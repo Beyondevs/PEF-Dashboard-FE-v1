@@ -186,16 +186,16 @@ const Dashboard = () => {
   const ongoingSessions = sessions.filter(s => s.status === 'Ongoing').slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-sm md:text-base text-muted-foreground">
           {role === 'trainer' ? "Overview of today's training activities" : "Your teaching performance overview"}
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {role === 'trainer' ? (
           <>
             <Card className="border-l-4 border-l-primary">
@@ -292,7 +292,7 @@ const Dashboard = () => {
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -439,7 +439,7 @@ const Dashboard = () => {
       </div>
 
       {/* Charts Row 2 */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
