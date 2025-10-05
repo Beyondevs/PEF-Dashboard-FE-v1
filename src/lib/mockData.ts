@@ -144,10 +144,11 @@ export const sessions: Session[] = Array.from({ length: 150 }, (_, i) => {
   const trainer = trainers[i % trainers.length];
   
   let status: SessionStatus = 'Planned';
-  if (daysOffset < 0) status = 'Completed';
-  else if (daysOffset === 0 && hour <= today.getHours()) {
-    // Make some sessions ongoing for today (indices that are multiples of 3)
-    if (i % 3 === 0 && hour >= today.getHours() - 2) {
+  if (daysOffset < 0) {
+    status = 'Completed';
+  } else if (daysOffset === 0) {
+    // Always ensure some sessions are ongoing today regardless of current hour
+    if (i % 4 === 0) {
       status = 'Ongoing';
     } else if (hour < today.getHours()) {
       status = 'Completed';

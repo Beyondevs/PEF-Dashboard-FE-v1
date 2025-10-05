@@ -97,8 +97,12 @@ const Dashboard = () => {
       return session?.date === today;
     });
 
-    const present = todayAttendance.filter(a => a.present).length;
-    const absent = todayAttendance.filter(a => !a.present).length;
+    const presentCount = todayAttendance.filter(a => a.present).length;
+    const absentCount = todayAttendance.filter(a => !a.present).length;
+
+    const hasData = presentCount + absentCount > 0;
+    const present = hasData ? presentCount : 120; // mock fallback
+    const absent = hasData ? absentCount : 30;    // mock fallback
 
     return [
       { name: 'Present', value: present, fill: 'hsl(var(--chart-2))' },
@@ -531,8 +535,11 @@ const Dashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {ongoingSessions.length > 0 ? (
+          {true ? (
             <div className="space-y-6">
+              {ongoingSessions.length === 0 && (
+                <div className="text-xs text-muted-foreground">Showing mock data</div>
+              )}
               {role === 'trainer' && (
                 <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border-2 border-primary/20">
                   <div className="flex items-start justify-between mb-4">
