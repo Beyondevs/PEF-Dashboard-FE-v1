@@ -145,8 +145,14 @@ export const sessions: Session[] = Array.from({ length: 150 }, (_, i) => {
   
   let status: SessionStatus = 'Planned';
   if (daysOffset < 0) status = 'Completed';
-  else if (daysOffset === 0 && hour < today.getHours()) status = 'Completed';
-  else if (daysOffset === 0 && hour === today.getHours()) status = 'Ongoing';
+  else if (daysOffset === 0 && hour <= today.getHours()) {
+    // Make some sessions ongoing for today (indices that are multiples of 3)
+    if (i % 3 === 0 && hour >= today.getHours() - 2) {
+      status = 'Ongoing';
+    } else if (hour < today.getHours()) {
+      status = 'Completed';
+    }
+  }
   
   return {
     id: `session${i + 1}`,
