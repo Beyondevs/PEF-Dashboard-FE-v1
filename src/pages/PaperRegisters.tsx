@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, CheckCircle, Clock } from 'lucide-react';
 import { paperRegisters, schools } from '@/lib/mockData';
 import { toast } from 'sonner';
+import PaginationControls from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
 
 const PaperRegisters = () => {
   const handleUpload = () => {
@@ -21,6 +23,16 @@ const PaperRegisters = () => {
   const handleVerify = () => {
     toast.success('Register verified successfully');
   };
+
+  const {
+    items: paginatedRegisters,
+    page,
+    setPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(paperRegisters, { initialPageSize: 10 });
 
   return (
     <div className="space-y-6">
@@ -40,24 +52,25 @@ const PaperRegisters = () => {
           <CardTitle>Uploaded Registers</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>School</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Uploaded By</TableHead>
-                <TableHead>Entries</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paperRegisters.map(register => {
-                const school = schools.find(s => s.id === register.schoolId);
-                
-                return (
-                  <TableRow key={register.id}>
-                    <TableCell className="font-medium">{school?.name}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>School</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Uploaded By</TableHead>
+                  <TableHead>Entries</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedRegisters.map(register => {
+                  const school = schools.find(s => s.id === register.schoolId);
+                  
+                  return (
+                    <TableRow key={register.id}>
+                      <TableCell className="font-medium">{school?.name}</TableCell>
                     <TableCell>{register.date}</TableCell>
                     <TableCell>{register.uploadedBy}</TableCell>
                     <TableCell>{register.rows.length} entries</TableCell>
@@ -79,9 +92,21 @@ const PaperRegisters = () => {
                     </TableCell>
                   </TableRow>
                 );
-              })}
-            </TableBody>
-          </Table>
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            pageInfo={
+              totalItems > 0
+                ? `Showing ${startIndex}-${endIndex} of ${totalItems} registers`
+                : undefined
+            }
+            className="mt-6"
+          />
         </CardContent>
       </Card>
     </div>

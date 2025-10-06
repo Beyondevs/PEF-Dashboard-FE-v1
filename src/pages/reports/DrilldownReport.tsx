@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ChevronRight, ChevronDown } from 'lucide-react';
@@ -24,6 +24,79 @@ interface DrillState {
 
 const DrilldownReport = () => {
   const [drillState, setDrillState] = useState<DrillState>({ level: 'province' });
+
+  const {
+    items: paginatedDivisions,
+    page: divisionPage,
+    setPage: setDivisionPage,
+    totalPages: divisionTotalPages,
+    startIndex: divisionStart,
+    endIndex: divisionEnd,
+    totalItems: divisionTotal,
+  } = usePagination(divisions, { initialPageSize: 10 });
+
+  const divisionDistricts = useMemo(() => {
+    if (!drillState.divisionId) {
+      return [];
+    }
+    return districts.filter(d => d.divisionId === drillState.divisionId);
+  }, [drillState.divisionId]);
+
+  const {
+    items: paginatedDivisionDistricts,
+    page: districtPage,
+    setPage: setDistrictPage,
+    totalPages: districtTotalPages,
+    startIndex: districtStart,
+    endIndex: districtEnd,
+    totalItems: districtTotal,
+  } = usePagination(divisionDistricts, { initialPageSize: 10 });
+
+  const districtTehsils = useMemo(() => {
+    if (!drillState.districtId) {
+      return [];
+    }
+    return tehsils.filter(t => t.districtId === drillState.districtId);
+  }, [drillState.districtId]);
+
+  const {
+    items: paginatedDistrictTehsils,
+    page: tehsilPage,
+    setPage: setTehsilPage,
+    totalPages: tehsilTotalPages,
+    startIndex: tehsilStart,
+    endIndex: tehsilEnd,
+    totalItems: tehsilTotal,
+  } = usePagination(districtTehsils, { initialPageSize: 10 });
+
+  const tehsilSchoolsList = useMemo(() => {
+    if (!drillState.tehsilId) {
+      return [];
+    }
+    return schools.filter(s => s.tehsilId === drillState.tehsilId);
+  }, [drillState.tehsilId]);
+
+  const {
+    items: paginatedTehsilSchools,
+    page: schoolPage,
+    setPage: setSchoolPage,
+    totalPages: schoolTotalPages,
+    startIndex: schoolStart,
+    endIndex: schoolEnd,
+    totalItems: schoolTotal,
+  } = usePagination(tehsilSchoolsList, { initialPageSize: 10 });
+
+  useEffect(() => {
+    setDistrictPage(1);
+  }, [drillState.divisionId, setDistrictPage]);
+
+  useEffect(() => {
+    setTehsilPage(1);
+  }, [drillState.districtId, setTehsilPage]);
+
+  useEffect(() => {
+    setSchoolPage(1);
+  }, [drillState.tehsilId, setSchoolPage]);
 
   const handleExport = () => {
     toast.success('Drill-down report exported successfully');
@@ -95,28 +168,29 @@ const DrilldownReport = () => {
             <CardTitle>Divisions</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Division Name</TableHead>
-                  <TableHead className="text-right">Districts</TableHead>
-                  <TableHead className="text-right">Schools</TableHead>
-                  <TableHead className="text-right">Sessions</TableHead>
-                  <TableHead className="text-right">Attendance Rate</TableHead>
-                  <TableHead className="text-right">Avg Score</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {divisions.map(division => {
-                  const divDistricts = districts.filter(d => d.divisionId === division.id);
-                  const metrics = calculateMetrics(schoolId => {
-                    const school = schools.find(s => s.id === schoolId);
-                    return school?.divisionId === division.id;
-                  });
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Division Name</TableHead>
+                    <TableHead className="text-right">Districts</TableHead>
+                    <TableHead className="text-right">Schools</TableHead>
+                    <TableHead className="text-right">Sessions</TableHead>
+                    <TableHead className="text-right">Attendance Rate</TableHead>
+                    <TableHead className="text-right">Avg Score</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedDivisions.map(division => {
+                    const divDistricts = districts.filter(d => d.divisionId === division.id);
+                    const metrics = calculateMetrics(schoolId => {
+                      const school = schools.find(s => s.id === schoolId);
+                      return school?.divisionId === division.id;
+                    });
 
-                  return (
-                    <TableRow key={division.id} className="cursor-pointer hover:bg-muted/50">
+                    return (
+                      <TableRow key={division.id} className="cursor-pointer hover:bg-muted/50">
                       <TableCell className="font-medium">{division.name}</TableCell>
                       <TableCell className="text-right">{divDistricts.length}</TableCell>
                       <TableCell className="text-right">{metrics.schools}</TableCell>
@@ -134,9 +208,21 @@ const DrilldownReport = () => {
                       </TableCell>
                     </TableRow>
                   );
-                })}
-              </TableBody>
-            </Table>
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <PaginationControls
+              currentPage={divisionPage}
+              totalPages={divisionTotalPages}
+              onPageChange={setDivisionPage}
+              pageInfo={
+                divisionTotal > 0
+                  ? `Showing ${divisionStart}-${divisionEnd} of ${divisionTotal} divisions`
+                  : undefined
+              }
+              className="mt-6"
+            />
           </CardContent>
         </Card>
       </div>
@@ -145,7 +231,7 @@ const DrilldownReport = () => {
 
   const renderDivisionLevel = () => {
     const division = divisions.find(d => d.id === drillState.divisionId);
-    const divDistricts = districts.filter(d => d.divisionId === drillState.divisionId);
+    const divDistricts = divisionDistricts;
     const metrics = calculateMetrics(schoolId => {
       const school = schools.find(s => s.id === schoolId);
       return school?.divisionId === drillState.divisionId;
@@ -188,28 +274,29 @@ const DrilldownReport = () => {
             <CardTitle>Districts</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>District Name</TableHead>
-                  <TableHead className="text-right">Tehsils</TableHead>
-                  <TableHead className="text-right">Schools</TableHead>
-                  <TableHead className="text-right">Sessions</TableHead>
-                  <TableHead className="text-right">Attendance Rate</TableHead>
-                  <TableHead className="text-right">Avg Score</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {divDistricts.map(district => {
-                  const distTehsils = tehsils.filter(t => t.districtId === district.id);
-                  const metrics = calculateMetrics(schoolId => {
-                    const school = schools.find(s => s.id === schoolId);
-                    return school?.districtId === district.id;
-                  });
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>District Name</TableHead>
+                    <TableHead className="text-right">Tehsils</TableHead>
+                    <TableHead className="text-right">Schools</TableHead>
+                    <TableHead className="text-right">Sessions</TableHead>
+                    <TableHead className="text-right">Attendance Rate</TableHead>
+                    <TableHead className="text-right">Avg Score</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedDivisionDistricts.map(district => {
+                    const distTehsils = tehsils.filter(t => t.districtId === district.id);
+                    const metrics = calculateMetrics(schoolId => {
+                      const school = schools.find(s => s.id === schoolId);
+                      return school?.districtId === district.id;
+                    });
 
-                  return (
-                    <TableRow key={district.id} className="cursor-pointer hover:bg-muted/50">
+                    return (
+                      <TableRow key={district.id} className="cursor-pointer hover:bg-muted/50">
                       <TableCell className="font-medium">{district.name}</TableCell>
                       <TableCell className="text-right">{distTehsils.length}</TableCell>
                       <TableCell className="text-right">{metrics.schools}</TableCell>
@@ -231,9 +318,21 @@ const DrilldownReport = () => {
                       </TableCell>
                     </TableRow>
                   );
-                })}
-              </TableBody>
-            </Table>
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <PaginationControls
+              currentPage={districtPage}
+              totalPages={districtTotalPages}
+              onPageChange={setDistrictPage}
+              pageInfo={
+                districtTotal > 0
+                  ? `Showing ${districtStart}-${districtEnd} of ${districtTotal} districts`
+                  : undefined
+              }
+              className="mt-6"
+            />
           </CardContent>
         </Card>
       </div>
@@ -242,7 +341,7 @@ const DrilldownReport = () => {
 
   const renderDistrictLevel = () => {
     const district = districts.find(d => d.id === drillState.districtId);
-    const distTehsils = tehsils.filter(t => t.districtId === drillState.districtId);
+    const distTehsils = districtTehsils;
     const metrics = calculateMetrics(schoolId => {
       const school = schools.find(s => s.id === schoolId);
       return school?.districtId === drillState.districtId;
@@ -291,26 +390,27 @@ const DrilldownReport = () => {
             <CardTitle>Tehsils</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tehsil Name</TableHead>
-                  <TableHead className="text-right">Schools</TableHead>
-                  <TableHead className="text-right">Sessions</TableHead>
-                  <TableHead className="text-right">Attendance Rate</TableHead>
-                  <TableHead className="text-right">Avg Score</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {distTehsils.map(tehsil => {
-                  const metrics = calculateMetrics(schoolId => {
-                    const school = schools.find(s => s.id === schoolId);
-                    return school?.tehsilId === tehsil.id;
-                  });
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tehsil Name</TableHead>
+                    <TableHead className="text-right">Schools</TableHead>
+                    <TableHead className="text-right">Sessions</TableHead>
+                    <TableHead className="text-right">Attendance Rate</TableHead>
+                    <TableHead className="text-right">Avg Score</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedDistrictTehsils.map(tehsil => {
+                    const metrics = calculateMetrics(schoolId => {
+                      const school = schools.find(s => s.id === schoolId);
+                      return school?.tehsilId === tehsil.id;
+                    });
 
-                  return (
-                    <TableRow key={tehsil.id} className="cursor-pointer hover:bg-muted/50">
+                    return (
+                      <TableRow key={tehsil.id} className="cursor-pointer hover:bg-muted/50">
                       <TableCell className="font-medium">{tehsil.name}</TableCell>
                       <TableCell className="text-right">{metrics.schools}</TableCell>
                       <TableCell className="text-right">{metrics.sessions}</TableCell>
@@ -332,9 +432,21 @@ const DrilldownReport = () => {
                       </TableCell>
                     </TableRow>
                   );
-                })}
-              </TableBody>
-            </Table>
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <PaginationControls
+              currentPage={tehsilPage}
+              totalPages={tehsilTotalPages}
+              onPageChange={setTehsilPage}
+              pageInfo={
+                tehsilTotal > 0
+                  ? `Showing ${tehsilStart}-${tehsilEnd} of ${tehsilTotal} tehsils`
+                  : undefined
+              }
+              className="mt-6"
+            />
           </CardContent>
         </Card>
       </div>
@@ -343,7 +455,7 @@ const DrilldownReport = () => {
 
   const renderTehsilLevel = () => {
     const tehsil = tehsils.find(t => t.id === drillState.tehsilId);
-    const tehsilSchools = schools.filter(s => s.tehsilId === drillState.tehsilId);
+    const tehsilSchools = tehsilSchoolsList;
     const metrics = calculateMetrics(schoolId => {
       const school = schools.find(s => s.id === schoolId);
       return school?.tehsilId === drillState.tehsilId;
@@ -393,32 +505,45 @@ const DrilldownReport = () => {
             <CardTitle>Schools</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>School Name</TableHead>
-                  <TableHead>EMIS Code</TableHead>
-                  <TableHead className="text-right">Sessions</TableHead>
-                  <TableHead className="text-right">Attendance Rate</TableHead>
-                  <TableHead className="text-right">Avg Score</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tehsilSchools.slice(0, 50).map(school => {
-                  const metrics = calculateMetrics(schoolId => schoolId === school.id);
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>School Name</TableHead>
+                    <TableHead>EMIS Code</TableHead>
+                    <TableHead className="text-right">Sessions</TableHead>
+                    <TableHead className="text-right">Attendance Rate</TableHead>
+                    <TableHead className="text-right">Avg Score</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedTehsilSchools.map(school => {
+                    const metrics = calculateMetrics(schoolId => schoolId === school.id);
 
-                  return (
-                    <TableRow key={school.id}>
-                      <TableCell className="font-medium max-w-xs truncate">{school.name}</TableCell>
+                    return (
+                      <TableRow key={school.id}>
+                        <TableCell className="font-medium max-w-xs truncate">{school.name}</TableCell>
                       <TableCell>{school.emisCode}</TableCell>
                       <TableCell className="text-right">{metrics.sessions}</TableCell>
                       <TableCell className="text-right">{metrics.attendanceRate}%</TableCell>
-                      <TableCell className="text-right">{metrics.avgScore}%</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        <TableCell className="text-right">{metrics.avgScore}%</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <PaginationControls
+              currentPage={schoolPage}
+              totalPages={schoolTotalPages}
+              onPageChange={setSchoolPage}
+              pageInfo={
+                schoolTotal > 0
+                  ? `Showing ${schoolStart}-${schoolEnd} of ${schoolTotal} schools`
+                  : undefined
+              }
+              className="mt-6"
+            />
           </CardContent>
         </Card>
       </div>

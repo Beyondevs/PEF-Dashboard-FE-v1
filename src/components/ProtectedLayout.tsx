@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppHeader } from './AppHeader';
 import { AppSidebar } from './AppSidebar';
 import { FilterBar } from './FilterBar';
+import LoginPopup from './LoginPopup';
 import { SidebarProvider } from './ui/sidebar';
 
 export const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
@@ -22,6 +23,7 @@ export const ProtectedLayout = ({ children }: { children: React.ReactNode }) => 
 
   return (
     <SidebarProvider>
+      <LoginPopup />
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">

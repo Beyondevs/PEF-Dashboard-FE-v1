@@ -17,6 +17,8 @@ import { attendance, sessions, teachers, students } from '@/lib/mockData';
 import { toast } from 'sonner';
 import { FilterBar } from '@/components/FilterBar';
 import { useFilters } from '@/contexts/FilterContext';
+import PaginationControls from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
 
 const Attendance = () => {
   const { filters } = useFilters();
@@ -44,8 +46,28 @@ const Attendance = () => {
     return attendanceChanges[recordId] !== undefined ? attendanceChanges[recordId] : originalStatus;
   };
 
-  const teacherAttendance = attendance.filter(a => a.personType === 'Teacher').slice(0, 50);
-  const studentAttendance = attendance.filter(a => a.personType === 'Student').slice(0, 50);
+  const teacherAttendance = attendance.filter(a => a.personType === 'Teacher');
+  const studentAttendance = attendance.filter(a => a.personType === 'Student');
+
+  const {
+    items: paginatedTeacherAttendance,
+    page: teacherPage,
+    setPage: setTeacherPage,
+    totalPages: teacherTotalPages,
+    startIndex: teacherStart,
+    endIndex: teacherEnd,
+    totalItems: teacherTotal,
+  } = usePagination(teacherAttendance, { initialPageSize: 10 });
+
+  const {
+    items: paginatedStudentAttendance,
+    page: studentPage,
+    setPage: setStudentPage,
+    totalPages: studentTotalPages,
+    startIndex: studentStart,
+    endIndex: studentEnd,
+    totalItems: studentTotal,
+  } = usePagination(studentAttendance, { initialPageSize: 10 });
 
   return (
     <div className="space-y-6">
@@ -88,6 +110,7 @@ const Attendance = () => {
               <CardTitle>Teacher Attendance Records</CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -100,7 +123,7 @@ const Attendance = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {teacherAttendance.map(att => {
+                  {paginatedTeacherAttendance.map(att => {
                     const teacher = teachers.find(t => t.id === att.personId);
                     const session = sessions.find(s => s.id === att.sessionId);
                     const currentStatus = getAttendanceStatus(att.id, att.present);
@@ -132,6 +155,19 @@ const Attendance = () => {
                   })}
                 </TableBody>
               </Table>
+              </div>
+
+              <PaginationControls
+                currentPage={teacherPage}
+                totalPages={teacherTotalPages}
+                onPageChange={setTeacherPage}
+                pageInfo={
+                  teacherTotal > 0
+                    ? `Showing ${teacherStart}-${teacherEnd} of ${teacherTotal} records`
+                    : undefined
+                }
+                className="mt-6"
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -142,6 +178,7 @@ const Attendance = () => {
               <CardTitle>Student Attendance Records</CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -155,7 +192,7 @@ const Attendance = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {studentAttendance.map(att => {
+                  {paginatedStudentAttendance.map(att => {
                     const student = students.find(s => s.id === att.personId);
                     const session = sessions.find(s => s.id === att.sessionId);
                     const currentStatus = getAttendanceStatus(att.id, att.present);
@@ -188,6 +225,19 @@ const Attendance = () => {
                   })}
                 </TableBody>
               </Table>
+              </div>
+
+              <PaginationControls
+                currentPage={studentPage}
+                totalPages={studentTotalPages}
+                onPageChange={setStudentPage}
+                pageInfo={
+                  studentTotal > 0
+                    ? `Showing ${studentStart}-${studentEnd} of ${studentTotal} records`
+                    : undefined
+                }
+                className="mt-6"
+              />
             </CardContent>
           </Card>
         </TabsContent>

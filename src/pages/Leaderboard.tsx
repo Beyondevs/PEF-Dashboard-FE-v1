@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -13,19 +13,36 @@ import { Trophy, Medal, Award } from 'lucide-react';
 import { teacherKPIs, teachers, schools } from '@/lib/mockData';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import PaginationControls from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
 
 const Leaderboard = () => {
   const [attendanceWeight, setAttendanceWeight] = useState([70]);
   
   const assessmentWeight = 100 - attendanceWeight[0];
 
-  const sortedTeachers = [...teacherKPIs]
-    .map(kpi => {
-      const compositeScore = (attendanceWeight[0] / 100) * kpi.attendanceRate + (assessmentWeight / 100) * kpi.avgStudentScore;
-      return { ...kpi, compositeScore };
-    })
-    .sort((a, b) => b.compositeScore - a.compositeScore)
-    .slice(0, 50);
+  const leaderboardTeachers = useMemo(() => {
+    const attendanceFactor = attendanceWeight[0];
+    const assessmentFactor = 100 - attendanceFactor;
+
+    return [...teacherKPIs]
+      .map(kpi => {
+        const compositeScore = (attendanceFactor / 100) * kpi.attendanceRate + (assessmentFactor / 100) * kpi.avgStudentScore;
+        return { ...kpi, compositeScore };
+      })
+      .sort((a, b) => b.compositeScore - a.compositeScore)
+      .slice(0, 50);
+  }, [attendanceWeight]);
+
+  const {
+    items: paginatedTeachers,
+    page,
+    setPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(leaderboardTeachers, { initialPageSize: 10 });
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Trophy className="h-5 w-5 text-accent" />;
@@ -83,45 +100,58 @@ const Leaderboard = () => {
           <CardTitle>Top 50 Teachers</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">Rank</TableHead>
-                <TableHead>Teacher</TableHead>
-                <TableHead>School</TableHead>
-                <TableHead>District</TableHead>
-                <TableHead className="text-right">Attendance %</TableHead>
-                <TableHead className="text-right">Avg Score %</TableHead>
-                <TableHead className="text-right">Composite</TableHead>
-                <TableHead>Badge</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedTeachers.map((kpi, index) => {
-                const teacher = teachers.find(t => t.id === kpi.teacherId);
-                const school = schools.find(s => s.id === teacher?.schoolId);
-                const rank = index + 1;
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-20">Rank</TableHead>
+                  <TableHead>Teacher</TableHead>
+                  <TableHead>School</TableHead>
+                  <TableHead>District</TableHead>
+                  <TableHead className="text-right">Attendance %</TableHead>
+                  <TableHead className="text-right">Avg Score %</TableHead>
+                  <TableHead className="text-right">Composite</TableHead>
+                  <TableHead>Badge</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedTeachers.map((kpi, index) => {
+                  const teacher = teachers.find(t => t.id === kpi.teacherId);
+                  const school = schools.find(s => s.id === teacher?.schoolId);
+                  const rank = startIndex > 0 ? startIndex + index : index + 1;
 
-                return (
-                  <TableRow key={kpi.teacherId} className={rank <= 3 ? 'bg-muted/30' : ''}>
-                    <TableCell className="font-bold flex items-center gap-2">
-                      {getRankIcon(rank)}
-                      {rank}
-                    </TableCell>
-                    <TableCell className="font-medium">{teacher?.name}</TableCell>
-                    <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
-                    <TableCell>{school?.districtId}</TableCell>
-                    <TableCell className="text-right">{kpi.attendanceRate.toFixed(1)}%</TableCell>
-                    <TableCell className="text-right">{kpi.avgStudentScore.toFixed(1)}%</TableCell>
-                    <TableCell className="text-right font-bold text-primary">
-                      {kpi.compositeScore.toFixed(1)}%
-                    </TableCell>
-                    <TableCell>{getRankBadge(rank)}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                  return (
+                    <TableRow key={kpi.teacherId} className={rank <= 3 ? 'bg-muted/30' : ''}>
+                      <TableCell className="font-bold flex items-center gap-2">
+                        {getRankIcon(rank)}
+                        {rank}
+                      </TableCell>
+                      <TableCell className="font-medium">{teacher?.name}</TableCell>
+                      <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
+                      <TableCell>{school?.districtId}</TableCell>
+                      <TableCell className="text-right">{kpi.attendanceRate.toFixed(1)}%</TableCell>
+                      <TableCell className="text-right">{kpi.avgStudentScore.toFixed(1)}%</TableCell>
+                      <TableCell className="text-right font-bold text-primary">
+                        {kpi.compositeScore.toFixed(1)}%
+                      </TableCell>
+                      <TableCell>{getRankBadge(rank)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            pageInfo={
+              totalItems > 0
+                ? `Showing ${startIndex}-${endIndex} of ${totalItems} teachers`
+                : undefined
+            }
+            className="mt-6"
+          />
         </CardContent>
       </Card>
     </div>
