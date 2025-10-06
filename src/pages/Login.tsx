@@ -117,8 +117,7 @@ const Login = () => {
           </Card>
         </div>
 
-        <div className="mt-6 md:mt-8 text-center text-xs md:text-sm text-muted-foreground">
-          <p>For demo purposes, click either card to simulate login</p>
+        <div className="mt-6 md:mt-8 text-center text-xs md:text-sm text-muted-foreground">~
         </div>
       </div>
     </div>
