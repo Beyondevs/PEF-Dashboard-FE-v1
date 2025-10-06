@@ -12,6 +12,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import PaginationControls from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
 
 const DistrictCompareReport = () => {
   const handleExport = () => {
@@ -59,6 +61,16 @@ const DistrictCompareReport = () => {
 
   const avgAttendanceRate = districtData.reduce((sum, d) => sum + d.metrics.attendanceRate, 0) / districtData.length;
   const avgScoreAll = districtData.reduce((sum, d) => sum + d.metrics.avgScore, 0) / districtData.length;
+
+  const {
+    items: paginatedDistricts,
+    page,
+    setPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(districtData, { initialPageSize: 10 });
 
   const getRankBadge = (rank: number) => {
     if (rank === 1) return <Badge className="bg-primary">🥇 1st</Badge>;
@@ -124,40 +136,57 @@ const DistrictCompareReport = () => {
           <CardTitle>District Rankings & Performance</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>District</TableHead>
-                <TableHead className="text-right">Schools</TableHead>
-                <TableHead className="text-right">Sessions</TableHead>
-                <TableHead className="text-right">Attendance Rate</TableHead>
-                <TableHead className="text-right">Avg Score</TableHead>
-                <TableHead className="text-right">Total Participants</TableHead>
-                <TableHead className="text-right">Assessments</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {districtData.map((district, index) => (
-                <TableRow key={district.id}>
-                  <TableCell>{getRankBadge(index + 1)}</TableCell>
-                  <TableCell className="font-medium">{district.name}</TableCell>
-                  <TableCell className="text-right">{district.metrics.schools}</TableCell>
-                  <TableCell className="text-right">{district.metrics.sessions}</TableCell>
-                  <TableCell className="text-right">
-                    <span className="font-semibold">{district.metrics.attendanceRate.toFixed(1)}%</span>
-                    {getPerformanceIndicator(district.metrics.attendanceRate, avgAttendanceRate)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className="font-semibold text-primary">{district.metrics.avgScore.toFixed(1)}%</span>
-                    {getPerformanceIndicator(district.metrics.avgScore, avgScoreAll)}
-                  </TableCell>
-                  <TableCell className="text-right">{district.metrics.totalAttendance}</TableCell>
-                  <TableCell className="text-right">{district.metrics.totalAssessments}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>District</TableHead>
+                  <TableHead className="text-right">Schools</TableHead>
+                  <TableHead className="text-right">Sessions</TableHead>
+                  <TableHead className="text-right">Attendance Rate</TableHead>
+                  <TableHead className="text-right">Avg Score</TableHead>
+                  <TableHead className="text-right">Total Participants</TableHead>
+                  <TableHead className="text-right">Assessments</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedDistricts.map((district, index) => {
+                  const rank = startIndex > 0 ? startIndex + index : index + 1;
+
+                  return (
+                    <TableRow key={district.id}>
+                      <TableCell>{getRankBadge(rank)}</TableCell>
+                      <TableCell className="font-medium">{district.name}</TableCell>
+                      <TableCell className="text-right">{district.metrics.schools}</TableCell>
+                      <TableCell className="text-right">{district.metrics.sessions}</TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-semibold">{district.metrics.attendanceRate.toFixed(1)}%</span>
+                        {getPerformanceIndicator(district.metrics.attendanceRate, avgAttendanceRate)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-semibold text-primary">{district.metrics.avgScore.toFixed(1)}%</span>
+                        {getPerformanceIndicator(district.metrics.avgScore, avgScoreAll)}
+                      </TableCell>
+                      <TableCell className="text-right">{district.metrics.totalAttendance}</TableCell>
+                      <TableCell className="text-right">{district.metrics.totalAssessments}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            pageInfo={
+              totalItems > 0
+                ? `Showing ${startIndex}-${endIndex} of ${totalItems} districts`
+                : undefined
+            }
+            className="mt-6"
+          />
         </CardContent>
       </Card>
 

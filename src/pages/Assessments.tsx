@@ -17,11 +17,23 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { FilterBar } from '@/components/FilterBar';
 import { useFilters } from '@/contexts/FilterContext';
+import PaginationControls from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
 
 const Assessments = () => {
   const { filters } = useFilters();
   const [scoreChanges, setScoreChanges] = useState<Record<string, number>>({});
   const [newEntries, setNewEntries] = useState<Array<{ studentId: string; sessionId: string; score: number }>>([]);
+
+  const {
+    items: paginatedAssessments,
+    page,
+    setPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(assessments, { initialPageSize: 10 });
 
   const handleExport = () => {
     toast.success('Export generated successfully');
@@ -89,40 +101,53 @@ const Assessments = () => {
               <CardTitle>Assessment Records</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Session</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Score</TableHead>
-                    <TableHead className="text-right">Max Score</TableHead>
-                    <TableHead className="text-right">Percentage</TableHead>
-                    <TableHead>Performance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assessments.slice(0, 50).map(assessment => {
-                    const student = students.find(s => s.id === assessment.studentId);
-                    const session = sessions.find(s => s.id === assessment.sessionId);
-                    const percentage = ((assessment.score / assessment.maxScore) * 100).toFixed(1);
-                    
-                    return (
-                      <TableRow key={assessment.id}>
-                        <TableCell className="font-medium">{student?.name}</TableCell>
-                        <TableCell>{session?.title}</TableCell>
-                        <TableCell>{session?.date}</TableCell>
-                        <TableCell className="text-right font-semibold">{assessment.score}</TableCell>
-                        <TableCell className="text-right">{assessment.maxScore}</TableCell>
-                        <TableCell className="text-right text-primary font-semibold">
-                          {percentage}%
-                        </TableCell>
-                        <TableCell>{getScoreBadge(assessment.score, assessment.maxScore)}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Session</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Score</TableHead>
+                      <TableHead className="text-right">Max Score</TableHead>
+                      <TableHead className="text-right">Percentage</TableHead>
+                      <TableHead>Performance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedAssessments.map(assessment => {
+                      const student = students.find(s => s.id === assessment.studentId);
+                      const session = sessions.find(s => s.id === assessment.sessionId);
+                      const percentage = ((assessment.score / assessment.maxScore) * 100).toFixed(1);
+
+                      return (
+                        <TableRow key={assessment.id}>
+                          <TableCell className="font-medium">{student?.name}</TableCell>
+                          <TableCell>{session?.title}</TableCell>
+                          <TableCell>{session?.date}</TableCell>
+                          <TableCell className="text-right font-semibold">{assessment.score}</TableCell>
+                          <TableCell className="text-right">{assessment.maxScore}</TableCell>
+                          <TableCell className="text-right text-primary font-semibold">
+                            {percentage}%
+                          </TableCell>
+                          <TableCell>{getScoreBadge(assessment.score, assessment.maxScore)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageInfo={
+                  totalItems > 0
+                    ? `Showing ${startIndex}-${endIndex} of ${totalItems} assessments`
+                    : undefined
+                }
+                className="mt-6"
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -133,51 +158,64 @@ const Assessments = () => {
               <CardTitle>Edit Assessment Scores</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Session</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Edit Score</TableHead>
-                    <TableHead className="text-right">Max Score</TableHead>
-                    <TableHead className="text-right">Percentage</TableHead>
-                    <TableHead>Performance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assessments.slice(0, 50).map(assessment => {
-                    const student = students.find(s => s.id === assessment.studentId);
-                    const session = sessions.find(s => s.id === assessment.sessionId);
-                    const currentScore = getScore(assessment.id, assessment.score);
-                    const hasChanges = scoreChanges[assessment.id] !== undefined;
-                    const percentage = ((currentScore / assessment.maxScore) * 100).toFixed(1);
-                    
-                    return (
-                      <TableRow key={assessment.id} className={hasChanges ? 'bg-muted/50' : ''}>
-                        <TableCell className="font-medium">{student?.name}</TableCell>
-                        <TableCell>{session?.title}</TableCell>
-                        <TableCell>{session?.date}</TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            min="0"
-                            max={assessment.maxScore}
-                            value={currentScore}
-                            onChange={(e) => updateScore(assessment.id, parseInt(e.target.value) || 0)}
-                            className="w-20 text-right"
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">{assessment.maxScore}</TableCell>
-                        <TableCell className="text-right text-primary font-semibold">
-                          {percentage}%
-                        </TableCell>
-                        <TableCell>{getScoreBadge(currentScore, assessment.maxScore)}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Session</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Edit Score</TableHead>
+                      <TableHead className="text-right">Max Score</TableHead>
+                      <TableHead className="text-right">Percentage</TableHead>
+                      <TableHead>Performance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedAssessments.map(assessment => {
+                      const student = students.find(s => s.id === assessment.studentId);
+                      const session = sessions.find(s => s.id === assessment.sessionId);
+                      const currentScore = getScore(assessment.id, assessment.score);
+                      const hasChanges = scoreChanges[assessment.id] !== undefined;
+                      const percentage = ((currentScore / assessment.maxScore) * 100).toFixed(1);
+
+                      return (
+                        <TableRow key={assessment.id} className={hasChanges ? 'bg-muted/50' : ''}>
+                          <TableCell className="font-medium">{student?.name}</TableCell>
+                          <TableCell>{session?.title}</TableCell>
+                          <TableCell>{session?.date}</TableCell>
+                          <TableCell className="text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              max={assessment.maxScore}
+                              value={currentScore}
+                              onChange={(e) => updateScore(assessment.id, parseInt(e.target.value) || 0)}
+                              className="w-20 text-right"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">{assessment.maxScore}</TableCell>
+                          <TableCell className="text-right text-primary font-semibold">
+                            {percentage}%
+                          </TableCell>
+                          <TableCell>{getScoreBadge(currentScore, assessment.maxScore)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageInfo={
+                  totalItems > 0
+                    ? `Showing ${startIndex}-${endIndex} of ${totalItems} assessments`
+                    : undefined
+                }
+                className="mt-6"
+              />
             </CardContent>
           </Card>
         </TabsContent>

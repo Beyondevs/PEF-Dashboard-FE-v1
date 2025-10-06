@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, FileSpreadsheet } from 'lucide-react';
 import { weeklySummaries } from '@/lib/mockData';
 import { toast } from 'sonner';
+import PaginationControls from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
 
 const WeeklySummaries = () => {
   const handleCreate = () => {
@@ -26,6 +28,16 @@ const WeeklySummaries = () => {
     };
     return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
   };
+
+  const {
+    items: paginatedSummaries,
+    page,
+    setPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(weeklySummaries, { initialPageSize: 10 });
 
   return (
     <div className="space-y-6">
@@ -45,20 +57,21 @@ const WeeklySummaries = () => {
           <CardTitle>Weekly Summary Reports</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Scope</TableHead>
-                <TableHead>Week Period</TableHead>
-                <TableHead>Compiled By</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {weeklySummaries.map(summary => (
-                <TableRow key={summary.id}>
-                  <TableCell className="font-medium">{summary.scope}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Scope</TableHead>
+                  <TableHead>Week Period</TableHead>
+                  <TableHead>Compiled By</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedSummaries.map(summary => (
+                  <TableRow key={summary.id}>
+                    <TableCell className="font-medium">{summary.scope}</TableCell>
                   <TableCell>
                     {new Date(summary.weekStart).toLocaleDateString()} - {new Date(summary.weekEnd).toLocaleDateString()}
                   </TableCell>
@@ -82,10 +95,22 @@ const WeeklySummaries = () => {
                       )}
                     </div>
                   </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            pageInfo={
+              totalItems > 0
+                ? `Showing ${startIndex}-${endIndex} of ${totalItems} summaries`
+                : undefined
+            }
+            className="mt-6"
+          />
         </CardContent>
       </Card>
     </div>

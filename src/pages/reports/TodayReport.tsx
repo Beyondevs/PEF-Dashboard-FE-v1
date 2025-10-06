@@ -12,6 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import PaginationControls from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
 
 const TodayReport = () => {
   const today = new Date().toISOString().split('T')[0];
@@ -45,6 +47,16 @@ const TodayReport = () => {
       tehsil: tehsil?.name || '-',
     };
   };
+
+  const {
+    items: paginatedSessions,
+    page,
+    setPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(todaySessions, { initialPageSize: 10 });
 
   return (
     <div className="space-y-6">
@@ -114,31 +126,32 @@ const TodayReport = () => {
           <CardTitle>Session Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Session</TableHead>
-                <TableHead>School</TableHead>
-                <TableHead>Division</TableHead>
-                <TableHead>District</TableHead>
-                <TableHead>Tehsil</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Attendance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {todaySessions.map(session => {
-                const school = schools.find(s => s.id === session.schoolId);
-                const location = getLocationInfo(session.schoolId);
-                const sessionAttendance = todayAttendance.filter(a => a.sessionId === session.id);
-                const present = sessionAttendance.filter(a => a.present).length;
-                const total = sessionAttendance.length;
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Session</TableHead>
+                  <TableHead>School</TableHead>
+                  <TableHead>Division</TableHead>
+                  <TableHead>District</TableHead>
+                  <TableHead>Tehsil</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Attendance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedSessions.map(session => {
+                  const school = schools.find(s => s.id === session.schoolId);
+                  const location = getLocationInfo(session.schoolId);
+                  const sessionAttendance = todayAttendance.filter(a => a.sessionId === session.id);
+                  const present = sessionAttendance.filter(a => a.present).length;
+                  const total = sessionAttendance.length;
 
-                return (
-                  <TableRow key={session.id}>
-                    <TableCell className="font-medium">{session.title}</TableCell>
-                    <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
+                  return (
+                    <TableRow key={session.id}>
+                      <TableCell className="font-medium">{session.title}</TableCell>
+                      <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
                     <TableCell>{location.division}</TableCell>
                     <TableCell>{location.district}</TableCell>
                     <TableCell>{location.tehsil}</TableCell>
@@ -150,14 +163,26 @@ const TodayReport = () => {
                         {session.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {present}/{total}
-                    </TableCell>
-                  </TableRow>
+                      <TableCell className="text-right font-medium">
+                        {present}/{total}
+                      </TableCell>
+                    </TableRow>
                 );
               })}
             </TableBody>
           </Table>
+          </div>
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            pageInfo={
+              totalItems > 0
+                ? `Showing ${startIndex}-${endIndex} of ${totalItems} sessions`
+                : undefined
+            }
+            className="mt-6"
+          />
         </CardContent>
       </Card>
     </div>

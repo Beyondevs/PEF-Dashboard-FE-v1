@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import PaginationControls from '@/components/PaginationControls';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,8 @@ import {
 import { sessions, schools, trainers, teachers, students, attendance, assessments } from '@/lib/mockData';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePagination } from '@/hooks/usePagination';
+import type { Teacher, Student } from '@/types';
 
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -55,6 +58,40 @@ const SessionDetail = () => {
   const session = useMemo(() => localSessions.find(s => s.id === id), [id, localSessions]);
   const school = useMemo(() => schools.find(s => s.id === session?.schoolId), [session]);
   const trainer = useMemo(() => trainers.find(t => t.id === session?.trainerId), [session]);
+
+  const sessionTeachers = useMemo<Teacher[]>(() => {
+    if (!session) {
+      return [];
+    }
+    return teachers.filter(t => t.schoolId === session.schoolId).slice(0, session.expectedTeachers);
+  }, [session]);
+
+  const sessionStudents = useMemo<Student[]>(() => {
+    if (!session) {
+      return [];
+    }
+    return students.filter(s => s.schoolId === session.schoolId).slice(0, session.expectedStudents);
+  }, [session]);
+
+  const {
+    items: paginatedSessionTeachers,
+    page: teacherPage,
+    setPage: setTeacherPage,
+    totalPages: teacherTotalPages,
+    startIndex: teacherStart,
+    endIndex: teacherEnd,
+    totalItems: teacherTotal,
+  } = usePagination(sessionTeachers, { initialPageSize: 10 });
+
+  const {
+    items: paginatedSessionStudents,
+    page: studentPage,
+    setPage: setStudentPage,
+    totalPages: studentTotalPages,
+    startIndex: studentStart,
+    endIndex: studentEnd,
+    totalItems: studentTotal,
+  } = usePagination(sessionStudents, { initialPageSize: 10 });
 
   if (!session) {
     return (
@@ -76,9 +113,6 @@ const SessionDetail = () => {
   
   const teachersPresent = teacherAttendance.filter(a => a.present).length;
   const studentsPresent = studentAttendance.filter(a => a.present).length;
-
-  const sessionTeachers = teachers.filter(t => t.schoolId === session.schoolId).slice(0, session.expectedTeachers);
-  const sessionStudents = students.filter(s => s.schoolId === session.schoolId).slice(0, session.expectedStudents);
 
   const avgAssessmentScore = sessionAssessments.length > 0
     ? (sessionAssessments.reduce((sum, a) => sum + a.score, 0) / sessionAssessments.length).toFixed(1)
@@ -394,24 +428,25 @@ const SessionDetail = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>CNIC</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    {role === 'trainer' && session.status !== 'Completed' && (
-                      <TableHead>Action</TableHead>
-                    )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessionTeachers.map(teacher => {
-                    const att = getAttendanceForPerson(teacher.id, 'Teacher');
-                    return (
-                      <TableRow key={teacher.id}>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>CNIC</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      {role === 'trainer' && session.status !== 'Completed' && (
+                        <TableHead>Action</TableHead>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedSessionTeachers.map(teacher => {
+                      const att = getAttendanceForPerson(teacher.id, 'Teacher');
+                      return (
+                        <TableRow key={teacher.id}>
                         <TableCell className="font-medium">{teacher.name}</TableCell>
                         <TableCell className="font-mono text-sm">{teacher.cnic}</TableCell>
                         <TableCell>{teacher.phone}</TableCell>
@@ -441,9 +476,21 @@ const SessionDetail = () => {
                         )}
                       </TableRow>
                     );
-                  })}
-                </TableBody>
-              </Table>
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <PaginationControls
+                currentPage={teacherPage}
+                totalPages={teacherTotalPages}
+                onPageChange={setTeacherPage}
+                pageInfo={
+                  teacherTotal > 0
+                    ? `Showing ${teacherStart}-${teacherEnd} of ${teacherTotal} teachers`
+                    : undefined
+                }
+                className="mt-6"
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -468,24 +515,25 @@ const SessionDetail = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Roll No</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Gender</TableHead>
-                    <TableHead>Grade</TableHead>
-                    <TableHead>Status</TableHead>
-                    {role === 'trainer' && session.status !== 'Completed' && (
-                      <TableHead>Action</TableHead>
-                    )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessionStudents.map(student => {
-                    const att = getAttendanceForPerson(student.id, 'Student');
-                    return (
-                      <TableRow key={student.id}>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Roll No</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Gender</TableHead>
+                      <TableHead>Grade</TableHead>
+                      <TableHead>Status</TableHead>
+                      {role === 'trainer' && session.status !== 'Completed' && (
+                        <TableHead>Action</TableHead>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedSessionStudents.map(student => {
+                      const att = getAttendanceForPerson(student.id, 'Student');
+                      return (
+                        <TableRow key={student.id}>
                         <TableCell className="font-mono">{student.rollNo}</TableCell>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell className="capitalize">{student.gender}</TableCell>
@@ -515,9 +563,21 @@ const SessionDetail = () => {
                         )}
                       </TableRow>
                     );
-                  })}
-                </TableBody>
-              </Table>
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <PaginationControls
+                currentPage={studentPage}
+                totalPages={studentTotalPages}
+                onPageChange={setStudentPage}
+                pageInfo={
+                  studentTotal > 0
+                    ? `Showing ${studentStart}-${studentEnd} of ${studentTotal} students`
+                    : undefined
+                }
+                className="mt-6"
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -618,22 +678,23 @@ const SessionDetail = () => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Roll No</TableHead>
-                  <TableHead>Student Name</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead className="text-right">Score (0-10)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sessionStudents.map(student => {
-                  const studentAtt = getAttendanceForPerson(student.id, 'Student');
-                  const isPresent = studentAtt?.present;
-                  
-                  return (
-                    <TableRow key={student.id} className={!isPresent ? 'opacity-50' : ''}>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Roll No</TableHead>
+                    <TableHead>Student Name</TableHead>
+                    <TableHead>Grade</TableHead>
+                    <TableHead className="text-right">Score (0-10)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedSessionStudents.map(student => {
+                    const studentAtt = getAttendanceForPerson(student.id, 'Student');
+                    const isPresent = studentAtt?.present;
+                    
+                    return (
+                      <TableRow key={student.id} className={!isPresent ? 'opacity-50' : ''}>
                       <TableCell className="font-mono">{student.rollNo}</TableCell>
                       <TableCell className="font-medium">{student.name}</TableCell>
                       <TableCell>Grade {student.grade}</TableCell>
@@ -654,11 +715,22 @@ const SessionDetail = () => {
                           disabled={!isPresent}
                         />
                       </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <PaginationControls
+              currentPage={studentPage}
+              totalPages={studentTotalPages}
+              onPageChange={setStudentPage}
+              pageInfo={
+                studentTotal > 0
+                  ? `Showing ${studentStart}-${studentEnd} of ${studentTotal} students`
+                  : undefined
+              }
+            />
             
             <div className="flex justify-end gap-2 pt-4 sticky bottom-0 bg-background pb-4">
               <Button variant="outline" onClick={() => setIsAssessmentModalOpen(false)}>

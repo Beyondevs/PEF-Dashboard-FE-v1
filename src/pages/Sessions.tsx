@@ -32,10 +32,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import PaginationControls from '@/components/PaginationControls';
+import { usePagination } from '@/hooks/usePagination';
 
 const Sessions = () => {
   const { role } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const {
+    items: paginatedSessions,
+    page: currentPage,
+    setPage: setCurrentPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination(sessions, { initialPageSize: 10 });
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
@@ -150,6 +162,7 @@ const Sessions = () => {
           <CardTitle>All Sessions</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -165,7 +178,7 @@ const Sessions = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sessions.slice(0, 20).map(session => {
+              {paginatedSessions.map(session => {
                 const school = schools.find(s => s.id === session.schoolId);
                 return (
                   <TableRow key={session.id}>
@@ -194,6 +207,19 @@ const Sessions = () => {
               })}
             </TableBody>
           </Table>
+          </div>
+
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            pageInfo={
+              totalItems > 0
+                ? `Showing ${startIndex}-${endIndex} of ${totalItems} sessions`
+                : undefined
+            }
+            className="mt-6"
+          />
         </CardContent>
       </Card>
     </div>
