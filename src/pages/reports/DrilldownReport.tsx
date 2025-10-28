@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Download, ChevronRight, ChevronDown } from 'lucide-react';
 import { divisions, districts, tehsils, schools, sessions, attendance, assessments, students } from '@/lib/mockData';
 import { toast } from 'sonner';
+import { usePagination } from '@/hooks/usePagination';
+import PaginationControls from '@/components/PaginationControls';
 import {
   Table,
   TableBody,

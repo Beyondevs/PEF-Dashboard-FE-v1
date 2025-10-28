@@ -1,189 +1,177 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserCheck, Calendar, School, TrendingUp, Activity, Award, Clock, Target, BookOpen, GraduationCap, BarChart3 } from 'lucide-react';
-import { sessions, attendance, teachers, students, schools, assessments } from '@/lib/mockData';
 import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { getDashboardAggregate } from '@/lib/api';
 
 const Dashboard = () => {
   const { filters } = useFilters();
   const { role } = useAuth();
   const today = new Date().toISOString().split('T')[0];
+  const toDateOnly = (d: any) => {
+    if (!d) return undefined;
+    const dt = d instanceof Date ? d : new Date(d);
+    if (isNaN(dt.getTime())) return undefined;
+    return dt.toISOString().split('T')[0];
+  };
+  
+  // API data state
+  // Slim backend payload state
+  const [teachersInTraining, setTeachersInTraining] = useState<number>(0);
+  const [studentsInTraining, setStudentsInTraining] = useState<number>(0);
+  const [totalSessions, setTotalSessions] = useState<number>(0);
+  const [activeSchools, setActiveSchools] = useState<number>(0);
+  const [activityTrends, setActivityTrends] = useState<Array<{ date: string; attendanceRate: number }>>([]);
+  const [attendanceStatusToday, setAttendanceStatusToday] = useState<{ present: number; absent: number; total: number }>({ present: 0, absent: 0, total: 0 });
+  const [coursePerformance, setCoursePerformance] = useState<Array<{ courseName: string; averageScore: number; sampleSize: number }>>([]);
+  const [weeklyProgress, setWeeklyProgress] = useState<Array<{ weekStart: string; sessions: number; attendanceRate: number }>>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiError] = useState(false);
+
+  // Back-compat placeholders (FE now uses slim metrics only)
+  const apiSessions: any[] = [];
+  const apiAttendance: any[] = [];
+  const apiAssessments: any[] = [];
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        
+
+        // Fetch slim aggregated dashboard payload
+        const agg = await getDashboardAggregate({ date: today });
+        const payload = agg.data as any;
+
+        setTeachersInTraining(payload.teachersInTraining || 0);
+        setStudentsInTraining(payload.studentsInTraining || 0);
+        setTotalSessions(payload.totalSessions || 0);
+        setActiveSchools(payload.activeSchools || 0);
+        setActivityTrends(Array.isArray(payload.activityTrends) ? payload.activityTrends : []);
+        setAttendanceStatusToday(payload.attendanceStatusToday || { present: 0, absent: 0, total: 0 });
+        setCoursePerformance(Array.isArray(payload.coursePerformance) ? payload.coursePerformance : []);
+        setWeeklyProgress(Array.isArray(payload.weeklyProgress) ? payload.weeklyProgress : []);
+        
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [today]);
 
   const stats = useMemo(() => {
-    const todaySessions = sessions.filter(s => s.date === today);
-    const todayAttendance = attendance.filter(a => {
-      const session = sessions.find(s => s.id === a.sessionId);
-      return session?.date === today;
-    });
-
-    const teachersToday = new Set(
-      todayAttendance
-        .filter(a => a.personType === 'Teacher' && a.present)
-        .map(a => a.personId)
-    ).size;
-
-    const studentsToday = new Set(
-      todayAttendance
-        .filter(a => a.personType === 'Student' && a.present)
-        .map(a => a.personId)
-    ).size;
-
-    const activeSessions = todaySessions.filter(s => s.status === 'Ongoing').length;
-    const activeSchools = new Set(todaySessions.map(s => s.schoolId)).size;
-    
-    // Additional stats
-    const completedSessions = sessions.filter(s => s.status === 'Completed').length;
-    const totalTeachers = new Set(attendance.filter(a => a.personType === 'Teacher').map(a => a.personId)).size;
-    const totalStudents = new Set(attendance.filter(a => a.personType === 'Student').map(a => a.personId)).size;
-    const avgAttendanceRate = attendance.length > 0 
-      ? (attendance.filter(a => a.present).length / attendance.length) * 100 
-      : 0;
-    
-    // Assessment stats
-    const totalAssessments = assessments.length;
-    const avgScore = assessments.length > 0
-      ? (assessments.reduce((sum, a) => sum + a.score, 0) / assessments.length)
-      : 0;
-
     return {
-      teachersToday,
-      studentsToday,
-      activeSessions,
-      activeSchools,
-      completedSessions,
-      totalTeachers,
-      totalStudents,
-      avgAttendanceRate,
-      totalAssessments,
-      avgScore,
+      teachersToday: teachersInTraining,
+      studentsToday: studentsInTraining,
+      activeSessions: totalSessions, // renamed meaning on FE card
+      activeSchools: activeSchools,
+      completedSessions: 0,
+      totalTeachers: teachersInTraining,
+      totalStudents: studentsInTraining,
+      avgAttendanceRate: 0,
+      totalAssessments: 0,
+      avgScore: 0,
     };
-  }, []);
+  }, [teachersInTraining, studentsInTraining, totalSessions, activeSchools]);
 
   const sessionsPerDay = useMemo(() => {
-    const last30Days = Array.from({ length: 30 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (29 - i));
-      return date.toISOString().split('T')[0];
-    });
-
-    return last30Days.map(date => {
-      const daySessions = sessions.filter(s => s.date === date);
-      const dayAttendance = attendance.filter(a => {
-        const session = sessions.find(s => s.id === a.sessionId);
-        return session?.date === date;
-      });
-      const attendanceRate = dayAttendance.length > 0
-        ? (dayAttendance.filter(a => a.present).length / dayAttendance.length) * 100
-        : 0;
-      
-      return {
-        date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        sessions: daySessions.length,
-        attendance: Math.round(attendanceRate),
-        teachers: new Set(dayAttendance.filter(a => a.personType === 'Teacher' && a.present).map(a => a.personId)).size,
-        students: new Set(dayAttendance.filter(a => a.personType === 'Student' && a.present).map(a => a.personId)).size,
-      };
-    });
-  }, []);
+    return activityTrends.map(d => ({
+      date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      sessions: 0,
+      attendance: Math.round(d.attendanceRate),
+      teachers: 0,
+      students: 0,
+    }));
+  }, [activityTrends]);
 
   const attendanceData = useMemo(() => {
-    const todayAttendance = attendance.filter(a => {
-      const session = sessions.find(s => s.id === a.sessionId);
-      return session?.date === today;
-    });
-
-    const presentCount = todayAttendance.filter(a => a.present).length;
-    const absentCount = todayAttendance.filter(a => !a.present).length;
-
-    const hasData = presentCount + absentCount > 0;
-    const present = hasData ? presentCount : 120; // mock fallback
-    const absent = hasData ? absentCount : 30;    // mock fallback
-
+    const presentRaw = attendanceStatusToday.present || 0;
+    const absentRaw = attendanceStatusToday.absent || 0;
+    const total = presentRaw + absentRaw;
+    const present = total > 0 ? presentRaw : 120; // fallback to keep chart visible
+    const absent = total > 0 ? absentRaw : 30;
     return [
       { name: 'Present', value: present, fill: 'hsl(var(--chart-2))' },
       { name: 'Absent', value: absent, fill: 'hsl(var(--chart-5))' },
     ];
-  }, []);
+  }, [attendanceStatusToday]);
   
   const performanceData = useMemo(() => {
-    // Score distribution
+    // Approximate score distribution from coursePerformance sample sizes and averages
     const scoreRanges = [
       { range: '0-4', count: 0, fill: 'hsl(var(--chart-5))' },
       { range: '5-6', count: 0, fill: 'hsl(var(--chart-3))' },
       { range: '7-8', count: 0, fill: 'hsl(var(--chart-2))' },
       { range: '9-10', count: 0, fill: 'hsl(var(--chart-1))' },
     ];
-    
-    assessments.forEach(a => {
-      if (a.score < 5) scoreRanges[0].count++;
-      else if (a.score < 7) scoreRanges[1].count++;
-      else if (a.score < 9) scoreRanges[2].count++;
-      else scoreRanges[3].count++;
+    (coursePerformance || []).forEach(c => {
+      const avg = c.averageScore;
+      const weight = Math.max(1, c.sampleSize || 0);
+      if (avg < 5) scoreRanges[0].count += weight;
+      else if (avg < 7) scoreRanges[1].count += weight;
+      else if (avg < 9) scoreRanges[2].count += weight;
+      else scoreRanges[3].count += weight;
     });
-    
     return scoreRanges;
-  }, []);
+  }, [coursePerformance]);
   
   const courseData = useMemo(() => {
-    const courseMap: Record<string, { sessions: number; avgScore: number; totalAssessments: number; fill: string }> = {
-      'English Basics': { sessions: 0, avgScore: 0, totalAssessments: 0, fill: 'hsl(var(--chart-1))' },
-      'English Intermediate': { sessions: 0, avgScore: 0, totalAssessments: 0, fill: 'hsl(var(--chart-2))' },
-      'English Advanced': { sessions: 0, avgScore: 0, totalAssessments: 0, fill: 'hsl(var(--chart-3))' },
+    const colorMap: Record<string, string> = {
+      'English Basics': 'hsl(var(--chart-1))',
+      'English Intermediate': 'hsl(var(--chart-2))',
+      'English Advanced': 'hsl(var(--chart-3))',
     };
-    
-    sessions.forEach(s => {
-      if (courseMap[s.courseName]) {
-        courseMap[s.courseName].sessions++;
-      }
-    });
-    
-    assessments.forEach(a => {
-      const session = sessions.find(s => s.id === a.sessionId);
-      if (session && courseMap[session.courseName]) {
-        courseMap[session.courseName].avgScore += a.score;
-        courseMap[session.courseName].totalAssessments++;
-      }
-    });
-    
-    return Object.entries(courseMap).map(([name, data]) => ({
-      course: name.replace('English ', ''),
-      sessions: data.sessions,
-      avgScore: data.totalAssessments > 0 ? Math.round((data.avgScore / data.totalAssessments) * 10) / 10 : 0,
-      fill: data.fill,
+    return (coursePerformance || []).map(c => ({
+      course: c.courseName.replace('English ', ''),
+      sessions: 0,
+      avgScore: Number((c.averageScore).toFixed(1)),
+      fill: colorMap[c.courseName] || 'hsl(var(--chart-1))',
     }));
-  }, []);
+  }, [coursePerformance]);
   
-  const weeklyProgress = useMemo(() => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (6 - i));
-      return date.toISOString().split('T')[0];
-    });
-    
-    return last7Days.map(date => {
-      const daySessions = sessions.filter(s => s.date === date && s.status === 'Completed');
-      const dayAssessments = assessments.filter(a => {
-        const session = sessions.find(s => s.id === a.sessionId);
-        return session?.date === date;
-      });
-      const avgScore = dayAssessments.length > 0
-        ? (dayAssessments.reduce((sum, a) => sum + a.score, 0) / dayAssessments.length)
-        : 0;
-      
-      return {
-        day: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-        completed: daySessions.length,
-        score: Math.round(avgScore * 10) / 10,
-      };
-    });
-  }, []);
+  const weeklyProgressSeries = useMemo(() => {
+    return (weeklyProgress || []).map(w => ({
+      day: new Date(w.weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      completed: w.sessions,
+      score: Math.round((w.attendanceRate / 10) * 10) / 10, // scale to 0-10 axis used in chart
+    }));
+  }, [weeklyProgress]);
 
-  const ongoingSessions = sessions.filter(s => s.status === 'Ongoing').slice(0, 5);
+  const ongoingSessions: any[] = [];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 md:space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
+            {role === 'trainer' ? "Overview of today's training activities" : "Your teaching performance overview"}
+          </p>
+        </div>
+        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="space-y-0 pb-2">
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-muted rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -192,6 +180,7 @@ const Dashboard = () => {
         <p className="text-sm md:text-base text-muted-foreground">
           {role === 'trainer' ? "Overview of today's training activities" : "Your teaching performance overview"}
         </p>
+        
       </div>
 
       {/* Stats Cards */}
@@ -489,7 +478,7 @@ const Dashboard = () => {
               }}
             >
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={weeklyProgress}>
+                <LineChart data={weeklyProgressSeries}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                   <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
@@ -606,8 +595,7 @@ const Dashboard = () => {
                     </div>
                     <div className="divide-y">
                       {ongoingSessions.slice(0, 2).map(session => {
-                        const school = schools.find(s => s.id === session.schoolId);
-                        const sessionAttendance = attendance.filter(a => a.sessionId === session.id);
+                        const sessionAttendance = apiAttendance.filter(a => a.sessionId === session.id);
                         const teachersPresent = sessionAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
                         const studentsPresent = sessionAttendance.filter(a => a.personType === 'Student' && a.present).length;
                         const attendanceRate = sessionAttendance.length > 0
@@ -624,7 +612,7 @@ const Dashboard = () => {
                                     {session.courseName.replace('English ', '')}
                                   </span>
                                 </div>
-                                <p className="text-sm text-muted-foreground">{school?.name}</p>
+                                <p className="text-sm text-muted-foreground">{session.school?.name}</p>
                                 <div className="flex items-center gap-4 mt-2">
                                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
@@ -672,8 +660,7 @@ const Dashboard = () => {
                     </div>
                     <div className="divide-y">
                       {ongoingSessions.slice(2, 4).map(session => {
-                        const school = schools.find(s => s.id === session.schoolId);
-                        const sessionAttendance = attendance.filter(a => a.sessionId === session.id);
+                        const sessionAttendance = apiAttendance.filter(a => a.sessionId === session.id);
                         const teachersPresent = sessionAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
                         const studentsPresent = sessionAttendance.filter(a => a.personType === 'Student' && a.present).length;
                         const attendanceRate = sessionAttendance.length > 0
@@ -690,7 +677,7 @@ const Dashboard = () => {
                                     {session.courseName.replace('English ', '')}
                                   </span>
                                 </div>
-                                <p className="text-sm text-muted-foreground">{school?.name}</p>
+                                <p className="text-sm text-muted-foreground">{session.school?.name}</p>
                                 <div className="flex items-center gap-4 mt-2">
                                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
@@ -738,8 +725,7 @@ const Dashboard = () => {
                     </div>
                     <div className="divide-y">
                       {ongoingSessions.slice(4, 5).map(session => {
-                        const school = schools.find(s => s.id === session.schoolId);
-                        const sessionAttendance = attendance.filter(a => a.sessionId === session.id);
+                        const sessionAttendance = apiAttendance.filter(a => a.sessionId === session.id);
                         const teachersPresent = sessionAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
                         const studentsPresent = sessionAttendance.filter(a => a.personType === 'Student' && a.present).length;
                         const attendanceRate = sessionAttendance.length > 0
@@ -756,7 +742,7 @@ const Dashboard = () => {
                                     {session.courseName.replace('English ', '')}
                                   </span>
                                 </div>
-                                <p className="text-sm text-muted-foreground">{school?.name}</p>
+                                <p className="text-sm text-muted-foreground">{session.school?.name}</p>
                                 <div className="flex items-center gap-4 mt-2">
                                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
@@ -799,8 +785,7 @@ const Dashboard = () => {
               ) : (
                 <div className="space-y-3">
                   {ongoingSessions.map(session => {
-                    const school = schools.find(s => s.id === session.schoolId);
-                    const sessionAttendance = attendance.filter(a => a.sessionId === session.id);
+                    const sessionAttendance = apiAttendance.filter(a => a.sessionId === session.id);
                     const teachersPresent = sessionAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
                     const studentsPresent = sessionAttendance.filter(a => a.personType === 'Student' && a.present).length;
                     const attendanceRate = sessionAttendance.length > 0
@@ -816,7 +801,7 @@ const Dashboard = () => {
                               {session.courseName.replace('English ', '')}
                             </span>
                           </div>
-                          <p className="text-sm text-muted-foreground">{school?.name}</p>
+                          <p className="text-sm text-muted-foreground">{session.school?.name}</p>
                           <div className="flex items-center gap-4 mt-2">
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <Clock className="h-3 w-3" />

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,12 +40,13 @@ import { sessions, schools, trainers, teachers, students, attendance, assessment
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePagination } from '@/hooks/usePagination';
+import { getSessionById } from '@/lib/api';
 import type { Teacher, Student } from '@/types';
 
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, isAdmin } = useAuth();
   
   const [localAttendance, setLocalAttendance] = useState(attendance);
   const [localAssessments, setLocalAssessments] = useState(assessments);
@@ -54,14 +55,52 @@ const SessionDetail = () => {
   const [attendanceType, setAttendanceType] = useState<'Teacher' | 'Student'>('Teacher');
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [assessmentScores, setAssessmentScores] = useState<Record<string, number>>({});
+  
+  // API session data
+  const [apiSession, setApiSession] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
-  const session = useMemo(() => localSessions.find(s => s.id === id), [id, localSessions]);
-  const school = useMemo(() => schools.find(s => s.id === session?.schoolId), [session]);
-  const trainer = useMemo(() => trainers.find(t => t.id === session?.trainerId), [session]);
+  // Fetch session data from API
+  useEffect(() => {
+    const fetchSession = async () => {
+      if (!id) return;
+      
+      try {
+        setIsLoading(true);
+        setSessionError(null);
+        const response = await getSessionById(id);
+        setApiSession(response.data);
+      } catch (error) {
+        console.error('Failed to fetch session:', error);
+        setSessionError('Failed to load session details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSession();
+  }, [id]);
+
+  const session = useMemo(() => apiSession || localSessions.find(s => s.id === id), [apiSession, id, localSessions]);
+  const school = useMemo(() => session?.school || schools.find(s => s.id === session?.schoolId), [session]);
+  const trainer = useMemo(() => session?.trainer || trainers.find(t => t.id === session?.trainerId), [session]);
 
   const sessionTeachers = useMemo<Teacher[]>(() => {
     if (!session) {
       return [];
+    }
+    // Use API data if available, otherwise fall back to mock data
+    if (session.sessionTeachers) {
+      return session.sessionTeachers.map(st => ({
+        id: st.teacher.id,
+        name: st.teacher.name,
+        cnic: st.teacher.cnic,
+        phone: st.teacher.phone,
+        email: st.teacher.email,
+        schoolId: st.teacher.schoolId,
+        rollNo: st.teacher.rollNo || '',
+      }));
     }
     return teachers.filter(t => t.schoolId === session.schoolId).slice(0, session.expectedTeachers);
   }, [session]);
@@ -70,8 +109,53 @@ const SessionDetail = () => {
     if (!session) {
       return [];
     }
+    // Use API data if available, otherwise fall back to mock data
+    if (session.sessionStudents) {
+      return session.sessionStudents.map(ss => ({
+        id: ss.student.id,
+        name: ss.student.name,
+        gender: ss.student.gender,
+        grade: ss.student.grade,
+        schoolId: ss.student.schoolId,
+        rollNo: ss.student.rollNo,
+      }));
+    }
     return students.filter(s => s.schoolId === session.schoolId).slice(0, session.expectedStudents);
   }, [session]);
+
+  const sessionAttendance = useMemo(() => {
+    if (!session) return [];
+    // Use API data if available, otherwise fall back to mock data
+    if (session.attendances) {
+      return session.attendances.map(att => ({
+        id: att.id,
+        sessionId: att.sessionId,
+        personType: att.personType as 'Teacher' | 'Student',
+        personId: att.personId,
+        present: att.present,
+        markedBy: att.markedBy,
+        timestamp: att.markedAt,
+      }));
+    }
+    return localAttendance.filter(a => a.sessionId === session.id);
+  }, [session, localAttendance]);
+
+  const sessionAssessments = useMemo(() => {
+    if (!session) return [];
+    // Use API data if available, otherwise fall back to mock data
+    if (session.assessments) {
+      return session.assessments.map(ass => ({
+        id: ass.id,
+        sessionId: ass.sessionId,
+        studentId: ass.studentId,
+        scoredBy: ass.scoredBy,
+        maxScore: ass.maxScore,
+        score: ass.score,
+        timestamp: ass.recordedAt,
+      }));
+    }
+    return localAssessments.filter(a => a.sessionId === session.id);
+  }, [session, localAssessments]);
 
   const {
     items: paginatedSessionTeachers,
@@ -93,10 +177,20 @@ const SessionDetail = () => {
     totalItems: studentTotal,
   } = usePagination(sessionStudents, { initialPageSize: 10 });
 
-  if (!session) {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p className="text-muted-foreground">Loading session details...</p>
+      </div>
+    );
+  }
+
+  if (sessionError || !session) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
         <h2 className="text-2xl font-bold">Session Not Found</h2>
+        <p className="text-muted-foreground">{sessionError || 'The requested session could not be found.'}</p>
         <Button onClick={() => navigate('/sessions')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Sessions
@@ -104,9 +198,6 @@ const SessionDetail = () => {
       </div>
     );
   }
-
-  const sessionAttendance = localAttendance.filter(a => a.sessionId === session.id);
-  const sessionAssessments = localAssessments.filter(a => a.sessionId === session.id);
   
   const teacherAttendance = sessionAttendance.filter(a => a.personType === 'Teacher');
   const studentAttendance = sessionAttendance.filter(a => a.personType === 'Student');
@@ -206,8 +297,8 @@ const SessionDetail = () => {
   };
 
   const getAttendanceForPerson = (personId: string, personType: 'Teacher' | 'Student') => {
-    return localAttendance.find(
-      a => a.sessionId === session.id && a.personId === personId && a.personType === personType
+    return sessionAttendance.find(
+      a => a.personId === personId && a.personType === personType
     );
   };
 
@@ -226,7 +317,7 @@ const SessionDetail = () => {
           </div>
           {getStatusBadge(session.status)}
         </div>
-        {session.status !== 'Completed' && role === 'trainer' && (
+        {session.status !== 'Completed' && isAdmin() && (
           <Button onClick={handleCompleteSession}>
             <CheckCircle className="h-4 w-4 mr-2" />
             Complete Session
@@ -336,20 +427,46 @@ const SessionDetail = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <School className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">School</p>
-                    <p className="text-sm text-muted-foreground">{school?.name}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <UserCheck className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Trainer</p>
-                    <p className="text-sm text-muted-foreground">{trainer?.name}</p>
-                  </div>
-                </div>
+                 <div className="flex items-center gap-3">
+                   <School className="h-5 w-5 text-muted-foreground" />
+                   <div>
+                     <p className="text-sm font-medium">School</p>
+                     <p className="text-sm text-muted-foreground">{school?.name}</p>
+                     {school?.address && (
+                       <p className="text-xs text-muted-foreground mt-1">{school.address}</p>
+                     )}
+                   </div>
+                 </div>
+                 <div className="flex items-center gap-3">
+                   <UserCheck className="h-5 w-5 text-muted-foreground" />
+                   <div>
+                     <p className="text-sm font-medium">Trainer</p>
+                     <p className="text-sm text-muted-foreground">{trainer?.name}</p>
+                     {trainer?.email && (
+                       <p className="text-xs text-muted-foreground mt-1">{trainer.email}</p>
+                     )}
+                   </div>
+                 </div>
+                 {school?.emisCode && (
+                   <div className="flex items-center gap-3">
+                     <div className="h-5 w-5 text-muted-foreground">📋</div>
+                     <div>
+                       <p className="text-sm font-medium">EMIS Code</p>
+                       <p className="text-sm text-muted-foreground">{school.emisCode}</p>
+                     </div>
+                   </div>
+                 )}
+                 {school?.division && school?.district && school?.tehsil && (
+                   <div className="flex items-center gap-3">
+                     <div className="h-5 w-5 text-muted-foreground">📍</div>
+                     <div>
+                       <p className="text-sm font-medium">Location</p>
+                       <p className="text-sm text-muted-foreground">
+                         {school.tehsil.name}, {school.district.name}, {school.division.name}
+                       </p>
+                     </div>
+                   </div>
+                 )}
               </CardContent>
             </Card>
 
@@ -369,7 +486,7 @@ const SessionDetail = () => {
                   </div>
                 )}
                 <div className="pt-4 space-y-2">
-                  {role === 'trainer' && session.status !== 'Completed' && (
+                  {isAdmin() && session.status !== 'Completed' && (
                     <>
                       <Button
                         className="w-full"
@@ -414,7 +531,7 @@ const SessionDetail = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Teacher Attendance</CardTitle>
-                {role === 'trainer' && session.status !== 'Completed' && (
+                {isAdmin() && session.status !== 'Completed' && (
                   <Button
                     onClick={() => {
                       setAttendanceType('Teacher');
@@ -437,7 +554,7 @@ const SessionDetail = () => {
                       <TableHead>Phone</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Status</TableHead>
-                      {role === 'trainer' && session.status !== 'Completed' && (
+                      {isAdmin() && session.status !== 'Completed' && (
                         <TableHead>Action</TableHead>
                       )}
                     </TableRow>
@@ -466,7 +583,7 @@ const SessionDetail = () => {
                             <Badge variant="outline">Not Marked</Badge>
                           )}
                         </TableCell>
-                        {role === 'trainer' && session.status !== 'Completed' && (
+                        {isAdmin() && session.status !== 'Completed' && (
                           <TableCell>
                             <Switch
                               checked={att?.present || false}
@@ -501,7 +618,7 @@ const SessionDetail = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Student Attendance</CardTitle>
-                {role === 'trainer' && session.status !== 'Completed' && (
+                {isAdmin() && session.status !== 'Completed' && (
                   <Button
                     onClick={() => {
                       setAttendanceType('Student');
@@ -524,7 +641,7 @@ const SessionDetail = () => {
                       <TableHead>Gender</TableHead>
                       <TableHead>Grade</TableHead>
                       <TableHead>Status</TableHead>
-                      {role === 'trainer' && session.status !== 'Completed' && (
+                      {isAdmin() && session.status !== 'Completed' && (
                         <TableHead>Action</TableHead>
                       )}
                     </TableRow>
@@ -553,7 +670,7 @@ const SessionDetail = () => {
                             <Badge variant="outline">Not Marked</Badge>
                           )}
                         </TableCell>
-                        {role === 'trainer' && session.status !== 'Completed' && (
+                        {isAdmin() && session.status !== 'Completed' && (
                           <TableCell>
                             <Switch
                               checked={att?.present || false}

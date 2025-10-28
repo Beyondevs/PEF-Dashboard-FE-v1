@@ -9,8 +9,8 @@ interface FilterContextType {
 
 const defaultFilters: FilterState = {
   dateRange: {
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    to: new Date(),
+    from: new Date('2024-01-01'),
+    to: new Date('2026-12-31'),
   },
 };
 

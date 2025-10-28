@@ -1,17 +1,26 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, GraduationCap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import LoginForm from '@/components/LoginForm';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (role: 'trainer' | 'teacher') => {
-    login(role);
+  const handleLoginSuccess = () => {
     navigate('/dashboard');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-3 md:p-4">
@@ -37,87 +46,18 @@ const Login = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary" onClick={() => handleLogin('trainer')}>
+        <div className="max-w-md mx-auto">
+          <Card className="border-2">
             <CardHeader className="text-center pb-3 md:pb-4">
-              <div className="mx-auto w-14 h-14 md:w-16 md:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3 md:mb-4">
-                <UserCheck className="h-7 w-7 md:h-8 md:w-8 text-primary" />
-              </div>
-              <CardTitle className="text-xl md:text-2xl">Login as Trainer</CardTitle>
+              <CardTitle className="text-xl md:text-2xl">Login</CardTitle>
               <CardDescription className="text-sm md:text-base">
-                PDLC Trainer Portal Access
+                Enter your credentials to access the portal
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-muted-foreground mb-4 md:mb-6">
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Create and manage training sessions</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Mark teacher and student attendance</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Enter student assessments</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Access comprehensive reports and analytics</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Manage repository and hybrid workflows</span>
-                </li>
-              </ul>
-              <Button className="w-full" size="lg">
-                Continue as Trainer
-              </Button>
+              <LoginForm onSuccess={handleLoginSuccess} />
             </CardContent>
           </Card>
-
-          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-secondary" onClick={() => handleLogin('teacher')}>
-            <CardHeader className="text-center pb-3 md:pb-4">
-              <div className="mx-auto w-14 h-14 md:w-16 md:h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-3 md:mb-4">
-                <GraduationCap className="h-7 w-7 md:h-8 md:w-8 text-secondary" />
-              </div>
-              <CardTitle className="text-xl md:text-2xl">Login as Teacher</CardTitle>
-              <CardDescription className="text-sm md:text-base">
-                Teacher Portal Access
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-muted-foreground mb-4 md:mb-6">
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>View assigned training sessions</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Mark student assessments</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>View leaderboard position</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Access school-level reports</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Track student progress</span>
-                </li>
-              </ul>
-              <Button className="w-full bg-secondary hover:bg-secondary/90" size="lg">
-                Continue as Teacher
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-6 md:mt-8 text-center text-xs md:text-sm text-muted-foreground">~
         </div>
       </div>
     </div>

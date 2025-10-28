@@ -1,22 +1,49 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppHeader } from './AppHeader';
 import { AppSidebar } from './AppSidebar';
 import { FilterBar } from './FilterBar';
 import LoginPopup from './LoginPopup';
 import { SidebarProvider } from './ui/sidebar';
+import { toast } from '@/hooks/use-toast';
 
 export const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!role) {
-      navigate('/login');
+    // Only redirect to login if we're not loading and there's no role
+    // and we're not already on the login page
+    if (!isLoading && !role && location.pathname !== '/login') {
+      const lastPath = location.pathname + location.search;
+      try { localStorage.setItem('pef.lastPath', lastPath); } catch {}
+      navigate(`/login?returnTo=${encodeURIComponent(lastPath)}`);
     }
-  }, [role, navigate]);
+  }, [role, isLoading, navigate, location.pathname]);
 
+  useEffect(() => {
+    const onExpired = () => {
+      toast({ title: 'Session expired', description: 'Please sign in again to continue.' });
+    };
+    window.addEventListener('pef:session-expired' as any, onExpired as any);
+    return () => window.removeEventListener('pef:session-expired' as any, onExpired as any);
+  }, []);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not loading and no role, return null (will redirect)
   if (!role) {
     return null;
   }

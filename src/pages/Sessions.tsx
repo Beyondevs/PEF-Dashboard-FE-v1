@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Eye, Users, ClipboardCheck, Download } from 'lucide-react';
-import { sessions, schools, trainers } from '@/lib/mockData';
+import { trainers } from '@/lib/mockData';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -34,20 +34,94 @@ import {
 } from '@/components/ui/select';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
+import { getSessions, createSession, getSchools, getDivisions, getDistricts, getTehsils } from '@/lib/api';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const Sessions = () => {
-  const { role } = useAuth();
+  const { role, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  
+  // API data state
+  const [apiSessions, setApiSessions] = useState<any[]>([]);
+  const [apiSchools, setApiSchools] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 10;
+
+  // Form state
+  const [formData, setFormData] = useState({
+    title: '',
+    courseName: '',
+    date: '',
+    startTime: '',
+    schoolId: '',
+    expectedTeachers: 5,
+    expectedStudents: 30,
+  });
+
+  const [schoolSearchOpen, setSchoolSearchOpen] = useState(false);
+
+  // Fetch sessions from API
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        setIsLoading(true);
+        setApiError(false);
+        
+        const response = await getSessions({
+          page: currentPage,
+          pageSize,
+        });
+        
+        setApiSessions(response.data.data || []);
+        setTotalPages(response.data.totalPages || 1);
+        setTotalItems(response.data.total || 0);
+        
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
+        setApiError(true);
+        setApiSessions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSessions();
+  }, [currentPage]);
+
+  // Fetch schools for create form
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        // Load more schools for better search experience
+        const response = await getSchools({ page: 1, pageSize: 1000 });
+        setApiSchools(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to fetch schools:', error);
+        setApiSchools([]);
+      }
+    };
+
+    fetchSchools();
+  }, []);
 
   const {
     items: paginatedSessions,
-    page: currentPage,
-    setPage: setCurrentPage,
-    totalPages,
     startIndex,
     endIndex,
-    totalItems,
-  } = usePagination(sessions, { initialPageSize: 10 });
+  } = usePagination(apiSessions, { 
+    initialPageSize: pageSize,
+    currentPage,
+    totalPages,
+    totalItems 
+  });
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
@@ -58,14 +132,89 @@ const Sessions = () => {
     return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
   };
 
+  const getSchoolName = (schoolId: string) => {
+    const school = apiSchools.find(s => s.id === schoolId);
+    return school ? school.name : 'Select school';
+  };
+
   const handleExport = () => {
     toast.success('Export generated successfully');
   };
 
-  const handleCreateSession = () => {
-    toast.success('Session created successfully');
-    setIsCreateOpen(false);
+  const handleCreateSession = async () => {
+    try {
+      // Validate required fields
+      if (!formData.title || !formData.schoolId || !formData.date || !formData.startTime) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
+      // Prepare the data for API
+      const sessionData = {
+        title: formData.title,
+        courseName: formData.courseName,
+        date: formData.date,
+        startTime: formData.startTime,
+        schoolId: formData.schoolId,
+        expectedTeachers: formData.expectedTeachers,
+        expectedStudents: formData.expectedStudents,
+      };
+
+      await createSession(sessionData);
+      toast.success('Session created successfully');
+      setIsCreateOpen(false);
+      
+      // Reset form
+      setFormData({
+        title: '',
+        courseName: '',
+        date: '',
+        startTime: '',
+        schoolId: '',
+        expectedTeachers: 5,
+        expectedStudents: 30,
+      });
+      
+      // Refresh sessions list
+      const response = await getSessions({
+        page: currentPage,
+        pageSize,
+      });
+      setApiSessions(response.data.data || []);
+      setTotalPages(response.data.totalPages || 1);
+      setTotalItems(response.data.total || 0);
+      
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      toast.error('Failed to create session. Please try again.');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Training Sessions</h1>
+            <p className="text-muted-foreground">Manage and monitor all training sessions</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <div className="h-4 bg-muted rounded w-1/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
+                  <div className="h-3 bg-muted rounded w-1/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -73,13 +222,14 @@ const Sessions = () => {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Training Sessions</h1>
           <p className="text-muted-foreground">Manage and monitor all training sessions</p>
+          
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          {role === 'trainer' && (
+          {isAdmin() && (
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -97,54 +247,115 @@ const Sessions = () => {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Session Title</Label>
-                    <Input id="title" placeholder="Enter session title" />
+                    <Input 
+                      id="title" 
+                      placeholder="Enter session title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="course">Course Name</Label>
-                    <Select>
+                    <Select 
+                      value={formData.courseName}
+                      onValueChange={(value) => setFormData({...formData, courseName: value})}
+                    >
                       <SelectTrigger id="course">
                         <SelectValue placeholder="Select course" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="basics">English Basics</SelectItem>
-                        <SelectItem value="intermediate">English Intermediate</SelectItem>
-                        <SelectItem value="advanced">English Advanced</SelectItem>
+                        <SelectItem value="English Basics">English Basics</SelectItem>
+                        <SelectItem value="English Intermediate">English Intermediate</SelectItem>
+                        <SelectItem value="English Advanced">English Advanced</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="date">Date</Label>
-                      <Input id="date" type="date" />
+                      <Input 
+                        id="date" 
+                        type="date" 
+                        value={formData.date}
+                        onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="time">Start Time</Label>
-                      <Input id="time" type="time" />
+                      <Input 
+                        id="time" 
+                        type="time" 
+                        value={formData.startTime}
+                        onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="school">School</Label>
-                    <Select>
-                      <SelectTrigger id="school">
-                        <SelectValue placeholder="Select school" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {schools.slice(0, 20).map(school => (
-                          <SelectItem key={school.id} value={school.id}>
-                            {school.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={schoolSearchOpen} onOpenChange={setSchoolSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={schoolSearchOpen}
+                          className="w-full justify-between"
+                        >
+                          {formData.schoolId 
+                            ? getSchoolName(formData.schoolId)
+                            : "Select school..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search schools..." />
+                          <CommandList>
+                            <CommandEmpty>No school found.</CommandEmpty>
+                            <CommandGroup>
+                              {apiSchools.map((school) => (
+                                <CommandItem
+                                  key={school.id}
+                                  value={school.name}
+                                  onSelect={() => {
+                                    setFormData({...formData, schoolId: school.id});
+                                    setSchoolSearchOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      formData.schoolId === school.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {school.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="teachers">Expected Teachers</Label>
-                      <Input id="teachers" type="number" min="1" defaultValue="5" />
+                      <Input 
+                        id="teachers" 
+                        type="number" 
+                        min="1" 
+                        value={formData.expectedTeachers}
+                        onChange={(e) => setFormData({...formData, expectedTeachers: parseInt(e.target.value) || 5})}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="students">Expected Students</Label>
-                      <Input id="students" type="number" min="1" defaultValue="30" />
+                      <Input 
+                        id="students" 
+                        type="number" 
+                        min="1" 
+                        value={formData.expectedStudents}
+                        onChange={(e) => setFormData({...formData, expectedStudents: parseInt(e.target.value) || 30})}
+                      />
                     </div>
                   </div>
                   <Button className="w-full" onClick={handleCreateSession}>
@@ -179,7 +390,7 @@ const Sessions = () => {
             </TableHeader>
             <TableBody>
               {paginatedSessions.map(session => {
-                const school = schools.find(s => s.id === session.schoolId);
+                const school = apiSchools.find(s => s.id === session.schoolId);
                 return (
                   <TableRow key={session.id}>
                     <TableCell className="font-medium">{session.title}</TableCell>
@@ -195,7 +406,7 @@ const Sessions = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.location.href = `/sessions/${session.id}`}
+                          onClick={() => navigate(`/sessions/${session.id}`)}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           View
