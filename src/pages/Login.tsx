@@ -23,9 +23,20 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-3 md:p-4">
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-6 md:mb-8">
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+      {/* Left image column: hidden on small screens */}
+      <div className="relative hidden md:block">
+        <img
+          src="/Participant%20Manual.webp"
+          alt="Login side visual"
+          className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
+        />
+      </div>
+
+      {/* Right content column */}
+      <div className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-3 md:p-4">
+        <div className="w-full max-w-4xl">
+          <div className="text-center mb-6 md:mb-8">
           <div className="flex items-center justify-center gap-3 md:gap-4 mb-4 md:mb-6">
             <img
               src="https://www.pef.edu.pk/images/logo/pef-logo_2.png"
@@ -44,20 +55,21 @@ const Login = () => {
           <p className="text-muted-foreground text-base md:text-lg">
             Monitoring & Management System
           </p>
-        </div>
+          </div>
 
-        <div className="max-w-md mx-auto">
-          <Card className="border-2">
-            <CardHeader className="text-center pb-3 md:pb-4">
-              <CardTitle className="text-xl md:text-2xl">Login</CardTitle>
-              <CardDescription className="text-sm md:text-base">
-                Enter your credentials to access the portal
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LoginForm onSuccess={handleLoginSuccess} />
-            </CardContent>
-          </Card>
+          <div className="max-w-md mx-auto">
+            <Card className="border-2">
+              <CardHeader className="text-center pb-3 md:pb-4">
+                <CardTitle className="text-xl md:text-2xl">Login</CardTitle>
+                <CardDescription className="text-sm md:text-base">
+                  Enter your credentials to access the portal
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LoginForm onSuccess={handleLoginSuccess} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
