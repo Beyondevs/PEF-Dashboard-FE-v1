@@ -13,8 +13,8 @@ import type {
 } from '@/types';
 
 // Auth
-export async function login(body: { email: string; password: string }) {
-  return apiClient.post<{ accessToken: string; refreshToken: string; role: 'admin' | 'client' | 'trainer' | 'teacher'; user: { id: string; email: string; role: 'admin' | 'client' | 'trainer' | 'teacher' } }>(
+export async function login(body: { identifier: string; password: string }) {
+  return apiClient.post<{ accessToken: string; refreshToken: string; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'student'; user: { id: string; email: string | null; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'student' } }>(
     '/auth/login',
     body,
   );

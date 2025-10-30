@@ -13,7 +13,7 @@ interface LoginFormProps {
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +22,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
   // Demo prefills (can be removed in production)
   React.useEffect(() => {
-    setEmail('trainer1@pef.gov.pk');
+    setIdentifier('+923000000001');
     setPassword('trainer123');
   }, []);
 
@@ -32,7 +32,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login(identifier, password);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
@@ -44,13 +44,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="identifier">CNIC / Phone Number</Label>
         <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter your email"
+          id="identifier"
+          type="text"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          placeholder="Enter CNIC (12345-6789012-3) or Phone (+92xxxxxxxxxx)"
           required
           disabled={isLoading}
         />
