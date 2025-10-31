@@ -23,42 +23,45 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* Left image column: hidden on small screens */}
-      <div className="relative hidden md:block">
-        <img
-          src="/Participant%20Manual.webp"
-          alt="Login side visual"
-          className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
-        />
-      </div>
-
-      {/* Right content column */}
-      <div className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-3 md:p-4">
-        <div className="w-full max-w-4xl">
-          <div className="text-center mb-6 md:mb-8">
-          <div className="flex items-center justify-center gap-3 md:gap-4 mb-4 md:mb-6">
+    <div className="min-h-screen bg-blue-600 flex items-center justify-center p-4">
+      {/* White square with rounded corners */}
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6">
+          {/* Left side - Image */}
+          <div className="flex items-center justify-start pr-0">
             <img
-              src="https://www.pef.edu.pk/images/logo/pef-logo_2.png"
-              alt="PEF Logo"
-              className="h-12 md:h-16"
-            />
-            <img
-              src="https://premierdlc.com/wp-content/uploads/2018/01/logo.png"
-              alt="Premier DLC Logo"
-              className="h-12 md:h-16"
+              src="/Participant%20Manual.webp"
+              alt="PEF Training"
+              className="w-full h-full max-w-md max-h-[600px] object-cover"
             />
           </div>
-          <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-2">
-            Punjab English Training Portal
-          </h1>
-          <p className="text-muted-foreground text-base md:text-lg">
-            Monitoring & Management System
-          </p>
-          </div>
 
-          <div className="max-w-md mx-auto">
-            <Card className="border-2">
+          {/* Right side - Logos and Login form */}
+          <div className="flex flex-col justify-center">
+            {/* Logo section */}
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
+                <img
+                  src="https://www.pef.edu.pk/images/logo/pef-logo_2.png"
+                  alt="PEF Logo"
+                  className="h-16 md:h-20"
+                />
+                <img
+                  src="https://premierdlc.com/wp-content/uploads/2018/01/logo.png"
+                  alt="Premier DLC Logo"
+                  className="h-16 md:h-20"
+                />
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+                Spoken English Training Portal
+              </h1>
+              <p className="text-gray-600 text-base md:text-lg">
+                Monitoring & Management System
+              </p>
+            </div>
+
+            {/* Login form */}
+            <Card className="border-2 border-gray-200 shadow-sm">
               <CardHeader className="text-center pb-3 md:pb-4">
                 <CardTitle className="text-xl md:text-2xl">Login</CardTitle>
                 <CardDescription className="text-sm md:text-base">
