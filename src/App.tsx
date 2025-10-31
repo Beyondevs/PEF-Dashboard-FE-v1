@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { FilterProvider } from "./contexts/FilterContext";
 import { ProtectedLayout } from "./components/ProtectedLayout";
+import { PrivateRoute } from "./components/PrivateRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Sessions from "./pages/Sessions";
@@ -19,7 +20,6 @@ import DrilldownReport from "./pages/reports/DrilldownReport";
 import DistrictCompareReport from "./pages/reports/DistrictCompareReport";
 import Schools from "./pages/Schools";
 import Repository from "./pages/Repository";
-import PaperRegisters from "./pages/PaperRegisters";
 import WeeklySummaries from "./pages/WeeklySummaries";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
@@ -61,25 +61,24 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<RootRedirect />} />
               <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
-              <Route path="/sessions" element={<ProtectedLayout><Sessions /></ProtectedLayout>} />
-              <Route path="/sessions/:id" element={<ProtectedLayout><SessionDetail /></ProtectedLayout>} />
-              <Route path="/attendance" element={<ProtectedLayout><Attendance /></ProtectedLayout>} />
-              <Route path="/assessments" element={<ProtectedLayout><Assessments /></ProtectedLayout>} />
-              <Route path="/leaderboard" element={<ProtectedLayout><Leaderboard /></ProtectedLayout>} />
-              <Route path="/reports" element={<ProtectedLayout><Reports /></ProtectedLayout>} />
-              <Route path="/reports/today" element={<ProtectedLayout><TodayReport /></ProtectedLayout>} />
-              <Route path="/reports/drilldown" element={<ProtectedLayout><DrilldownReport /></ProtectedLayout>} />
-              <Route path="/reports/district-compare" element={<ProtectedLayout><DistrictCompareReport /></ProtectedLayout>} />
-              <Route path="/schools" element={<ProtectedLayout><Schools /></ProtectedLayout>} />
-              <Route path="/repository" element={<ProtectedLayout><Repository /></ProtectedLayout>} />
-              <Route path="/hybrid/paper-registers" element={<ProtectedLayout><PaperRegisters /></ProtectedLayout>} />
-              <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><WeeklySummaries /></ProtectedLayout>} />
-              <Route path="/admin/trainers" element={<ProtectedLayout><Trainers /></ProtectedLayout>} />
-              <Route path="/admin/teachers" element={<ProtectedLayout><Teachers /></ProtectedLayout>} />
-              <Route path="/admin/students" element={<ProtectedLayout><Students /></ProtectedLayout>} />
-              <Route path="/admin/schools" element={<ProtectedLayout><AdminSchools /></ProtectedLayout>} />
-              <Route path="/admin/geography" element={<ProtectedLayout><Geography /></ProtectedLayout>} />
-              <Route path="/help" element={<ProtectedLayout><Help /></ProtectedLayout>} />
+              <Route path="/sessions" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><Sessions /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/sessions/:id" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><SessionDetail /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/attendance" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><Attendance /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/assessments" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><Assessments /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/leaderboard" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><Leaderboard /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><Reports /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/today" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><TodayReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/drilldown" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><DrilldownReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/district-compare" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><DistrictCompareReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer']}><Schools /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/repository" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer']}><Repository /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/trainers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin']}><Trainers /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/teachers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin']}><Teachers /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/students" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin']}><Students /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin']}><AdminSchools /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/geography" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin']}><Geography /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/help" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'trainer', 'teacher']}><Help /></PrivateRoute></ProtectedLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

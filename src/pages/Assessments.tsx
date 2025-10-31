@@ -16,11 +16,10 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FilterBar } from '@/components/FilterBar';
 import { useFilters } from '@/contexts/FilterContext';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
-import { getAssessments, bulkUpsertAssessments, updateAssessment } from '@/lib/api';
+import { getAssessments, bulkUpsertAssessments, updateAssessment, getSessions, getTeacherLeaderboard } from '@/lib/api';
 
 const Assessments = () => {
   const { filters } = useFilters();
@@ -31,11 +30,14 @@ const Assessments = () => {
   
   // API data state
   const [apiAssessments, setApiAssessments] = useState<any[]>([]);
+  const [apiSessions, setApiSessions] = useState<any[]>([]);
+  const [teacherPerformance, setTeacherPerformance] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const pageSize = 20;
 
   // Fetch assessments from API
@@ -51,10 +53,9 @@ const Assessments = () => {
           pageSize,
         };
         
-        // Add date range if present
-        if (filters.dateRange) {
-          apiFilters.from = filters.dateRange.from.toISOString().split('T')[0];
-          apiFilters.to = filters.dateRange.to.toISOString().split('T')[0];
+        // Add session filter if present
+        if (filters.sessionId) {
+          apiFilters.sessionId = filters.sessionId;
         }
         
         // Add other filters
@@ -80,6 +81,58 @@ const Assessments = () => {
 
     fetchAssessments();
   }, [currentPage, filters]);
+
+  // Fetch teacher performance data
+  useEffect(() => {
+    const fetchTeacherPerformance = async () => {
+      try {
+        const params: Record<string, string | number> = {
+          topN: 1000, // Get a large number
+        };
+        
+        // Add geography filters if selected
+        if (filters.division) params.divisionId = filters.division;
+        if (filters.district) params.districtId = filters.district;
+        if (filters.school) params.schoolId = filters.school;
+        
+        const response = await getTeacherLeaderboard(params);
+        setTeacherPerformance(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch teacher performance:', error);
+        setTeacherPerformance([]);
+      }
+    };
+
+    if (activeTab === 'teachers') {
+      fetchTeacherPerformance();
+    }
+  }, [activeTab, filters.division, filters.district, filters.school]);
+
+  // Fetch sessions for the selector
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const params: Record<string, string | number> = {
+          page: 1,
+          pageSize: 1000, // Get a large number of sessions for the selector
+        };
+        
+        // Add geography filters if selected
+        if (filters.division) params.divisionId = filters.division;
+        if (filters.district) params.districtId = filters.district;
+        if (filters.tehsil) params.tehsilId = filters.tehsil;
+        if (filters.school) params.schoolId = filters.school;
+        
+        const response = await getSessions(params);
+        setApiSessions(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
+        setApiSessions([]);
+      }
+    };
+
+    fetchSessions();
+  }, [filters]);
 
   const {
     items: paginatedAssessments,
@@ -125,10 +178,7 @@ const Assessments = () => {
       const response = await getAssessments({
         page: currentPage,
         pageSize,
-        ...(filters.dateRange && {
-          from: filters.dateRange.from.toISOString().split('T')[0],
-          to: filters.dateRange.to.toISOString().split('T')[0],
-        }),
+        ...(filters.sessionId && { sessionId: filters.sessionId }),
         ...(filters.division && { divisionId: filters.division }),
         ...(filters.district && { districtId: filters.district }),
         ...(filters.tehsil && { tehsilId: filters.tehsil }),
@@ -200,10 +250,7 @@ const Assessments = () => {
       const response = await getAssessments({
         page: currentPage,
         pageSize,
-        ...(filters.dateRange && {
-          from: filters.dateRange.from.toISOString().split('T')[0],
-          to: filters.dateRange.to.toISOString().split('T')[0],
-        }),
+        ...(filters.sessionId && { sessionId: filters.sessionId }),
         ...(filters.division && { divisionId: filters.division }),
         ...(filters.district && { districtId: filters.district }),
         ...(filters.tehsil && { tehsilId: filters.tehsil }),
@@ -250,32 +297,41 @@ const Assessments = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Student Assessments</h1>
-          <p className="text-muted-foreground">View and manage student assessment scores</p>
+          <h1 className="text-3xl font-bold text-foreground">Assessments</h1>
+          <p className="text-muted-foreground">View and manage student assessments and teacher performance</p>
           
         </div>
         <div className="flex gap-2">
-          {(Object.keys(scoreChanges).length > 0 || newEntries.length > 0) && (
-            <Button onClick={handleSaveChanges}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes ({Object.keys(scoreChanges).length + newEntries.length})
-            </Button>
+          {activeTab === 'students' && (
+            <>
+              {(Object.keys(scoreChanges).length > 0 || newEntries.length > 0) && (
+                <Button onClick={handleSaveChanges}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes ({Object.keys(scoreChanges).length + newEntries.length})
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleExport}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </>
           )}
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
         </div>
       </div>
 
-      <FilterBar />
-
-      <Tabs defaultValue="view" className="space-y-4">
+      <Tabs defaultValue="students" value={activeTab} onValueChange={(v) => setActiveTab(v as 'students' | 'teachers')} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="view">View Assessments</TabsTrigger>
-          <TabsTrigger value="edit">Edit Scores</TabsTrigger>
-          <TabsTrigger value="entry">Quick Entry</TabsTrigger>
+          <TabsTrigger value="students">Students</TabsTrigger>
+          <TabsTrigger value="teachers">Teachers</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="students">
+          <Tabs defaultValue="view" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="view">View Assessments</TabsTrigger>
+              <TabsTrigger value="edit">Edit Scores</TabsTrigger>
+              <TabsTrigger value="entry">Quick Entry</TabsTrigger>
+            </TabsList>
 
         <TabsContent value="view">
           <Card>
@@ -420,16 +476,15 @@ const Assessments = () => {
                     <SelectValue placeholder="Select a session" />
                   </SelectTrigger>
                   <SelectContent>
-                    {apiAssessments
-                      .map(assessment => assessment.session)
-                      .filter((session, index, self) => 
-                        session && self.findIndex(s => s?.id === session.id) === index
-                      )
-                      .map(session => (
+                    {apiSessions.length === 0 ? (
+                      <SelectItem value="" disabled>No sessions available</SelectItem>
+                    ) : (
+                      apiSessions.map(session => (
                         <SelectItem key={session?.id} value={session?.id || ''}>
-                          {session?.title} - {session?.date ? new Date(session.date).toLocaleDateString() : ''}
+                          {session?.title} - {session?.date ? new Date(session.date).toLocaleDateString() : 'No date'}
                         </SelectItem>
-                      ))}
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <Button 
@@ -491,6 +546,76 @@ const Assessments = () => {
                     })}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="teachers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Teacher Performance Metrics</CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">
+                View teacher performance based on attendance and student assessment scores
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rank</TableHead>
+                      <TableHead>Teacher</TableHead>
+                      <TableHead>School</TableHead>
+                      <TableHead className="text-right">Attendance Rate</TableHead>
+                      <TableHead className="text-right">Avg Student Score</TableHead>
+                      <TableHead className="text-right">Composite Score</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {teacherPerformance.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          {isLoading ? 'Loading teacher performance data...' : 'No teacher performance data available'}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      teacherPerformance.map((item: any) => (
+                        <TableRow key={item.teacher?.id}>
+                          <TableCell className="font-medium">
+                            <Badge variant="outline">#{item.rank}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">{item.teacher?.name || 'N/A'}</TableCell>
+                          <TableCell>{item.teacher?.school || 'N/A'}</TableCell>
+                          <TableCell className="text-right">
+                            <span className="font-semibold">{item.metrics?.attendanceRate?.toFixed(1) || 0}%</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="font-semibold">{(item.metrics?.avgStudentScore || 0).toFixed(1)}</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge 
+                              variant={
+                                item.metrics?.compositeScore >= 70 ? "default" :
+                                item.metrics?.compositeScore >= 50 ? "secondary" : "outline"
+                              }
+                              className="font-semibold"
+                            >
+                              {(item.metrics?.compositeScore || 0).toFixed(1)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {teacherPerformance.length > 0 && (
+                <div className="mt-4 text-sm text-muted-foreground">
+                  Showing {teacherPerformance.length} teachers
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

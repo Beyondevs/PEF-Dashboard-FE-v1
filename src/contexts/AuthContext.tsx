@@ -16,6 +16,7 @@ interface AuthContextType {
   isAdmin: () => boolean;
   canEdit: () => boolean;
   canDelete: () => boolean;
+  canMarkAttendance: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -228,6 +229,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAdmin = () => role === 'admin';
   const canEdit = () => role === 'admin';
   const canDelete = () => role === 'admin';
+  const canMarkAttendance = () => role === 'admin' || role === 'trainer';
 
   return (
     <AuthContext.Provider value={{ 
@@ -242,7 +244,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ensureFreshToken,
       isAdmin,
       canEdit,
-      canDelete
+      canDelete,
+      canMarkAttendance
     }}>
       {children}
     </AuthContext.Provider>

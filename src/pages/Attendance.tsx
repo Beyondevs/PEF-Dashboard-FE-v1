@@ -12,10 +12,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Download, Save } from 'lucide-react';
+import { Download, Save, Calendar as CalendarIcon, Clock, UserCheck, UserX } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileCard } from '@/components/MobileCard';
 import { attendance, sessions, teachers, students } from '@/lib/mockData';
 import { toast } from 'sonner';
-import { FilterBar } from '@/components/FilterBar';
 import { useFilters } from '@/contexts/FilterContext';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
@@ -23,6 +24,7 @@ import { getAttendanceList, toggleAttendance } from '@/lib/api';
 
 const Attendance = () => {
   const { filters } = useFilters();
+  const isMobile = useIsMobile();
   const [editMode, setEditMode] = useState(false);
   const [attendanceChanges, setAttendanceChanges] = useState<Record<string, boolean>>({});
   
@@ -49,10 +51,9 @@ const Attendance = () => {
           pageSize,
         };
         
-        // Add date range if present
-        if (filters.dateRange) {
-          baseFilters.from = filters.dateRange.from.toISOString().split('T')[0];
-          baseFilters.to = filters.dateRange.to.toISOString().split('T')[0];
+        // Add session filter if present
+        if (filters.sessionId) {
+          baseFilters.sessionId = filters.sessionId;
         }
         
         // Add other filters
@@ -107,9 +108,8 @@ const Attendance = () => {
       pageSize,
     };
     
-    if (filters.dateRange) {
-      baseFilters.from = filters.dateRange.from.toISOString().split('T')[0];
-      baseFilters.to = filters.dateRange.to.toISOString().split('T')[0];
+    if (filters.sessionId) {
+      baseFilters.sessionId = filters.sessionId;
     }
     if (filters.division) baseFilters.divisionId = filters.division;
     if (filters.district) baseFilters.districtId = filters.district;
@@ -170,11 +170,11 @@ const Attendance = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Attendance</h1>
-            <p className="text-muted-foreground">View and manage attendance records</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Attendance</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">View and manage attendance records</p>
           </div>
         </div>
         <div className="space-y-4">
@@ -195,49 +195,104 @@ const Attendance = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Attendance</h1>
-          <p className="text-muted-foreground">View and manage attendance records</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Attendance</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">View and manage attendance records</p>
           
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button 
             variant={editMode ? 'default' : 'outline'}
             onClick={() => setEditMode(!editMode)}
+            className="flex-1 sm:flex-initial"
           >
-            {editMode ? 'Cancel Edit' : 'Edit Mode'}
+            <span className="hidden sm:inline">{editMode ? 'Cancel Edit' : 'Edit Mode'}</span>
+            <span className="sm:hidden">{editMode ? 'Cancel' : 'Edit'}</span>
           </Button>
           {editMode && Object.keys(attendanceChanges).length > 0 && (
-            <Button onClick={handleSaveChanges}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes ({Object.keys(attendanceChanges).length})
+            <Button onClick={handleSaveChanges} className="flex-1 sm:flex-initial">
+              <Save className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Save Changes ({Object.keys(attendanceChanges).length})</span>
+              <span className="sm:hidden">Save ({Object.keys(attendanceChanges).length})</span>
             </Button>
           )}
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
+          <Button variant="outline" onClick={handleExport} className="flex-1 sm:flex-initial">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
         </div>
       </div>
 
-      <FilterBar />
-
       <Tabs defaultValue="teachers" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="teachers">Teacher Attendance</TabsTrigger>
-          <TabsTrigger value="students">Student Attendance</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="teachers" className="text-sm sm:text-base">
+            <span className="hidden sm:inline">Teacher Attendance</span>
+            <span className="sm:hidden">Teachers</span>
+          </TabsTrigger>
+          <TabsTrigger value="students" className="text-sm sm:text-base">
+            <span className="hidden sm:inline">Student Attendance</span>
+            <span className="sm:hidden">Students</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="teachers">
           <Card>
             <CardHeader>
-              <CardTitle>Teacher Attendance Records</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Teacher Attendance Records</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-              <Table>
+              {isMobile ? (
+                <div className="space-y-3">
+                  {paginatedTeacherAttendance.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      {isLoading ? 'Loading teacher attendance...' : 'No teacher attendance records found for the selected filters.'}
+                    </div>
+                  ) : (
+                    paginatedTeacherAttendance.map(att => {
+                      const currentStatus = getAttendanceStatus(att.id, att.present);
+                      const hasChanges = attendanceChanges[att.id] !== undefined;
+                      
+                      return (
+                        <MobileCard
+                          key={att.id}
+                          title={att.personName}
+                          subtitle={att.session?.title}
+                          badges={[
+                            { label: currentStatus ? 'Present' : 'Absent', variant: currentStatus ? 'default' : 'destructive' }
+                          ]}
+                          metadata={[
+                            {
+                              label: "Date",
+                              value: new Date(att.session?.date).toLocaleDateString(),
+                              icon: <CalendarIcon className="h-3 w-3" />
+                            },
+                            {
+                              label: "Marked At",
+                              value: new Date(att.markedAt).toLocaleString(),
+                              icon: <Clock className="h-3 w-3" />
+                            }
+                          ]}
+                          actions={editMode && (
+                            <div className="flex items-center justify-between w-full">
+                              <span className="text-sm font-medium">Mark Attendance:</span>
+                              <Switch
+                                checked={currentStatus}
+                                onCheckedChange={() => handleToggleAttendance(att.id, att.present)}
+                                className="data-[state=checked]:bg-primary"
+                              />
+                            </div>
+                          )}
+                          className={hasChanges ? 'bg-muted/50 border-primary' : ''}
+                        />
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Teacher</TableHead>
@@ -287,7 +342,8 @@ const Attendance = () => {
                   )}
                 </TableBody>
               </Table>
-              </div>
+                </div>
+              )}
 
               <PaginationControls
                 currentPage={teacherPage}
@@ -307,11 +363,60 @@ const Attendance = () => {
         <TabsContent value="students">
           <Card>
             <CardHeader>
-              <CardTitle>Student Attendance Records</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Student Attendance Records</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-              <Table>
+              {isMobile ? (
+                <div className="space-y-3">
+                  {paginatedStudentAttendance.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      {isLoading ? 'Loading student attendance...' : 'No student attendance records found for the selected filters.'}
+                    </div>
+                  ) : (
+                    paginatedStudentAttendance.map(att => {
+                      const currentStatus = getAttendanceStatus(att.id, att.present);
+                      const hasChanges = attendanceChanges[att.id] !== undefined;
+                      
+                      return (
+                        <MobileCard
+                          key={att.id}
+                          title={att.personName}
+                          subtitle={att.session?.title}
+                          badges={[
+                            { label: `Grade ${att.gradeLevel || 'N/A'}`, variant: "secondary" },
+                            { label: currentStatus ? 'Present' : 'Absent', variant: currentStatus ? 'default' : 'destructive' }
+                          ]}
+                          metadata={[
+                            {
+                              label: "Date",
+                              value: new Date(att.session?.date).toLocaleDateString(),
+                              icon: <CalendarIcon className="h-3 w-3" />
+                            },
+                            {
+                              label: "Marked At",
+                              value: new Date(att.markedAt).toLocaleString(),
+                              icon: <Clock className="h-3 w-3" />
+                            }
+                          ]}
+                          actions={editMode && (
+                            <div className="flex items-center justify-between w-full">
+                              <span className="text-sm font-medium">Mark Attendance:</span>
+                              <Switch
+                                checked={currentStatus}
+                                onCheckedChange={() => handleToggleAttendance(att.id, att.present)}
+                                className="data-[state=checked]:bg-primary"
+                              />
+                            </div>
+                          )}
+                          className={hasChanges ? 'bg-muted/50 border-primary' : ''}
+                        />
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student</TableHead>
@@ -363,7 +468,8 @@ const Attendance = () => {
                   )}
                 </TableBody>
               </Table>
-              </div>
+                </div>
+              )}
 
               <PaginationControls
                 currentPage={studentPage}

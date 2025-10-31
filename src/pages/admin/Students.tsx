@@ -19,10 +19,12 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFilters } from '@/contexts/FilterContext';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
 
 export default function Students() {
+  const { filters } = useFilters();
   const [students, setStudents] = useState([]);
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,15 +49,23 @@ export default function Students() {
   useEffect(() => {
     fetchStudents();
     fetchSchools();
-  }, []);
+  }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
   const fetchStudents = async (page = pagination.page) => {
     try {
       setLoading(true);
-      const response = await api.getStudents({ 
+      const params: Record<string, string | number> = { 
         page, 
         pageSize: pagination.pageSize
-      });
+      };
+      
+      // Add geography filters if selected
+      if (filters.division) params.divisionId = filters.division;
+      if (filters.district) params.districtId = filters.district;
+      if (filters.tehsil) params.tehsilId = filters.tehsil;
+      if (filters.school) params.schoolId = filters.school;
+      
+      const response = await api.getStudents(params);
       setStudents(response.data.data);
       setPagination(prev => ({
         ...prev,

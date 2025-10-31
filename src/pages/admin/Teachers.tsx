@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Mail, Phone as PhoneIcon, CreditCard, School } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileCard } from '@/components/MobileCard';
 import {
   Table,
   TableBody,
@@ -20,9 +22,12 @@ import {
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useFilters } from '@/contexts/FilterContext';
 import * as api from '@/lib/api';
 
 export default function Teachers() {
+  const isMobile = useIsMobile();
+  const { filters } = useFilters();
   const [teachers, setTeachers] = useState([]);
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,15 +53,23 @@ export default function Teachers() {
   useEffect(() => {
     fetchTeachers();
     fetchSchools();
-  }, []);
+  }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
   const fetchTeachers = async (page = pagination.page) => {
     try {
       setLoading(true);
-      const response = await api.getTeachers({ 
+      const params: Record<string, string | number> = { 
         page, 
         pageSize: pagination.pageSize
-      });
+      };
+      
+      // Add geography filters if selected
+      if (filters.division) params.divisionId = filters.division;
+      if (filters.district) params.districtId = filters.district;
+      if (filters.tehsil) params.tehsilId = filters.tehsil;
+      if (filters.school) params.schoolId = filters.school;
+      
+      const response = await api.getTeachers(params);
       setTeachers(response.data.data);
       setPagination(prev => ({
         ...prev,
@@ -158,15 +171,15 @@ export default function Teachers() {
   );
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Teachers Management</h1>
-        <p className="text-muted-foreground mt-1">Manage teacher accounts and school assignments</p>
+    <div className="p-4 sm:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Teachers Management</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage teacher accounts and school assignments</p>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex gap-2">
-          <div className="relative w-64">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
+        <div className="flex gap-2 flex-1">
+          <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search teachers..."
@@ -184,12 +197,13 @@ export default function Teachers() {
         {canEdit() && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Teacher
+              <Button onClick={openCreateDialog} className="flex-1 sm:flex-initial">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Teacher</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}</DialogTitle>
               </DialogHeader>
@@ -260,6 +274,55 @@ export default function Teachers() {
         )}
       </div>
 
+      {isMobile ? (
+        <div className="space-y-3">
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading...</div>
+          ) : filteredTeachers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">No teachers found</div>
+          ) : (
+            filteredTeachers.map((teacher: any) => (
+              <MobileCard
+                key={teacher.id}
+                title={teacher.teacherProfile?.name || 'N/A'}
+                subtitle={teacher.teacherProfile?.school?.name || 'N/A'}
+                metadata={[
+                  { label: "Email", value: teacher.email, icon: <Mail className="h-3 w-3" /> },
+                  { label: "Phone", value: teacher.phone || 'N/A', icon: <PhoneIcon className="h-3 w-3" /> },
+                  { label: "CNIC", value: teacher.teacherProfile?.cnic || 'N/A', icon: <CreditCard className="h-3 w-3" /> },
+                  { label: "School", value: teacher.teacherProfile?.school?.name || 'N/A', icon: <School className="h-3 w-3" /> }
+                ]}
+                actions={(canEdit() || canDelete()) && (
+                  <div className="flex gap-2">
+                    {canEdit() && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditDialog(teacher)}
+                        className="flex-1"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    )}
+                    {canDelete() && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(teacher.id)}
+                        className="flex-1"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                )}
+              />
+            ))
+          )}
+        </div>
+      ) : (
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
@@ -319,6 +382,7 @@ export default function Teachers() {
           </TableBody>
         </Table>
       </div>
+      )}
 
       {/* Pagination */}
       {pagination.total > 0 && (

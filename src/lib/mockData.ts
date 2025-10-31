@@ -131,7 +131,7 @@ export const students: Student[] = Array.from({ length: 4000 }, (_, i) => {
 
 // Generate 150 sessions spread over last/next 14 days
 const today = new Date();
-const courseNames: CourseName[] = ['English Basics', 'English Intermediate', 'English Advanced'];
+const courseNames: CourseName[] = ['Spoken English Programme'];
 const sessionStatuses: SessionStatus[] = ['Planned', 'Ongoing', 'Completed'];
 
 export const sessions: Session[] = Array.from({ length: 150 }, (_, i) => {
@@ -157,16 +157,14 @@ export const sessions: Session[] = Array.from({ length: 150 }, (_, i) => {
   
   return {
     id: `session${i + 1}`,
-    title: `${courseNames[i % 3]} - ${school.name.split(' ').slice(0, 3).join(' ')}`,
-    courseName: courseNames[i % 3],
+    title: `${courseNames[0]} - ${school.name.split(' ').slice(0, 3).join(' ')}`,
+    courseName: courseNames[0],
     date: sessionDate.toISOString().split('T')[0],
     startTime: `${String(hour).padStart(2, '0')}:00`,
     endTime: `${String(hour + 2).padStart(2, '0')}:00`,
     trainerId: trainer.id,
     schoolId: school.id,
     status,
-    expectedTeachers: Math.floor(Math.random() * 5) + 3,
-    expectedStudents: Math.floor(Math.random() * 30) + 20,
     notes: i % 5 === 0 ? 'Special focus on pronunciation and vocabulary building exercises.' : undefined,
   };
 });
@@ -174,8 +172,8 @@ export const sessions: Session[] = Array.from({ length: 150 }, (_, i) => {
 // Generate attendance records
 export const attendance: Attendance[] = [];
 sessions.filter(s => s.status !== 'Planned').forEach((session, sessionIdx) => {
-  const schoolTeachers = teachers.filter(t => t.schoolId === session.schoolId).slice(0, session.expectedTeachers);
-  const schoolStudents = students.filter(s => s.schoolId === session.schoolId).slice(0, session.expectedStudents);
+  const schoolTeachers = teachers.filter(t => t.schoolId === session.schoolId);
+  const schoolStudents = students.filter(s => s.schoolId === session.schoolId);
   
   schoolTeachers.forEach((teacher, tIdx) => {
     const present = Math.random() > 0.15; // 85% attendance rate

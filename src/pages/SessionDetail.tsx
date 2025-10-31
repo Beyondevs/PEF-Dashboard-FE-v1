@@ -40,25 +40,28 @@ import { sessions, schools, trainers, teachers, students, attendance, assessment
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePagination } from '@/hooks/usePagination';
-import { getSessionById } from '@/lib/api';
+import { getSessionById, getSessionAttendance, bulkUpsertAttendance } from '@/lib/api';
 import type { Teacher, Student } from '@/types';
 
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { role, isAdmin } = useAuth();
+  const { role, isAdmin, canMarkAttendance } = useAuth();
   
   const [localAttendance, setLocalAttendance] = useState(attendance);
   const [localAssessments, setLocalAssessments] = useState(assessments);
   const [localSessions, setLocalSessions] = useState(sessions);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [attendanceType, setAttendanceType] = useState<'Teacher' | 'Student'>('Teacher');
+  const [modalAttendance, setModalAttendance] = useState<Record<string, boolean>>({});
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [assessmentScores, setAssessmentScores] = useState<Record<string, number>>({});
   
   // API session data
   const [apiSession, setApiSession] = useState<any>(null);
+  const [apiAttendance, setApiAttendance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
   // Fetch session data from API
@@ -82,6 +85,29 @@ const SessionDetail = () => {
     fetchSession();
   }, [id]);
 
+  // Fetch attendance data from API
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      if (!id) return;
+      
+      try {
+        setIsAttendanceLoading(true);
+        const response = await getSessionAttendance(id);
+        setApiAttendance(response.data);
+      } catch (error) {
+        console.error('Failed to fetch attendance:', error);
+        // Don't show error, just use empty attendance
+        setApiAttendance(null);
+      } finally {
+        setIsAttendanceLoading(false);
+      }
+    };
+
+    if (apiSession) {
+      fetchAttendance();
+    }
+  }, [id, apiSession]);
+
   const session = useMemo(() => apiSession || localSessions.find(s => s.id === id), [apiSession, id, localSessions]);
   const school = useMemo(() => session?.school || schools.find(s => s.id === session?.schoolId), [session]);
   const trainer = useMemo(() => session?.trainer || trainers.find(t => t.id === session?.trainerId), [session]);
@@ -102,7 +128,7 @@ const SessionDetail = () => {
         rollNo: st.teacher.rollNo || '',
       }));
     }
-    return teachers.filter(t => t.schoolId === session.schoolId).slice(0, session.expectedTeachers);
+    return teachers.filter(t => t.schoolId === session.schoolId);
   }, [session]);
 
   const sessionStudents = useMemo<Student[]>(() => {
@@ -120,12 +146,54 @@ const SessionDetail = () => {
         rollNo: ss.student.rollNo,
       }));
     }
-    return students.filter(s => s.schoolId === session.schoolId).slice(0, session.expectedStudents);
+    return students.filter(s => s.schoolId === session.schoolId);
   }, [session]);
 
   const sessionAttendance = useMemo(() => {
     if (!session) return [];
-    // Use API data if available, otherwise fall back to mock data
+    
+    // Use API attendance data if available
+    if (apiAttendance) {
+      const attendanceList: any[] = [];
+      
+      // Add teacher attendance
+      if (apiAttendance.teachers) {
+        apiAttendance.teachers.forEach((teacher: any) => {
+          if (teacher.attendance) {
+            attendanceList.push({
+              id: teacher.attendance.id,
+              sessionId: session.id,
+              personType: 'Teacher' as const,
+              personId: teacher.id,
+              present: teacher.attendance.present,
+              markedBy: teacher.attendance.markedBy,
+              timestamp: teacher.attendance.markedAt,
+            });
+          }
+        });
+      }
+      
+      // Add student attendance
+      if (apiAttendance.students) {
+        apiAttendance.students.forEach((student: any) => {
+          if (student.attendance) {
+            attendanceList.push({
+              id: student.attendance.id,
+              sessionId: session.id,
+              personType: 'Student' as const,
+              personId: student.id,
+              present: student.attendance.present,
+              markedBy: student.attendance.markedBy,
+              timestamp: student.attendance.markedAt,
+            });
+          }
+        });
+      }
+      
+      return attendanceList;
+    }
+    
+    // Fallback to session attendances if available
     if (session.attendances) {
       return session.attendances.map(att => ({
         id: att.id,
@@ -137,8 +205,10 @@ const SessionDetail = () => {
         timestamp: att.markedAt,
       }));
     }
+    
+    // Final fallback to local mock data
     return localAttendance.filter(a => a.sessionId === session.id);
-  }, [session, localAttendance]);
+  }, [session, apiAttendance, localAttendance]);
 
   const sessionAssessments = useMemo(() => {
     if (!session) return [];
@@ -219,6 +289,14 @@ const SessionDetail = () => {
   };
 
   const toggleAttendance = (personId: string, personType: 'Teacher' | 'Student') => {
+    // Update modal attendance state for immediate UI feedback
+    const key = `${personType}-${personId}`;
+    setModalAttendance(prev => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+    
+    // Also update local state for table switches
     setLocalAttendance(prev => {
       const existing = prev.find(a => a.sessionId === session.id && a.personId === personId && a.personType === personType);
       
@@ -241,9 +319,90 @@ const SessionDetail = () => {
     });
   };
 
-  const handleSaveAttendance = () => {
-    toast.success(`${attendanceType} attendance saved successfully`);
-    setIsAttendanceModalOpen(false);
+  // Initialize modal attendance when opening the modal
+  const handleOpenAttendanceModal = (type: 'Teacher' | 'Student') => {
+    setAttendanceType(type);
+    const initialAttendance: Record<string, boolean> = {};
+    
+    if (type === 'Teacher') {
+      sessionTeachers.forEach(teacher => {
+        const att = getAttendanceForPerson(teacher.id, 'Teacher');
+        const key = `Teacher-${teacher.id}`;
+        initialAttendance[key] = att?.present ?? false;
+      });
+    } else {
+      sessionStudents.forEach(student => {
+        const att = getAttendanceForPerson(student.id, 'Student');
+        const key = `Student-${student.id}`;
+        initialAttendance[key] = att?.present ?? false;
+      });
+    }
+    
+    setModalAttendance(initialAttendance);
+    setIsAttendanceModalOpen(true);
+  };
+
+  const getModalAttendance = (personId: string, personType: 'Teacher' | 'Student') => {
+    const key = `${personType}-${personId}`;
+    // If modal attendance has been modified, use that, otherwise fall back to actual attendance
+    if (key in modalAttendance) {
+      return modalAttendance[key];
+    }
+    const att = getAttendanceForPerson(personId, personType);
+    return att?.present ?? false;
+  };
+
+  const handleSaveAttendance = async () => {
+    if (!id || !session) {
+      toast.error('Session ID not found');
+      return;
+    }
+
+    try {
+      setIsAttendanceLoading(true);
+      
+      // Prepare attendance data based on type using modal attendance state
+      const attendanceData: {
+        teachers?: Array<{ teacherId: string; present: boolean }>;
+        students?: Array<{ studentId: string; present: boolean }>;
+      } = {};
+
+      if (attendanceType === 'Teacher') {
+        attendanceData.teachers = sessionTeachers.map(teacher => {
+          const key = `Teacher-${teacher.id}`;
+          return {
+            teacherId: teacher.id,
+            present: modalAttendance[key] ?? false,
+          };
+        });
+      } else {
+        attendanceData.students = sessionStudents.map(student => {
+          const key = `Student-${student.id}`;
+          return {
+            studentId: student.id,
+            present: modalAttendance[key] ?? false,
+          };
+        });
+      }
+
+      // Save to API
+      await bulkUpsertAttendance(id, attendanceData);
+      
+      // Refresh attendance data
+      const response = await getSessionAttendance(id);
+      setApiAttendance(response.data);
+      
+      // Clear modal attendance state
+      setModalAttendance({});
+      
+      toast.success(`${attendanceType} attendance saved successfully`);
+      setIsAttendanceModalOpen(false);
+    } catch (error: any) {
+      console.error('Failed to save attendance:', error);
+      toast.error(error?.response?.data?.message || `Failed to save ${attendanceType.toLowerCase()} attendance`);
+    } finally {
+      setIsAttendanceLoading(false);
+    }
   };
 
   const handleOpenAssessments = () => {
@@ -344,10 +503,10 @@ const SessionDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-primary">
-                  {teachersPresent}/{session.expectedTeachers}
+                  {teachersPresent}/{sessionTeachers.length}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {((teachersPresent / session.expectedTeachers) * 100).toFixed(0)}% present
+                  {sessionTeachers.length > 0 ? ((teachersPresent / sessionTeachers.length) * 100).toFixed(0) : 0}% present
                 </p>
               </CardContent>
             </Card>
@@ -359,10 +518,10 @@ const SessionDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-secondary">
-                  {studentsPresent}/{session.expectedStudents}
+                  {studentsPresent}/{sessionStudents.length}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {((studentsPresent / session.expectedStudents) * 100).toFixed(0)}% present
+                  {sessionStudents.length > 0 ? ((studentsPresent / sessionStudents.length) * 100).toFixed(0) : 0}% present
                 </p>
               </CardContent>
             </Card>
@@ -486,15 +645,12 @@ const SessionDetail = () => {
                   </div>
                 )}
                 <div className="pt-4 space-y-2">
-                  {isAdmin() && session.status !== 'Completed' && (
+                  {canMarkAttendance() && session.status !== 'Completed' && (
                     <>
                       <Button
                         className="w-full"
                         variant="outline"
-                        onClick={() => {
-                          setAttendanceType('Teacher');
-                          setIsAttendanceModalOpen(true);
-                        }}
+                        onClick={() => handleOpenAttendanceModal('Teacher')}
                       >
                         <Users className="h-4 w-4 mr-2" />
                         Mark Teacher Attendance
@@ -502,22 +658,21 @@ const SessionDetail = () => {
                       <Button
                         className="w-full"
                         variant="outline"
-                        onClick={() => {
-                          setAttendanceType('Student');
-                          setIsAttendanceModalOpen(true);
-                        }}
+                        onClick={() => handleOpenAttendanceModal('Student')}
                       >
                         <Users className="h-4 w-4 mr-2" />
                         Mark Student Attendance
                       </Button>
-                      <Button
-                        className="w-full"
-                        onClick={handleOpenAssessments}
-                      >
-                        <ClipboardCheck className="h-4 w-4 mr-2" />
-                        Enter Assessments
-                      </Button>
                     </>
+                  )}
+                  {isAdmin() && session.status !== 'Completed' && (
+                    <Button
+                      className="w-full"
+                      onClick={handleOpenAssessments}
+                    >
+                      <ClipboardCheck className="h-4 w-4 mr-2" />
+                      Enter Assessments
+                    </Button>
                   )}
                 </div>
               </CardContent>
@@ -531,12 +686,9 @@ const SessionDetail = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Teacher Attendance</CardTitle>
-                {isAdmin() && session.status !== 'Completed' && (
+                {canMarkAttendance() && session.status !== 'Completed' && (
                   <Button
-                    onClick={() => {
-                      setAttendanceType('Teacher');
-                      setIsAttendanceModalOpen(true);
-                    }}
+                    onClick={() => handleOpenAttendanceModal('Teacher')}
                   >
                     <Users className="h-4 w-4 mr-2" />
                     Mark Attendance
@@ -554,7 +706,7 @@ const SessionDetail = () => {
                       <TableHead>Phone</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Status</TableHead>
-                      {isAdmin() && session.status !== 'Completed' && (
+                      {canMarkAttendance() && session.status !== 'Completed' && (
                         <TableHead>Action</TableHead>
                       )}
                     </TableRow>
@@ -583,7 +735,7 @@ const SessionDetail = () => {
                             <Badge variant="outline">Not Marked</Badge>
                           )}
                         </TableCell>
-                        {isAdmin() && session.status !== 'Completed' && (
+                        {canMarkAttendance() && session.status !== 'Completed' && (
                           <TableCell>
                             <Switch
                               checked={att?.present || false}
@@ -618,12 +770,9 @@ const SessionDetail = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Student Attendance</CardTitle>
-                {isAdmin() && session.status !== 'Completed' && (
+                {canMarkAttendance() && session.status !== 'Completed' && (
                   <Button
-                    onClick={() => {
-                      setAttendanceType('Student');
-                      setIsAttendanceModalOpen(true);
-                    }}
+                    onClick={() => handleOpenAttendanceModal('Student')}
                   >
                     <Users className="h-4 w-4 mr-2" />
                     Mark Attendance
@@ -641,7 +790,7 @@ const SessionDetail = () => {
                       <TableHead>Gender</TableHead>
                       <TableHead>Grade</TableHead>
                       <TableHead>Status</TableHead>
-                      {isAdmin() && session.status !== 'Completed' && (
+                      {canMarkAttendance() && session.status !== 'Completed' && (
                         <TableHead>Action</TableHead>
                       )}
                     </TableRow>
@@ -670,7 +819,7 @@ const SessionDetail = () => {
                             <Badge variant="outline">Not Marked</Badge>
                           )}
                         </TableCell>
-                        {isAdmin() && session.status !== 'Completed' && (
+                        {canMarkAttendance() && session.status !== 'Completed' && (
                           <TableCell>
                             <Switch
                               checked={att?.present || false}
@@ -714,7 +863,7 @@ const SessionDetail = () => {
             <div className="grid gap-4">
               {attendanceType === 'Teacher'
                 ? sessionTeachers.map(teacher => {
-                    const att = getAttendanceForPerson(teacher.id, 'Teacher');
+                    const isPresent = getModalAttendance(teacher.id, 'Teacher');
                     return (
                       <div
                         key={teacher.id}
@@ -722,26 +871,26 @@ const SessionDetail = () => {
                       >
                         <div className="flex items-center gap-4">
                           <Checkbox
-                            checked={att?.present || false}
+                            checked={isPresent}
                             onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
                             id={`teacher-${teacher.id}`}
                           />
                           <label
                             htmlFor={`teacher-${teacher.id}`}
-                            className="cursor-pointer"
+                            className="cursor-pointer flex-1"
                           >
                             <p className="font-medium">{teacher.name}</p>
                             <p className="text-sm text-muted-foreground">{teacher.email}</p>
                           </label>
                         </div>
-                        <Badge variant={att?.present ? 'default' : 'outline'}>
-                          {att?.present ? 'Present' : 'Absent'}
+                        <Badge variant={isPresent ? 'default' : 'outline'}>
+                          {isPresent ? 'Present' : 'Absent'}
                         </Badge>
                       </div>
                     );
                   })
                 : sessionStudents.map(student => {
-                    const att = getAttendanceForPerson(student.id, 'Student');
+                    const isPresent = getModalAttendance(student.id, 'Student');
                     return (
                       <div
                         key={student.id}
@@ -749,13 +898,13 @@ const SessionDetail = () => {
                       >
                         <div className="flex items-center gap-4">
                           <Checkbox
-                            checked={att?.present || false}
+                            checked={isPresent}
                             onCheckedChange={() => toggleAttendance(student.id, 'Student')}
                             id={`student-${student.id}`}
                           />
                           <label
                             htmlFor={`student-${student.id}`}
-                            className="cursor-pointer"
+                            className="cursor-pointer flex-1"
                           >
                             <p className="font-medium">{student.name}</p>
                             <p className="text-sm text-muted-foreground">
@@ -763,8 +912,8 @@ const SessionDetail = () => {
                             </p>
                           </label>
                         </div>
-                        <Badge variant={att?.present ? 'default' : 'outline'}>
-                          {att?.present ? 'Present' : 'Absent'}
+                        <Badge variant={isPresent ? 'default' : 'outline'}>
+                          {isPresent ? 'Present' : 'Absent'}
                         </Badge>
                       </div>
                     );
@@ -772,12 +921,18 @@ const SessionDetail = () => {
             </div>
             
             <div className="flex justify-end gap-2 pt-4 sticky bottom-0 bg-background pb-4">
-              <Button variant="outline" onClick={() => setIsAttendanceModalOpen(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsAttendanceModalOpen(false);
+                  setModalAttendance({});
+                }}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleSaveAttendance}>
+              <Button onClick={handleSaveAttendance} disabled={isAttendanceLoading}>
                 <Save className="h-4 w-4 mr-2" />
-                Save Attendance
+                {isAttendanceLoading ? 'Saving...' : 'Save Attendance'}
               </Button>
             </div>
           </div>

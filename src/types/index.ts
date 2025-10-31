@@ -53,7 +53,7 @@ export interface Student {
 }
 
 export type SessionStatus = 'Planned' | 'Ongoing' | 'Completed';
-export type CourseName = 'English Basics' | 'English Intermediate' | 'English Advanced';
+export type CourseName = 'Spoken English Programme';
 
 export interface Session {
   id: string;
@@ -65,8 +65,6 @@ export interface Session {
   trainerId: string;
   schoolId: string;
   status: SessionStatus;
-  expectedTeachers: number;
-  expectedStudents: number;
   notes?: string;
 }
 
@@ -140,8 +138,5 @@ export interface FilterState {
   district?: string;
   tehsil?: string;
   school?: string;
-  dateRange: {
-    from: Date;
-    to: Date;
-  };
+  sessionId?: string;
 }

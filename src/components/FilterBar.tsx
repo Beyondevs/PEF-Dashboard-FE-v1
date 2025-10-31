@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Select,
   SelectContent,
@@ -7,38 +6,157 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { CalendarIcon, RotateCcw } from 'lucide-react';
-import { format } from 'date-fns';
+import { RotateCcw } from 'lucide-react';
 import { useFilters } from '@/contexts/FilterContext';
-import { divisions, districts, tehsils, schools } from '@/lib/mockData';
+import { getSessions, getDivisions, getDistricts, getTehsils, getSchools } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import type { Session, Division, District, Tehsil, School } from '@/types';
 
 export const FilterBar = () => {
   const { filters, setFilters, resetFilters } = useFilters();
+  
+  // State for geography data
+  const [divisions, setDivisions] = useState<Division[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [tehsils, setTehsils] = useState<Tehsil[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  
+  // Loading states
+  const [isLoadingDivisions, setIsLoadingDivisions] = useState(false);
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
+  const [isLoadingTehsils, setIsLoadingTehsils] = useState(false);
+  const [isLoadingSchools, setIsLoadingSchools] = useState(false);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
-  const filteredDistricts = filters.division
-    ? districts.filter(d => d.divisionId === filters.division)
-    : districts;
+  // Fetch divisions on mount
+  useEffect(() => {
+    const fetchDivisions = async () => {
+      try {
+        setIsLoadingDivisions(true);
+        const response = await getDivisions();
+        setDivisions(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch divisions:', error);
+        setDivisions([]);
+      } finally {
+        setIsLoadingDivisions(false);
+      }
+    };
 
-  const filteredTehsils = filters.district
-    ? tehsils.filter(t => t.districtId === filters.district)
-    : tehsils;
+    fetchDivisions();
+  }, []);
 
-  const filteredSchools = filters.tehsil
-    ? schools.filter(s => s.tehsilId === filters.tehsil)
-    : filters.district
-    ? schools.filter(s => s.districtId === filters.district)
-    : schools;
+  // Fetch districts when division changes
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      if (!filters.division) {
+        setDistricts([]);
+        return;
+      }
+
+      try {
+        setIsLoadingDistricts(true);
+        const response = await getDistricts(filters.division);
+        setDistricts(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch districts:', error);
+        setDistricts([]);
+      } finally {
+        setIsLoadingDistricts(false);
+      }
+    };
+
+    fetchDistricts();
+  }, [filters.division]);
+
+  // Fetch tehsils when district changes
+  useEffect(() => {
+    const fetchTehsils = async () => {
+      if (!filters.district) {
+        setTehsils([]);
+        return;
+      }
+
+      try {
+        setIsLoadingTehsils(true);
+        const response = await getTehsils(filters.district);
+        setTehsils(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch tehsils:', error);
+        setTehsils([]);
+      } finally {
+        setIsLoadingTehsils(false);
+      }
+    };
+
+    fetchTehsils();
+  }, [filters.district]);
+
+  // Fetch schools when tehsil or district changes
+  useEffect(() => {
+    const fetchSchools = async () => {
+      if (!filters.tehsil && !filters.district) {
+        setSchools([]);
+        return;
+      }
+
+      try {
+        setIsLoadingSchools(true);
+        const params: Record<string, string | number> = {
+          page: 1,
+          pageSize: 1000, // Get many schools for dropdown
+        };
+
+        if (filters.division) params.divisionId = filters.division;
+        if (filters.district) params.districtId = filters.district;
+        if (filters.tehsil) params.tehsilId = filters.tehsil;
+
+        const response = await getSchools(params);
+        setSchools(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to fetch schools:', error);
+        setSchools([]);
+      } finally {
+        setIsLoadingSchools(false);
+      }
+    };
+
+    fetchSchools();
+  }, [filters.division, filters.district, filters.tehsil]);
+
+  // Fetch sessions based on current filters
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        setIsLoadingSessions(true);
+        const params: Record<string, string | number> = {
+          page: 1,
+          pageSize: 1000, // Get many sessions to populate dropdown
+        };
+
+        if (filters.division) params.divisionId = filters.division;
+        if (filters.district) params.districtId = filters.district;
+        if (filters.tehsil) params.tehsilId = filters.tehsil;
+        if (filters.school) params.schoolId = filters.school;
+
+        const response = await getSessions(params);
+        setSessions(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
+        setSessions([]);
+      } finally {
+        setIsLoadingSessions(false);
+      }
+    };
+
+    fetchSessions();
+  }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
   return (
-    <div className="bg-card border-b p-3 md:p-4">
-      <div className="flex flex-wrap items-center gap-2 md:gap-3">
-        <div className="text-xs md:text-sm font-medium text-foreground shrink-0">Filters:</div>
+    <div className="bg-card border-b p-2 sm:p-3 md:p-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-3">
+        <div className="text-xs sm:text-sm font-medium text-foreground shrink-0 w-full sm:w-auto">Filters:</div>
         
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs md:text-sm text-muted-foreground">Province:</span>
@@ -47,115 +165,207 @@ export const FilterBar = () => {
 
         <Select
           value={filters.division}
-          onValueChange={(value) => setFilters(prev => ({ 
-            ...prev, 
-            division: value,
-            district: undefined,
-            tehsil: undefined,
-            school: undefined,
-          }))}
+          onValueChange={(value) => {
+            if (value === "clear") {
+              setFilters(prev => ({ 
+                ...prev, 
+                division: undefined,
+                district: undefined,
+                tehsil: undefined,
+                school: undefined,
+                sessionId: undefined,
+              }));
+            } else {
+              setFilters(prev => ({ 
+                ...prev, 
+                division: value,
+                district: undefined,
+                tehsil: undefined,
+                school: undefined,
+                sessionId: undefined,
+              }));
+            }
+          }}
+          disabled={isLoadingDivisions}
         >
-          <SelectTrigger className="w-[140px] md:w-[180px] text-xs md:text-sm">
-            <SelectValue placeholder="Division" />
+          <SelectTrigger className="w-full sm:w-[140px] md:w-[180px] text-xs md:text-sm">
+            <SelectValue placeholder={isLoadingDivisions ? "Loading..." : "Division"} />
           </SelectTrigger>
           <SelectContent className="z-50">
-            {divisions.map(div => (
-              <SelectItem key={div.id} value={div.id}>{div.name}</SelectItem>
-            ))}
+            {filters.division && (
+              <SelectItem value="clear" className="text-muted-foreground italic">
+                Clear selection
+              </SelectItem>
+            )}
+            {divisions.length === 0 && !isLoadingDivisions ? (
+              <SelectItem value="none" disabled>No divisions available</SelectItem>
+            ) : (
+              divisions.map(div => (
+                <SelectItem key={div.id} value={div.id}>{div.name}</SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
 
         <Select
           value={filters.district}
-          onValueChange={(value) => setFilters(prev => ({ 
-            ...prev, 
-            district: value,
-            tehsil: undefined,
-            school: undefined,
-          }))}
-          disabled={!filters.division}
+          onValueChange={(value) => {
+            if (value === "clear") {
+              setFilters(prev => ({ 
+                ...prev, 
+                district: undefined,
+                tehsil: undefined,
+                school: undefined,
+                sessionId: undefined,
+              }));
+            } else {
+              setFilters(prev => ({ 
+                ...prev, 
+                district: value,
+                tehsil: undefined,
+                school: undefined,
+                sessionId: undefined,
+              }));
+            }
+          }}
+          disabled={!filters.division || isLoadingDistricts}
         >
-          <SelectTrigger className="w-[140px] md:w-[180px] text-xs md:text-sm">
-            <SelectValue placeholder="District" />
+          <SelectTrigger className="w-full sm:w-[140px] md:w-[180px] text-xs md:text-sm">
+            <SelectValue placeholder={isLoadingDistricts ? "Loading..." : "District"} />
           </SelectTrigger>
           <SelectContent className="z-50">
-            {filteredDistricts.map(dist => (
-              <SelectItem key={dist.id} value={dist.id}>{dist.name}</SelectItem>
-            ))}
+            {filters.district && (
+              <SelectItem value="clear" className="text-muted-foreground italic">
+                Clear selection
+              </SelectItem>
+            )}
+            {districts.length === 0 && !isLoadingDistricts ? (
+              <SelectItem value="none" disabled>
+                {filters.division ? "No districts available" : "Select division first"}
+              </SelectItem>
+            ) : (
+              districts.map(dist => (
+                <SelectItem key={dist.id} value={dist.id}>{dist.name}</SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
 
         <Select
           value={filters.tehsil}
-          onValueChange={(value) => setFilters(prev => ({ 
-            ...prev, 
-            tehsil: value,
-            school: undefined,
-          }))}
-          disabled={!filters.district}
+          onValueChange={(value) => {
+            if (value === "clear") {
+              setFilters(prev => ({ 
+                ...prev, 
+                tehsil: undefined,
+                school: undefined,
+                sessionId: undefined,
+              }));
+            } else {
+              setFilters(prev => ({ 
+                ...prev, 
+                tehsil: value,
+                school: undefined,
+                sessionId: undefined,
+              }));
+            }
+          }}
+          disabled={!filters.district || isLoadingTehsils}
         >
-          <SelectTrigger className="w-[140px] md:w-[180px] text-xs md:text-sm">
-            <SelectValue placeholder="Tehsil" />
+          <SelectTrigger className="w-full sm:w-[140px] md:w-[180px] text-xs md:text-sm">
+            <SelectValue placeholder={isLoadingTehsils ? "Loading..." : "Tehsil"} />
           </SelectTrigger>
           <SelectContent className="z-50">
-            {filteredTehsils.map(teh => (
-              <SelectItem key={teh.id} value={teh.id}>{teh.name}</SelectItem>
-            ))}
+            {filters.tehsil && (
+              <SelectItem value="clear" className="text-muted-foreground italic">
+                Clear selection
+              </SelectItem>
+            )}
+            {tehsils.length === 0 && !isLoadingTehsils ? (
+              <SelectItem value="none" disabled>
+                {filters.district ? "No tehsils available" : "Select district first"}
+              </SelectItem>
+            ) : (
+              tehsils.map(teh => (
+                <SelectItem key={teh.id} value={teh.id}>{teh.name}</SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
 
         <Select
           value={filters.school}
-          onValueChange={(value) => setFilters(prev => ({ ...prev, school: value }))}
-          disabled={!filters.tehsil && !filters.district}
+          onValueChange={(value) => {
+            if (value === "clear") {
+              setFilters(prev => ({ 
+                ...prev, 
+                school: undefined,
+                sessionId: undefined,
+              }));
+            } else {
+              setFilters(prev => ({ 
+                ...prev, 
+                school: value,
+                sessionId: undefined,
+              }));
+            }
+          }}
+          disabled={(!filters.tehsil && !filters.district) || isLoadingSchools}
         >
-          <SelectTrigger className="w-[180px] md:w-[250px] text-xs md:text-sm">
-            <SelectValue placeholder="School" />
+          <SelectTrigger className="w-full sm:w-[180px] md:w-[250px] text-xs md:text-sm">
+            <SelectValue placeholder={isLoadingSchools ? "Loading..." : "School"} />
           </SelectTrigger>
           <SelectContent className="z-50">
-            {filteredSchools.slice(0, 50).map(school => (
-              <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>
-            ))}
+            {filters.school && (
+              <SelectItem value="clear" className="text-muted-foreground italic">
+                Clear selection
+              </SelectItem>
+            )}
+            {schools.length === 0 && !isLoadingSchools ? (
+              <SelectItem value="none" disabled>
+                {filters.district || filters.tehsil ? "No schools available" : "Select district or tehsil first"}
+              </SelectItem>
+            ) : (
+              schools.slice(0, 100).map(school => (
+                <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className={cn("w-[180px] md:w-[240px] justify-start text-left font-normal text-xs md:text-sm")}>
-              <CalendarIcon className="mr-2 h-3 w-3 md:h-4 md:w-4" />
-              {filters.dateRange.from && filters.dateRange.to ? (
-                <>
-                  <span className="hidden md:inline">
-                    {format(filters.dateRange.from, 'PP')} - {format(filters.dateRange.to, 'PP')}
-                  </span>
-                  <span className="md:hidden">
-                    {format(filters.dateRange.from, 'P')} - {format(filters.dateRange.to, 'P')}
-                  </span>
-                </>
-              ) : (
-                <span>Pick a date range</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 z-50" align="start">
-            <Calendar
-              mode="range"
-              selected={{ from: filters.dateRange.from, to: filters.dateRange.to }}
-              onSelect={(range) => {
-                if (range?.from && range?.to) {
-                  setFilters(prev => ({ 
-                    ...prev, 
-                    dateRange: { from: range.from, to: range.to } 
-                  }));
-                }
-              }}
-              numberOfMonths={2}
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
+        <Select
+          value={filters.sessionId}
+          onValueChange={(value) => {
+            if (value === "clear") {
+              setFilters(prev => ({ ...prev, sessionId: undefined }));
+            } else {
+              setFilters(prev => ({ ...prev, sessionId: value }));
+            }
+          }}
+          disabled={isLoadingSessions}
+        >
+          <SelectTrigger className="w-full sm:w-[180px] md:w-[240px] text-xs md:text-sm">
+            <SelectValue placeholder={isLoadingSessions ? "Loading sessions..." : "Session"} />
+          </SelectTrigger>
+          <SelectContent className="z-50">
+            {filters.sessionId && (
+              <SelectItem value="clear" className="text-muted-foreground italic">
+                Clear selection
+              </SelectItem>
+            )}
+            {sessions.length === 0 && !isLoadingSessions ? (
+              <SelectItem value="none" disabled>No sessions available</SelectItem>
+            ) : (
+              sessions.map(session => (
+                <SelectItem key={session.id} value={session.id}>
+                  {session.title} ({new Date(session.date).toLocaleDateString()})
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
 
-        <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs md:text-sm shrink-0">
+        <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs md:text-sm shrink-0 w-full sm:w-auto">
           <RotateCcw className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
           <span className="hidden sm:inline">Reset Filters</span>
           <span className="sm:hidden">Reset</span>

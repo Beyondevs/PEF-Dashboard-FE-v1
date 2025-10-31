@@ -68,7 +68,6 @@ const systemManagementItems = [
 ];
 
 const hybridMonitoringItems = [
-  { title: 'Paper Registers', url: '/hybrid/paper-registers', icon: FileText },
   { title: 'Weekly Summaries', url: '/hybrid/weekly-summaries', icon: Settings },
 ];
 

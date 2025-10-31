@@ -63,6 +63,7 @@ export const getSessions = (params: Record<string, string | number | boolean> = 
 export const getSessionById = (id: string) => apiClient.get<Session>(`/sessions/${id}`);
 export const createSession = (data: Partial<Session>) => apiClient.post<Session>('/sessions', data);
 export const updateSession = (id: string, data: Partial<Session>) => apiClient.patch<Session>(`/sessions/${id}`, data);
+export const deleteSession = (id: string) => apiClient.delete(`/sessions/${id}`);
 export const publishSession = (id: string) => apiClient.post<Session>(`/sessions/${id}/publish`, {});
 
 // Attendance

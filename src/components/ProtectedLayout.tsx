@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppHeader } from './AppHeader';
 import { AppSidebar } from './AppSidebar';
+import { ClientHeader } from './ClientHeader';
 import { FilterBar } from './FilterBar';
 import LoginPopup from './LoginPopup';
 import { SidebarProvider } from './ui/sidebar';
@@ -20,6 +21,11 @@ export const ProtectedLayout = ({ children }: { children: React.ReactNode }) => 
       const lastPath = location.pathname + location.search;
       try { localStorage.setItem('pef.lastPath', lastPath); } catch {}
       navigate(`/login?returnTo=${encodeURIComponent(lastPath)}`);
+    }
+
+    // Redirect client role away from any page that's not dashboard
+    if (role === 'client' && location.pathname !== '/dashboard' && location.pathname !== '/login') {
+      navigate('/dashboard', { replace: true });
     }
   }, [role, isLoading, navigate, location.pathname]);
 
@@ -48,6 +54,22 @@ export const ProtectedLayout = ({ children }: { children: React.ReactNode }) => 
     return null;
   }
 
+  // Client role: simplified layout without sidebar and header (only logout button)
+  if (role === 'client') {
+    return (
+      <div className="min-h-screen flex flex-col w-full bg-background">
+        <LoginPopup />
+        <ClientHeader />
+        <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <div className="max-w-[1600px] mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Other roles: full layout with sidebar and header
   return (
     <SidebarProvider>
       <LoginPopup />
