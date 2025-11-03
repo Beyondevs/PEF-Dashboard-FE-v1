@@ -109,3 +109,17 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+
+@media only screen and (max-width: 999px) {
+  .mb-mobile-2 {
+    margin-bottom: 12px;
+  }
+}
+
+
+
+
+
+
+

@@ -542,7 +542,7 @@ const Dashboard = () => {
       <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap">
             <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
               <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 Last 30 Days Attendance
@@ -755,7 +755,7 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center flex-wrap justify-between">
             <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-chart-3" />
                 Last 30 Days Sessions Progress
