@@ -90,7 +90,7 @@ const Dashboard = () => {
         // Fetch attendance data by personType for last 30 days
         const attendanceParams: Record<string, string | number> = {
           page: 1,
-          pageSize: 10000, // Large number to get all records
+          pageSize: 1000, // Large number to get all records
           from: last30DaysStart,
           to: today,
         };
