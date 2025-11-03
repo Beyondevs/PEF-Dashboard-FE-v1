@@ -153,8 +153,8 @@ export default function Trainers() {
         <p className="text-muted-foreground mt-1">Manage trainer accounts and assignments</p>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="relative w-64">
+      <div className="flex justify-between flex-wrap items-center mb-6 sm:flex sm:nowrap">
+        <div className="relative w-64 mt-2 sm:mt-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search trainers..."
@@ -170,7 +170,7 @@ export default function Trainers() {
         {canEdit() && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openCreateDialog}>
+              <Button className="mt-2 sm:mt-0" onClick={openCreateDialog}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Trainer
               </Button>
@@ -293,12 +293,12 @@ export default function Trainers() {
 
       {/* Pagination */}
       {pagination.total > 0 && (
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between flex-wrap mt-4">
+          <div className="text-sm text-muted-foreground mb-4">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} trainers
             {searchTerm && ` (${filteredTrainers.length} filtered)`}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
