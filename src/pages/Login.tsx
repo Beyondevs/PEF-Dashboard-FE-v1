@@ -10,7 +10,7 @@ const Login = () => {
   };
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f4674' }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
@@ -19,7 +19,7 @@ const Login = () => {
     );
   }
   return (
-    <div className="min-h-screen bg-blue-600 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0f4674' }}>
       {/* White square with rounded corners */}
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6">

@@ -44,16 +44,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="identifier">CNIC / Phone Number</Label>
+        <Label htmlFor="identifier">Mobile Number / CNIC / Email</Label>
         <Input
           id="identifier"
           type="text"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
-          placeholder="Enter CNIC (12345-6789012-3) or Phone (+92xxxxxxxxxx)"
+          placeholder="Mobile: +92xxxxxxxxxx | CNIC: 12345-6789012-3 | Email: user@example.com"
           required
           disabled={isLoading}
         />
+        <p className="text-xs text-muted-foreground">
+          Trainers must use mobile number format (+92xxxxxxxxxx)
+        </p>
       </div>
 
       <div className="space-y-2">

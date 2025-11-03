@@ -25,6 +25,12 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   ArrowLeft,
   Users,
   UserCheck,
@@ -111,6 +117,25 @@ const SessionDetail = () => {
   const session = useMemo(() => apiSession || localSessions.find(s => s.id === id), [apiSession, id, localSessions]);
   const school = useMemo(() => session?.school || schools.find(s => s.id === session?.schoolId), [session]);
   const trainer = useMemo(() => session?.trainer || trainers.find(t => t.id === session?.trainerId), [session]);
+
+  // Check if session date is today (for trainer restrictions)
+  const isSessionToday = useMemo(() => {
+    if (!session?.date) return false;
+    const sessionDate = new Date(session.date);
+    const today = new Date();
+    return (
+      sessionDate.getFullYear() === today.getFullYear() &&
+      sessionDate.getMonth() === today.getMonth() &&
+      sessionDate.getDate() === today.getDate()
+    );
+  }, [session?.date]);
+
+  // Check if trainer can mark attendance (trainers can only mark for today's sessions)
+  const canTrainerMarkAttendance = useMemo(() => {
+    if (role === 'admin') return true;
+    if (role === 'trainer') return isSessionToday;
+    return false;
+  }, [role, isSessionToday]);
 
   const sessionTeachers = useMemo<Teacher[]>(() => {
     if (!session) {
@@ -321,6 +346,12 @@ const SessionDetail = () => {
 
   // Initialize modal attendance when opening the modal
   const handleOpenAttendanceModal = (type: 'Teacher' | 'Student') => {
+    // Prevent trainers from opening modal for non-today sessions
+    if (!canTrainerMarkAttendance && role === 'trainer') {
+      toast.error('Trainers can only mark attendance for sessions scheduled on the current date');
+      return;
+    }
+    
     setAttendanceType(type);
     const initialAttendance: Record<string, boolean> = {};
     
@@ -646,24 +677,50 @@ const SessionDetail = () => {
                 )}
                 <div className="pt-4 space-y-2">
                   {canMarkAttendance() && session.status !== 'Completed' && (
-                    <>
-                      <Button
-                        className="w-full"
-                        variant="outline"
-                        onClick={() => handleOpenAttendanceModal('Teacher')}
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        Mark Teacher Attendance
-                      </Button>
-                      <Button
-                        className="w-full"
-                        variant="outline"
-                        onClick={() => handleOpenAttendanceModal('Student')}
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        Mark Student Attendance
-                      </Button>
-                    </>
+                    <TooltipProvider>
+                      <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="w-full">
+                              <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => handleOpenAttendanceModal('Teacher')}
+                                disabled={!canTrainerMarkAttendance}
+                              >
+                                <Users className="h-4 w-4 mr-2" />
+                                Mark Teacher Attendance
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {!canTrainerMarkAttendance && role === 'trainer' && (
+                            <TooltipContent>
+                              <p>Trainers can only mark attendance for sessions scheduled on the current date</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="w-full">
+                              <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => handleOpenAttendanceModal('Student')}
+                                disabled={!canTrainerMarkAttendance}
+                              >
+                                <Users className="h-4 w-4 mr-2" />
+                                Mark Student Attendance
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {!canTrainerMarkAttendance && role === 'trainer' && (
+                            <TooltipContent>
+                              <p>Trainers can only mark attendance for sessions scheduled on the current date</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </>
+                    </TooltipProvider>
                   )}
                   {isAdmin() && session.status !== 'Completed' && (
                     <Button
@@ -687,12 +744,26 @@ const SessionDetail = () => {
               <div className="flex items-center justify-between">
                 <CardTitle>Teacher Attendance</CardTitle>
                 {canMarkAttendance() && session.status !== 'Completed' && (
-                  <Button
-                    onClick={() => handleOpenAttendanceModal('Teacher')}
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    Mark Attendance
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            onClick={() => handleOpenAttendanceModal('Teacher')}
+                            disabled={!canTrainerMarkAttendance}
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            Mark Attendance
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {!canTrainerMarkAttendance && role === 'trainer' && (
+                        <TooltipContent>
+                          <p>Trainers can only mark attendance for sessions scheduled on the current date</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
             </CardHeader>
@@ -737,10 +808,24 @@ const SessionDetail = () => {
                         </TableCell>
                         {canMarkAttendance() && session.status !== 'Completed' && (
                           <TableCell>
-                            <Switch
-                              checked={att?.present || false}
-                              onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
-                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Switch
+                                      checked={att?.present || false}
+                                      onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
+                                      disabled={!canTrainerMarkAttendance}
+                                    />
+                                  </span>
+                                </TooltipTrigger>
+                                {!canTrainerMarkAttendance && role === 'trainer' && (
+                                  <TooltipContent>
+                                    <p>Trainers can only mark attendance for sessions scheduled on the current date</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </TableCell>
                         )}
                       </TableRow>
@@ -771,12 +856,26 @@ const SessionDetail = () => {
               <div className="flex items-center justify-between">
                 <CardTitle>Student Attendance</CardTitle>
                 {canMarkAttendance() && session.status !== 'Completed' && (
-                  <Button
-                    onClick={() => handleOpenAttendanceModal('Student')}
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    Mark Attendance
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            onClick={() => handleOpenAttendanceModal('Student')}
+                            disabled={!canTrainerMarkAttendance}
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            Mark Attendance
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {!canTrainerMarkAttendance && role === 'trainer' && (
+                        <TooltipContent>
+                          <p>Trainers can only mark attendance for sessions scheduled on the current date</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
             </CardHeader>
@@ -821,10 +920,24 @@ const SessionDetail = () => {
                         </TableCell>
                         {canMarkAttendance() && session.status !== 'Completed' && (
                           <TableCell>
-                            <Switch
-                              checked={att?.present || false}
-                              onCheckedChange={() => toggleAttendance(student.id, 'Student')}
-                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Switch
+                                      checked={att?.present || false}
+                                      onCheckedChange={() => toggleAttendance(student.id, 'Student')}
+                                      disabled={!canTrainerMarkAttendance}
+                                    />
+                                  </span>
+                                </TooltipTrigger>
+                                {!canTrainerMarkAttendance && role === 'trainer' && (
+                                  <TooltipContent>
+                                    <p>Trainers can only mark attendance for sessions scheduled on the current date</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </TableCell>
                         )}
                       </TableRow>
@@ -879,7 +992,9 @@ const SessionDetail = () => {
                             htmlFor={`teacher-${teacher.id}`}
                             className="cursor-pointer flex-1"
                           >
-                            <p className="font-medium">{teacher.name}</p>
+                            <p className="font-medium">
+                              {teacher.name || 'Unknown Teacher'}{teacher.cnic ? `_${teacher.cnic}` : ''}
+                            </p>
                             <p className="text-sm text-muted-foreground">{teacher.email}</p>
                           </label>
                         </div>

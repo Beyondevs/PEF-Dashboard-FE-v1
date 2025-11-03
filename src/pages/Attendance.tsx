@@ -19,7 +19,6 @@ import { attendance, sessions, teachers, students } from '@/lib/mockData';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
 import PaginationControls from '@/components/PaginationControls';
-import { usePagination } from '@/hooks/usePagination';
 import { getAttendanceList, toggleAttendance } from '@/lib/api';
 
 const Attendance = () => {
@@ -33,9 +32,14 @@ const Attendance = () => {
   const [apiStudentAttendance, setApiStudentAttendance] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  
+  // Pagination state - separate for teachers and students
+  const [teacherPage, setTeacherPage] = useState(1);
+  const [studentPage, setStudentPage] = useState(1);
+  const [teacherTotalPages, setTeacherTotalPages] = useState(1);
+  const [studentTotalPages, setStudentTotalPages] = useState(1);
+  const [teacherTotalItems, setTeacherTotalItems] = useState(0);
+  const [studentTotalItems, setStudentTotalItems] = useState(0);
   const pageSize = 20;
 
   // Fetch attendance from API
@@ -46,38 +50,65 @@ const Attendance = () => {
         setApiError(false);
         
         // Transform filters to API format
-        const baseFilters: any = {
-          page: currentPage,
+        const teacherFilters: any = {
+          page: teacherPage,
           pageSize,
+          personType: 'teacher',
+        };
+        
+        const studentFilters: any = {
+          page: studentPage,
+          pageSize,
+          personType: 'student',
         };
         
         // Add session filter if present
         if (filters.sessionId) {
-          baseFilters.sessionId = filters.sessionId;
+          teacherFilters.sessionId = filters.sessionId;
+          studentFilters.sessionId = filters.sessionId;
         }
         
         // Add other filters
-        if (filters.division) baseFilters.divisionId = filters.division;
-        if (filters.district) baseFilters.districtId = filters.district;
-        if (filters.tehsil) baseFilters.tehsilId = filters.tehsil;
-        if (filters.school) baseFilters.schoolId = filters.school;
+        if (filters.division) {
+          teacherFilters.divisionId = filters.division;
+          studentFilters.divisionId = filters.division;
+        }
+        if (filters.district) {
+          teacherFilters.districtId = filters.district;
+          studentFilters.districtId = filters.district;
+        }
+        if (filters.tehsil) {
+          teacherFilters.tehsilId = filters.tehsil;
+          studentFilters.tehsilId = filters.tehsil;
+        }
+        if (filters.school) {
+          teacherFilters.schoolId = filters.school;
+          studentFilters.schoolId = filters.school;
+        }
         
         // Fetch both teacher and student attendance in parallel
         const [teacherResponse, studentResponse] = await Promise.all([
-          getAttendanceList({ ...baseFilters, personType: 'teacher' }),
-          getAttendanceList({ ...baseFilters, personType: 'student' })
+          getAttendanceList(teacherFilters),
+          getAttendanceList(studentFilters)
         ]);
         
         setApiTeacherAttendance(teacherResponse.data.data || []);
         setApiStudentAttendance(studentResponse.data.data || []);
         
-        // Debug logging
-        console.log('Teacher attendance data:', teacherResponse.data);
-        console.log('Student attendance data:', studentResponse.data);
+        // Set pagination info from API response
+        if (teacherResponse.data.totalPages !== undefined) {
+          setTeacherTotalPages(teacherResponse.data.totalPages);
+        } else if (teacherResponse.data.total !== undefined) {
+          setTeacherTotalPages(Math.ceil(teacherResponse.data.total / pageSize));
+        }
+        setTeacherTotalItems(teacherResponse.data.totalItems || teacherResponse.data.total || 0);
         
-        // Use student response for pagination info (they should be the same)
-        setTotalPages(Math.ceil((studentResponse.data.total || 0) / pageSize));
-        setTotalItems((teacherResponse.data.total || 0) + (studentResponse.data.total || 0));
+        if (studentResponse.data.totalPages !== undefined) {
+          setStudentTotalPages(studentResponse.data.totalPages);
+        } else if (studentResponse.data.total !== undefined) {
+          setStudentTotalPages(Math.ceil(studentResponse.data.total / pageSize));
+        }
+        setStudentTotalItems(studentResponse.data.totalItems || studentResponse.data.total || 0);
         
       } catch (error) {
         console.error('Failed to fetch attendance:', error);
@@ -90,7 +121,7 @@ const Attendance = () => {
     };
 
     fetchAttendance();
-  }, [currentPage, filters]);
+  }, [teacherPage, studentPage, filters]);
 
   const handleExport = () => {
     toast.success('Export generated successfully');
@@ -102,24 +133,44 @@ const Attendance = () => {
     setAttendanceChanges({});
     setEditMode(false);
     
-    // Refresh data
-    const baseFilters: any = {
-      page: currentPage,
+    // Refresh data with current page numbers
+    const teacherFilters: any = {
+      page: teacherPage,
       pageSize,
+      personType: 'teacher',
+    };
+    
+    const studentFilters: any = {
+      page: studentPage,
+      pageSize,
+      personType: 'student',
     };
     
     if (filters.sessionId) {
-      baseFilters.sessionId = filters.sessionId;
+      teacherFilters.sessionId = filters.sessionId;
+      studentFilters.sessionId = filters.sessionId;
     }
-    if (filters.division) baseFilters.divisionId = filters.division;
-    if (filters.district) baseFilters.districtId = filters.district;
-    if (filters.tehsil) baseFilters.tehsilId = filters.tehsil;
-    if (filters.school) baseFilters.schoolId = filters.school;
+    if (filters.division) {
+      teacherFilters.divisionId = filters.division;
+      studentFilters.divisionId = filters.division;
+    }
+    if (filters.district) {
+      teacherFilters.districtId = filters.district;
+      studentFilters.districtId = filters.district;
+    }
+    if (filters.tehsil) {
+      teacherFilters.tehsilId = filters.tehsil;
+      studentFilters.tehsilId = filters.tehsil;
+    }
+    if (filters.school) {
+      teacherFilters.schoolId = filters.school;
+      studentFilters.schoolId = filters.school;
+    }
     
     try {
       const [teacherResponse, studentResponse] = await Promise.all([
-        getAttendanceList({ ...baseFilters, personType: 'teacher' }),
-        getAttendanceList({ ...baseFilters, personType: 'student' })
+        getAttendanceList(teacherFilters),
+        getAttendanceList(studentFilters)
       ]);
       setApiTeacherAttendance(teacherResponse.data.data || []);
       setApiStudentAttendance(studentResponse.data.data || []);
@@ -145,28 +196,18 @@ const Attendance = () => {
     return attendanceChanges[recordId] !== undefined ? attendanceChanges[recordId] : originalStatus;
   };
 
-  const teacherAttendance = apiTeacherAttendance;
-  const studentAttendance = apiStudentAttendance;
-
-  const {
-    items: paginatedTeacherAttendance,
-    page: teacherPage,
-    setPage: setTeacherPage,
-    totalPages: teacherTotalPages,
-    startIndex: teacherStart,
-    endIndex: teacherEnd,
-    totalItems: teacherTotal,
-  } = usePagination(teacherAttendance, { initialPageSize: 10 });
-
-  const {
-    items: paginatedStudentAttendance,
-    page: studentPage,
-    setPage: setStudentPage,
-    totalPages: studentTotalPages,
-    startIndex: studentStart,
-    endIndex: studentEnd,
-    totalItems: studentTotal,
-  } = usePagination(studentAttendance, { initialPageSize: 10 });
+  // Calculate display indices for pagination info
+  const teacherStart = teacherTotalItems > 0 ? (teacherPage - 1) * pageSize + 1 : 0;
+  const teacherEnd = Math.min(teacherPage * pageSize, teacherTotalItems);
+  
+  const studentStart = studentTotalItems > 0 ? (studentPage - 1) * pageSize + 1 : 0;
+  const studentEnd = Math.min(studentPage * pageSize, studentTotalItems);
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setTeacherPage(1);
+    setStudentPage(1);
+  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school]);
 
   if (isLoading) {
     return (
@@ -245,12 +286,12 @@ const Attendance = () => {
             <CardContent>
               {isMobile ? (
                 <div className="space-y-3">
-                  {paginatedTeacherAttendance.length === 0 ? (
+                  {apiTeacherAttendance.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
                       {isLoading ? 'Loading teacher attendance...' : 'No teacher attendance records found for the selected filters.'}
                     </div>
                   ) : (
-                    paginatedTeacherAttendance.map(att => {
+                    apiTeacherAttendance.map(att => {
                       const currentStatus = getAttendanceStatus(att.id, att.present);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
                       
@@ -304,14 +345,14 @@ const Attendance = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedTeacherAttendance.length === 0 ? (
+                  {apiTeacherAttendance.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={editMode ? 6 : 5} className="text-center text-muted-foreground py-8">
                         {isLoading ? 'Loading teacher attendance...' : 'No teacher attendance records found for the selected filters.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedTeacherAttendance.map(att => {
+                    apiTeacherAttendance.map(att => {
                       const currentStatus = getAttendanceStatus(att.id, att.present);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
                       
@@ -350,8 +391,8 @@ const Attendance = () => {
                 totalPages={teacherTotalPages}
                 onPageChange={setTeacherPage}
                 pageInfo={
-                  teacherTotal > 0
-                    ? `Showing ${teacherStart}-${teacherEnd} of ${teacherTotal} records`
+                  teacherTotalItems > 0
+                    ? `Showing ${teacherStart}-${teacherEnd} of ${teacherTotalItems.toLocaleString()} records`
                     : undefined
                 }
                 className="mt-6"
@@ -368,12 +409,12 @@ const Attendance = () => {
             <CardContent>
               {isMobile ? (
                 <div className="space-y-3">
-                  {paginatedStudentAttendance.length === 0 ? (
+                  {apiStudentAttendance.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
                       {isLoading ? 'Loading student attendance...' : 'No student attendance records found for the selected filters.'}
                     </div>
                   ) : (
-                    paginatedStudentAttendance.map(att => {
+                    apiStudentAttendance.map(att => {
                       const currentStatus = getAttendanceStatus(att.id, att.present);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
                       
@@ -429,14 +470,14 @@ const Attendance = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedStudentAttendance.length === 0 ? (
+                  {apiStudentAttendance.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={editMode ? 7 : 6} className="text-center text-muted-foreground py-8">
                         {isLoading ? 'Loading student attendance...' : 'No student attendance records found for the selected filters.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedStudentAttendance.map(att => {
+                    apiStudentAttendance.map(att => {
                       const currentStatus = getAttendanceStatus(att.id, att.present);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
                       
@@ -476,8 +517,8 @@ const Attendance = () => {
                 totalPages={studentTotalPages}
                 onPageChange={setStudentPage}
                 pageInfo={
-                  studentTotal > 0
-                    ? `Showing ${studentStart}-${studentEnd} of ${studentTotal} records`
+                  studentTotalItems > 0
+                    ? `Showing ${studentStart}-${studentEnd} of ${studentTotalItems.toLocaleString()} records`
                     : undefined
                 }
                 className="mt-6"
