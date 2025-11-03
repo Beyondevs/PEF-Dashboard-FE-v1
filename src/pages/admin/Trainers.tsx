@@ -162,6 +162,9 @@ export default function Trainers() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
+
+
+          
         </div>
 
         {canEdit() && (
