@@ -30,12 +30,12 @@ const Repository = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between flex-wrap">
+        <div className="mb-mobile-2">
           <h1 className="text-3xl font-bold text-foreground">Training Materials Repository</h1>
           <p className="text-muted-foreground">Access and manage training resources</p>
         </div>
-        <Button onClick={handleAddResource}>
+        <Button className="mb-mobile-2" onClick={handleAddResource}>
           <Plus className="h-4 w-4 mr-2" />
           Add Resource
         </Button>

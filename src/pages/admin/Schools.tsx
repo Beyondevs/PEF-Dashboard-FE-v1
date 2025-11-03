@@ -186,7 +186,7 @@ export default function Schools() {
         <p className="text-muted-foreground mt-1">Manage schools and their details</p>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center flex-wrap mb-6">
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -355,12 +355,12 @@ export default function Schools() {
 
       {/* Pagination */}
       {pagination.total > 0 && (
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between flex-wrap mt-4">
+          <div className="text-sm text-muted-foreground mb-4">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} schools
             {searchTerm && ` (${filteredSchools.length} filtered)`}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"

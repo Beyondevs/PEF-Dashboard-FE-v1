@@ -386,12 +386,12 @@ export default function Teachers() {
 
       {/* Pagination */}
       {pagination.total > 0 && (
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between flex-wrap mt-4">
+          <div className="text-sm text-muted-foreground mb-4">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} teachers
             {searchTerm && ` (${filteredTeachers.length} filtered)`}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
