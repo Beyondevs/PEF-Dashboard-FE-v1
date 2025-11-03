@@ -2,15 +2,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import LoginForm from '@/components/LoginForm';
-
 const Login = () => {
   const { isLoading } = useAuth();
   const navigate = useNavigate();
-
   const handleLoginSuccess = () => {
     navigate('/dashboard');
   };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center">
@@ -21,21 +18,19 @@ const Login = () => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-blue-600 flex items-center justify-center p-4">
       {/* White square with rounded corners */}
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6">
           {/* Left side - Image */}
-          <div className="flex items-center justify-start pr-0">
+          <div className="flex items-center hidden sm:block justify-start pr-0">
             <img
               src="/Participant%20Manual.webp"
               alt="PEF Training"
-              className="w-full h-full max-w-md max-h-[600px] object-cover"
+              className="w-full h-full max-h-[600px] object-cover"
             />
           </div>
-
           {/* Right side - Logos and Login form */}
           <div className="flex flex-col justify-center">
             {/* Logo section */}
@@ -59,7 +54,6 @@ const Login = () => {
                 Monitoring & Management System
               </p>
             </div>
-
             {/* Login form */}
             <Card className="border-2 border-gray-200 shadow-sm">
               <CardHeader className="text-center pb-3 md:pb-4">
@@ -78,5 +72,4 @@ const Login = () => {
     </div>
   );
 };
-
 export default Login;
