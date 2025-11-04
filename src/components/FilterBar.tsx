@@ -144,10 +144,31 @@ export const FilterBar = () => {
           if (filters.district) params.districtId = filters.district;
           if (filters.tehsil) params.tehsilId = filters.tehsil;
           if (filters.school) params.schoolId = filters.school;
+        } else {
+          // For trainers, filter to only show today's sessions
+          const today = new Date();
+          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+          const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+          params.from = todayStart.toISOString();
+          params.to = todayEnd.toISOString();
         }
 
         const response = await getSessions(params);
-        setSessions(response.data.data || []);
+        let fetchedSessions = response.data.data || [];
+        
+        // Additional client-side filtering for trainers (date-only comparison)
+        if (isTrainer) {
+          const today = new Date();
+          const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          
+          fetchedSessions = fetchedSessions.filter((session: Session) => {
+            const sessionDate = new Date(session.date);
+            const sessionDateOnly = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate());
+            return sessionDateOnly.getTime() === todayDateOnly.getTime();
+          });
+        }
+        
+        setSessions(fetchedSessions);
       } catch (error) {
         console.error('Failed to fetch sessions:', error);
         setSessions([]);

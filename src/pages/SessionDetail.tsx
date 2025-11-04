@@ -119,21 +119,28 @@ const SessionDetail = () => {
   const trainer = useMemo(() => session?.trainer || trainers.find(t => t.id === session?.trainerId), [session]);
 
   // Check if session date is today (for trainer restrictions)
+  // Uses date-only comparison (ignoring time) to ensure it works for entire current day
   const isSessionToday = useMemo(() => {
     if (!session?.date) return false;
     const sessionDate = new Date(session.date);
     const today = new Date();
-    return (
-      sessionDate.getFullYear() === today.getFullYear() &&
-      sessionDate.getMonth() === today.getMonth() &&
-      sessionDate.getDate() === today.getDate()
-    );
+    
+    // Normalize both dates to midnight (start of day) for accurate date-only comparison
+    const sessionDateOnly = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate());
+    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    return sessionDateOnly.getTime() === todayDateOnly.getTime();
   }, [session?.date]);
 
   // Check if trainer can mark attendance (trainers can only mark for today's sessions)
+  // For today's sessions, trainers can mark attendance multiple times throughout the day
   const canTrainerMarkAttendance = useMemo(() => {
     if (role === 'admin') return true;
-    if (role === 'trainer') return isSessionToday;
+    if (role === 'trainer') {
+      // Trainers can mark attendance multiple times for today's sessions
+      // Only restrict future/past dates, not current date
+      return isSessionToday;
+    }
     return false;
   }, [role, isSessionToday]);
 

@@ -26,6 +26,7 @@ const Attendance = () => {
   const isMobile = useIsMobile();
   const [editMode, setEditMode] = useState(false);
   const [attendanceChanges, setAttendanceChanges] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState('teachers');
   
   // API data state
   const [apiTeacherAttendance, setApiTeacherAttendance] = useState<any[]>([]);
@@ -266,7 +267,7 @@ const Attendance = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="teachers" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="teachers" className="text-sm sm:text-base">
             <span className="hidden sm:inline">Teacher Attendance</span>
