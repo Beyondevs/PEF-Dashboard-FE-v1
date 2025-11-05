@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -24,6 +26,8 @@ import * as api from '@/lib/api';
 
 export default function Trainers() {
   const [trainers, setTrainers] = useState([]);
+  const [schools, setSchools] = useState([]);
+  const [schoolSearchTerm, setSchoolSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -35,7 +39,7 @@ export default function Trainers() {
     phone: '',
     cnic: '',
     password: '',
-    assignedDivisions: [] as string[],
+    assignedSchools: [] as string[],
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -44,6 +48,32 @@ export default function Trainers() {
   });
   const { canEdit, canDelete } = useAuth();
   const { toast } = useToast();
+
+  // Fetch schools on component mount (with pagination to get all)
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        // Fetch all schools with pagination
+        let allSchools: any[] = [];
+        let page = 1;
+        const pageSize = 100;
+        let hasMore = true;
+
+        while (hasMore) {
+          const response = await api.getSchools({ page, pageSize });
+          const schoolsData = response.data.data || [];
+          allSchools = [...allSchools, ...schoolsData];
+          hasMore = schoolsData.length === pageSize;
+          page++;
+        }
+
+        setSchools(allSchools);
+      } catch (error) {
+        console.error('Failed to load schools', error);
+      }
+    };
+    fetchSchools();
+  }, []);
 
   // Debounce search term (300ms delay)
   useEffect(() => {
@@ -103,7 +133,7 @@ export default function Trainers() {
       }
       setIsDialogOpen(false);
       setEditingTrainer(null);
-      setFormData({ name: '', email: '', phone: '', cnic: '', password: '', assignedDivisions: [] });
+      setFormData({ name: '', email: '', phone: '', cnic: '', password: '', assignedSchools: [] });
       fetchTrainers();
     } catch (error) {
       toast({
@@ -129,6 +159,31 @@ export default function Trainers() {
     }
   };
 
+  const handleSchoolToggle = (schoolId: string) => {
+    setFormData(prev => {
+      const current = prev.assignedSchools || [];
+      if (current.includes(schoolId)) {
+        return { ...prev, assignedSchools: current.filter(id => id !== schoolId) };
+      } else {
+        return { ...prev, assignedSchools: [...current, schoolId] };
+      }
+    });
+  };
+
+  const getSchoolName = (schoolId: string) => {
+    const school = schools.find((s: any) => s.id === schoolId);
+    return school ? `${school.name} (${school.emisCode})` : schoolId;
+  };
+
+  const filteredSchools = schools.filter((school: any) => {
+    if (!schoolSearchTerm.trim()) return true;
+    const search = schoolSearchTerm.toLowerCase();
+    return (
+      school.name?.toLowerCase().includes(search) ||
+      school.emisCode?.toLowerCase().includes(search)
+    );
+  });
+
   const openEditDialog = (trainer: any) => {
     setEditingTrainer(trainer);
     setFormData({
@@ -137,14 +192,15 @@ export default function Trainers() {
       phone: trainer.phone || '',
       cnic: trainer.trainerProfile?.cnic || '',
       password: '',
-      assignedDivisions: trainer.trainerProfile?.assignedDivisions || [],
+      assignedSchools: trainer.trainerProfile?.assignedSchools || [],
     });
     setIsDialogOpen(true);
   };
 
   const openCreateDialog = () => {
     setEditingTrainer(null);
-    setFormData({ name: '', email: '', phone: '', cnic: '', password: '', assignedDivisions: [] });
+    setSchoolSearchTerm('');
+    setFormData({ name: '', email: '', phone: '', cnic: '', password: '', assignedSchools: [] });
     setIsDialogOpen(true);
   };
 
@@ -221,6 +277,55 @@ export default function Trainers() {
                     onChange={(e) => setFormData({ ...formData, cnic: e.target.value })}
                   />
                 </div>
+                <div>
+                  <Label>Assigned Schools</Label>
+                  <div className="mb-2">
+                    <Input
+                      placeholder="Search schools by name or EMIS code..."
+                      value={schoolSearchTerm}
+                      onChange={(e) => setSchoolSearchTerm(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+                    {schools.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Loading schools...</p>
+                    ) : filteredSchools.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No schools found matching your search</p>
+                    ) : (
+                      filteredSchools.map((school: any) => (
+                        <div key={school.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`school-${school.id}`}
+                            checked={formData.assignedSchools.includes(school.id)}
+                            onCheckedChange={() => handleSchoolToggle(school.id)}
+                          />
+                          <label
+                            htmlFor={`school-${school.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                          >
+                            <div className="flex flex-col">
+                              <span>{school.name}</span>
+                              <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
+                            </div>
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {formData.assignedSchools.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {formData.assignedSchools.map((schoolId) => (
+                        <Badge key={schoolId} variant="secondary">
+                          {getSchoolName(schoolId)}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Select one or more schools this trainer will be assigned to
+                  </p>
+                </div>
                 {!editingTrainer && (
                   <div>
                     <Label>Password</Label>
@@ -247,7 +352,7 @@ export default function Trainers() {
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>CNIC</TableHead>
-              <TableHead>Divisions</TableHead>
+              <TableHead>Schools</TableHead>
               {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
@@ -261,13 +366,34 @@ export default function Trainers() {
                 <TableCell colSpan={6} className="text-center">No trainers found</TableCell>
               </TableRow>
             ) : (
-              trainers.map((trainer: any) => (
+              trainers.map((trainer: any) => {
+                const assignedSchools = trainer.trainerProfile?.assignedSchools || [];
+                const schoolNames = assignedSchools
+                  .map((schoolId: string) => {
+                    const school = schools.find((s: any) => s.id === schoolId);
+                    return school ? `${school.name} (${school.emisCode})` : schoolId;
+                  })
+                  .filter(Boolean);
+                
+                return (
                 <TableRow key={trainer.id}>
                   <TableCell>{trainer.trainerProfile?.name || 'N/A'}</TableCell>
                   <TableCell>{trainer.email}</TableCell>
                   <TableCell>{trainer.phone || 'N/A'}</TableCell>
                   <TableCell>{trainer.trainerProfile?.cnic || 'N/A'}</TableCell>
-                  <TableCell>{trainer.trainerProfile?.assignedDivisions?.length || 0}</TableCell>
+                  <TableCell>
+                    {schoolNames.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 max-w-md">
+                        {schoolNames.map((name: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {name}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">None</span>
+                    )}
+                  </TableCell>
                   {(canEdit() || canDelete()) && (
                     <TableCell>
                       <div className="flex gap-2">
@@ -293,7 +419,8 @@ export default function Trainers() {
                     </TableCell>
                   )}
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>

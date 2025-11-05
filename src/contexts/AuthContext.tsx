@@ -237,7 +237,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout();
         // Don't redirect if already on login page
         if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        window.location.href = '/login';
         }
       }
     };

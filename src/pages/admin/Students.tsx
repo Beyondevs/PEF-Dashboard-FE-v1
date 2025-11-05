@@ -383,18 +383,18 @@ export default function Students() {
                       </Badge>
                     </TableCell>
                     {(canEdit() || canDelete() || isAdmin()) && (
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {canEdit() && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditDialog(student)}
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {canEdit() && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditDialog(student)}
                               disabled={isDisabled}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                           {isAdmin() && student.userId && (
                             <>
                               {student.user?.isActive ? (
@@ -418,19 +418,19 @@ export default function Students() {
                               )}
                             </>
                           )}
-                          {canDelete() && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDelete(student.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
+                        {canDelete() && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(student.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
                 );
               })
             )}
