@@ -129,12 +129,108 @@ const Attendance = () => {
   };
 
   const handleSaveChanges = async () => {
-    // No bulk endpoint without sessionId; toggles already persisted per-record.
-    toast.success(`Saved ${Object.keys(attendanceChanges).length} change(s)`);
+    const changes = Object.keys(attendanceChanges);
+    if (changes.length === 0) {
+      toast.info('No changes to save');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Batch API calls for all pending changes
+      const savePromises = changes.map(recordId => 
+        toggleAttendance(recordId).catch(error => {
+          console.error(`Failed to save attendance for record ${recordId}:`, error);
+          return { error: true, recordId };
+        })
+      );
+
+      const results = await Promise.all(savePromises);
+      
+      // Check for errors
+      const errors = results.filter(r => r && (r as any).error);
+      const successCount = results.length - errors.length;
+
+      if (errors.length > 0) {
+        toast.error(`Failed to save ${errors.length} of ${changes.length} changes. Please try again.`);
+        // Don't clear changes if there were errors
+        return;
+      }
+
+      // All changes saved successfully
+      toast.success(`Successfully saved ${successCount} change(s)`);
+      setAttendanceChanges({});
+      setEditMode(false);
+      
+      // Refresh data with current page numbers
+      const teacherFilters: any = {
+        page: teacherPage,
+        pageSize,
+        personType: 'teacher',
+      };
+      
+      const studentFilters: any = {
+        page: studentPage,
+        pageSize,
+        personType: 'student',
+      };
+      
+      if (filters.sessionId) {
+        teacherFilters.sessionId = filters.sessionId;
+        studentFilters.sessionId = filters.sessionId;
+      }
+      if (filters.division) {
+        teacherFilters.divisionId = filters.division;
+        studentFilters.divisionId = filters.division;
+      }
+      if (filters.district) {
+        teacherFilters.districtId = filters.district;
+        studentFilters.districtId = filters.district;
+      }
+      if (filters.tehsil) {
+        teacherFilters.tehsilId = filters.tehsil;
+        studentFilters.tehsilId = filters.tehsil;
+      }
+      if (filters.school) {
+        teacherFilters.schoolId = filters.school;
+        studentFilters.schoolId = filters.school;
+      }
+      
+      try {
+        const [teacherResponse, studentResponse] = await Promise.all([
+          getAttendanceList(teacherFilters),
+          getAttendanceList(studentFilters)
+        ]);
+        setApiTeacherAttendance(teacherResponse.data.data || []);
+        setApiStudentAttendance(studentResponse.data.data || []);
+      } catch (e) {
+        // Ignore refresh error to avoid UX interruption
+        console.error('Failed to refresh attendance data:', e);
+      }
+    } catch (error) {
+      console.error('Failed to save changes:', error);
+      toast.error('Failed to save changes. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleAttendance = (recordId: string, currentStatus: boolean) => {
+    // Only update local state - no API call
+    // Changes will be saved when "Save Changes" button is clicked
+    setAttendanceChanges(prev => ({
+      ...prev,
+      [recordId]: !currentStatus,
+    }));
+  };
+
+  const handleCancelEdit = () => {
+    // Discard all unsaved changes and reset to last saved state
     setAttendanceChanges({});
     setEditMode(false);
     
-    // Refresh data with current page numbers
+    // Refresh data to ensure UI shows last saved state
     const teacherFilters: any = {
       page: teacherPage,
       pageSize,
@@ -168,29 +264,20 @@ const Attendance = () => {
       studentFilters.schoolId = filters.school;
     }
     
-    try {
-      const [teacherResponse, studentResponse] = await Promise.all([
-        getAttendanceList(teacherFilters),
-        getAttendanceList(studentFilters)
-      ]);
-      setApiTeacherAttendance(teacherResponse.data.data || []);
-      setApiStudentAttendance(studentResponse.data.data || []);
-    } catch (e) {
-      // Ignore refresh error to avoid UX interruption
-    }
-  };
-
-  const handleToggleAttendance = async (recordId: string, currentStatus: boolean) => {
-    try {
-      await toggleAttendance(recordId);
-      setAttendanceChanges(prev => ({
-        ...prev,
-        [recordId]: !currentStatus,
-      }));
-    } catch (error) {
-      console.error('Failed to toggle attendance:', error);
-      toast.error('Failed to update attendance. Please try again.');
-    }
+    // Silently refresh data in background
+    Promise.all([
+      getAttendanceList(teacherFilters).catch(() => null),
+      getAttendanceList(studentFilters).catch(() => null)
+    ]).then(([teacherResponse, studentResponse]) => {
+      if (teacherResponse?.data) {
+        setApiTeacherAttendance(teacherResponse.data.data || []);
+      }
+      if (studentResponse?.data) {
+        setApiStudentAttendance(studentResponse.data.data || []);
+      }
+    }).catch(() => {
+      // Ignore refresh errors
+    });
   };
 
   const getAttendanceStatus = (recordId: string, originalStatus: boolean) => {
@@ -247,7 +334,7 @@ const Attendance = () => {
         <div className="flex flex-wrap gap-2">
           <Button 
             variant={editMode ? 'default' : 'outline'}
-            onClick={() => setEditMode(!editMode)}
+            onClick={editMode ? handleCancelEdit : () => setEditMode(true)}
             className="flex-1 sm:flex-initial"
           >
             <span className="hidden sm:inline">{editMode ? 'Cancel Edit' : 'Edit Mode'}</span>

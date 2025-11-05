@@ -32,6 +32,7 @@ export default function Teachers() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -50,8 +51,22 @@ export default function Teachers() {
   const { canEdit, canDelete } = useAuth();
   const { toast } = useToast();
 
+  // Debounce search term (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch teachers when filters, search, or page changes
   useEffect(() => {
     fetchTeachers();
+  }, [filters.division, filters.district, filters.tehsil, filters.school, debouncedSearchTerm, pagination.page]);
+
+  useEffect(() => {
     fetchSchools();
   }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
@@ -68,6 +83,11 @@ export default function Teachers() {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      
+      // Add search parameter if provided
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        params.search = debouncedSearchTerm.trim();
+      }
       
       const response = await api.getTeachers(params);
       setTeachers(response.data.data);
@@ -153,22 +173,11 @@ export default function Teachers() {
     setIsDialogOpen(true);
   };
 
-  const handleSearch = () => {
-    // Search is now client-side only
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
-
   const handlePageChange = (newPage: number) => {
-    fetchTeachers(newPage);
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
-
-  // Client-side filtering
-  const filteredTeachers = teachers.filter((teacher: any) =>
-    teacher.teacherProfile?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="p-4 sm:p-6">
@@ -185,13 +194,9 @@ export default function Teachers() {
               placeholder="Search teachers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               className="pl-10"
             />
           </div>
-          <Button onClick={handleSearch} variant="outline">
-            Search
-          </Button>
         </div>
 
         {canEdit() && (
@@ -340,12 +345,12 @@ export default function Teachers() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center">Loading...</TableCell>
               </TableRow>
-            ) : filteredTeachers.length === 0 ? (
+            ) : teachers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center">No teachers found</TableCell>
               </TableRow>
             ) : (
-              filteredTeachers.map((teacher: any) => (
+              teachers.map((teacher: any) => (
                 <TableRow key={teacher.id}>
                   <TableCell>{teacher.teacherProfile?.name || 'N/A'}</TableCell>
                   <TableCell>{teacher.email}</TableCell>
@@ -389,7 +394,7 @@ export default function Teachers() {
         <div className="flex items-center justify-between flex-wrap mt-4">
           <div className="text-sm text-muted-foreground mb-4">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} teachers
-            {searchTerm && ` (${filteredTeachers.length} filtered)`}
+            {searchTerm && ` (filtered)`}
           </div>
           <div className="flex items-center flex-wrap gap-2">
             <Button

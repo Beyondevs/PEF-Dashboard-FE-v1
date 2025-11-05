@@ -29,6 +29,7 @@ export default function Students() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -46,8 +47,22 @@ export default function Students() {
   const { canEdit, canDelete } = useAuth();
   const { toast } = useToast();
 
+  // Debounce search term (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch students when filters, search, or page changes
   useEffect(() => {
     fetchStudents();
+  }, [filters.division, filters.district, filters.tehsil, filters.school, debouncedSearchTerm, pagination.page]);
+
+  useEffect(() => {
     fetchSchools();
   }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
@@ -64,6 +79,11 @@ export default function Students() {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      
+      // Add search parameter if provided
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        params.search = debouncedSearchTerm.trim();
+      }
       
       const response = await api.getStudents(params);
       setStudents(response.data.data);
@@ -153,22 +173,11 @@ export default function Students() {
     setIsDialogOpen(true);
   };
 
-  const handleSearch = () => {
-    // Search is now client-side only
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
-
   const handlePageChange = (newPage: number) => {
-    fetchStudents(newPage);
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
-
-  // Client-side filtering
-  const filteredStudents = students.filter((student: any) =>
-    student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.rollNo?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="p-6">
@@ -185,13 +194,9 @@ export default function Students() {
               placeholder="Search students..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               className="pl-10"
             />
           </div>
-          <Button onClick={handleSearch} variant="outline">
-            Search
-          </Button>
         </div>
 
         {canEdit() && (
@@ -282,12 +287,12 @@ export default function Students() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center">Loading...</TableCell>
               </TableRow>
-            ) : filteredStudents.length === 0 ? (
+            ) : students.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center">No students found</TableCell>
               </TableRow>
             ) : (
-              filteredStudents.map((student: any) => (
+              students.map((student: any) => (
                 <TableRow key={student.id}>
                   <TableCell>{student.name}</TableCell>
                   <TableCell>{student.rollNo || 'N/A'}</TableCell>
@@ -330,7 +335,7 @@ export default function Students() {
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} students
-            {searchTerm && ` (${filteredStudents.length} filtered)`}
+            {searchTerm && ` (filtered)`}
           </div>
           <div className="flex items-center gap-2">
             <Button

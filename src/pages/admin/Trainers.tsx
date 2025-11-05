@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ export default function Trainers() {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -44,17 +45,30 @@ export default function Trainers() {
   const { canEdit, canDelete } = useAuth();
   const { toast } = useToast();
 
+  // Debounce search term (300ms delay)
   useEffect(() => {
-    fetchTrainers();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
+    }, 300);
 
-  const fetchTrainers = async (page = pagination.page) => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchTrainers = useCallback(async (page = pagination.page) => {
     try {
       setLoading(true);
-      const response = await api.getTrainers({ 
+      const params: Record<string, string | number> = { 
         page, 
         pageSize: pagination.pageSize
-      });
+      };
+      
+      // Add search parameter if provided
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        params.search = debouncedSearchTerm.trim();
+      }
+      
+      const response = await api.getTrainers(params);
       setTrainers(response.data.data);
       setPagination(prev => ({
         ...prev,
@@ -71,7 +85,12 @@ export default function Trainers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearchTerm, pagination.pageSize]);
+
+  // Fetch trainers when component mounts, search changes, or page changes
+  useEffect(() => {
+    fetchTrainers(pagination.page);
+  }, [fetchTrainers, pagination.page]);
 
   const handleSave = async () => {
     try {
@@ -129,22 +148,11 @@ export default function Trainers() {
     setIsDialogOpen(true);
   };
 
-  const handleSearch = () => {
-    // Search is now client-side only
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
-
   const handlePageChange = (newPage: number) => {
-    fetchTrainers(newPage);
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
-
-  // Client-side filtering
-  const filteredTrainers = trainers.filter((trainer: any) =>
-    trainer.trainerProfile?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trainer.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="p-6">
@@ -248,12 +256,12 @@ export default function Trainers() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center">Loading...</TableCell>
               </TableRow>
-            ) : filteredTrainers.length === 0 ? (
+            ) : trainers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center">No trainers found</TableCell>
               </TableRow>
             ) : (
-              filteredTrainers.map((trainer: any) => (
+              trainers.map((trainer: any) => (
                 <TableRow key={trainer.id}>
                   <TableCell>{trainer.trainerProfile?.name || 'N/A'}</TableCell>
                   <TableCell>{trainer.email}</TableCell>
@@ -296,7 +304,7 @@ export default function Trainers() {
         <div className="flex items-center justify-between flex-wrap mt-4">
           <div className="text-sm text-muted-foreground mb-4">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} trainers
-            {searchTerm && ` (${filteredTrainers.length} filtered)`}
+            {searchTerm && ` (filtered)`}
           </div>
           <div className="flex items-center flex-wrap gap-2">
             <Button
