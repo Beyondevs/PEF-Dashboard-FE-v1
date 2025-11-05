@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Mail, Phone as PhoneIcon, CreditCard, School } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Mail, Phone as PhoneIcon, CreditCard, School, Ban, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCard } from '@/components/MobileCard';
 import {
@@ -48,7 +49,7 @@ export default function Teachers() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete } = useAuth();
+  const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
   // Debounce search term (300ms delay)
@@ -152,6 +153,45 @@ export default function Teachers() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleDisable = async (teacher: any) => {
+    if (!confirm(`Are you sure you want to disable ${teacher.teacherProfile?.name || 'this teacher'}? They will not be able to mark attendance or perform any actions.`)) return;
+    
+    try {
+      await api.updateTeacher(teacher.id, { isActive: false });
+      toast({ title: 'Success', description: `${teacher.teacherProfile?.name || 'Teacher'} has been disabled successfully` });
+      fetchTeachers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to disable teacher',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEnable = async (teacher: any) => {
+    if (!confirm(`Are you sure you want to enable ${teacher.teacherProfile?.name || 'this teacher'}? They will be able to mark attendance and perform actions again.`)) return;
+    
+    try {
+      await api.updateTeacher(teacher.id, { isActive: true });
+      toast({ title: 'Success', description: `${teacher.teacherProfile?.name || 'Teacher'} has been enabled successfully` });
+      fetchTeachers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to enable teacher',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getTeacherStatus = (teacher: any) => {
+    if (!teacher.isActive) {
+      return { label: 'Disabled', variant: 'destructive' as const };
+    }
+    return { label: 'Active', variant: 'default' as const };
   };
 
   const openEditDialog = (teacher: any) => {
@@ -283,32 +323,62 @@ export default function Teachers() {
         <div className="space-y-3">
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Loading...</div>
-          ) : filteredTeachers.length === 0 ? (
+          ) : teachers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No teachers found</div>
           ) : (
-            filteredTeachers.map((teacher: any) => (
+            teachers.map((teacher: any) => {
+              const status = getTeacherStatus(teacher);
+              const isDisabled = !teacher.isActive;
+              
+              return (
               <MobileCard
                 key={teacher.id}
                 title={teacher.teacherProfile?.name || 'N/A'}
-                subtitle={teacher.teacherProfile?.school?.name || 'N/A'}
+                subtitle={<Badge variant={status.variant} className="mt-1">{status.label}</Badge>}
                 metadata={[
                   { label: "Email", value: teacher.email, icon: <Mail className="h-3 w-3" /> },
                   { label: "Phone", value: teacher.phone || 'N/A', icon: <PhoneIcon className="h-3 w-3" /> },
                   { label: "CNIC", value: teacher.teacherProfile?.cnic || 'N/A', icon: <CreditCard className="h-3 w-3" /> },
                   { label: "School", value: teacher.teacherProfile?.school?.name || 'N/A', icon: <School className="h-3 w-3" /> }
                 ]}
-                actions={(canEdit() || canDelete()) && (
-                  <div className="flex gap-2">
+                actions={(canEdit() || canDelete() || isAdmin()) && (
+                  <div className="flex gap-2 flex-wrap">
                     {canEdit() && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => openEditDialog(teacher)}
+                        disabled={isDisabled}
                         className="flex-1"
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
+                    )}
+                    {isAdmin() && (
+                      <>
+                        {teacher.isActive ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDisable(teacher)}
+                            className="flex-1"
+                          >
+                            <Ban className="h-4 w-4 mr-2" />
+                            Disable
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEnable(teacher)}
+                            className="flex-1"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Enable
+                          </Button>
+                        )}
+                      </>
                     )}
                     {canDelete() && (
                       <Button
@@ -324,7 +394,8 @@ export default function Teachers() {
                   </div>
                 )}
               />
-            ))
+              );
+            })
           )}
         </div>
       ) : (
@@ -337,52 +408,100 @@ export default function Teachers() {
               <TableHead>Phone</TableHead>
               <TableHead>CNIC</TableHead>
               <TableHead>School</TableHead>
-              {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
+              <TableHead>Status</TableHead>
+              {(canEdit() || canDelete() || isAdmin()) && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : teachers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">No teachers found</TableCell>
+                <TableCell colSpan={7} className="text-center">No teachers found</TableCell>
               </TableRow>
             ) : (
-              teachers.map((teacher: any) => (
-                <TableRow key={teacher.id}>
-                  <TableCell>{teacher.teacherProfile?.name || 'N/A'}</TableCell>
-                  <TableCell>{teacher.email}</TableCell>
-                  <TableCell>{teacher.phone || 'N/A'}</TableCell>
-                  <TableCell>{teacher.teacherProfile?.cnic || 'N/A'}</TableCell>
-                  <TableCell>{teacher.teacherProfile?.school?.name || 'N/A'}</TableCell>
-                  {(canEdit() || canDelete()) && (
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {canEdit() && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(teacher)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {canDelete() && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(teacher.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+              teachers.map((teacher: any) => {
+                const status = getTeacherStatus(teacher);
+                const isDisabled = !teacher.isActive;
+                
+                return (
+                  <TableRow 
+                    key={teacher.id}
+                    className={isDisabled ? 'opacity-60' : ''}
+                  >
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.teacherProfile?.name || 'N/A'}
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.email}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.phone || 'N/A'}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.teacherProfile?.cnic || 'N/A'}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.teacherProfile?.school?.name || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={status.variant}>
+                        {status.label}
+                      </Badge>
+                    </TableCell>
+                    {(canEdit() || canDelete() || isAdmin()) && (
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {canEdit() && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(teacher)}
+                              disabled={isDisabled}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {isAdmin() && (
+                            <>
+                              {teacher.isActive ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDisable(teacher)}
+                                  title="Disable teacher"
+                                >
+                                  <Ban className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEnable(teacher)}
+                                  title="Enable teacher"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          {canDelete() && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(teacher.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Ban, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -44,7 +45,7 @@ export default function Students() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete } = useAuth();
+  const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
   // Debounce search term (300ms delay)
@@ -153,6 +154,65 @@ export default function Students() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleDisable = async (student: any) => {
+    if (!student.userId) {
+      toast({
+        title: 'Error',
+        description: 'This student does not have a user account to disable',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to disable ${student.name}? They will not be able to mark attendance or perform any actions.`)) return;
+    
+    try {
+      await api.updateStudent(student.id, { isActive: false });
+      toast({ title: 'Success', description: `${student.name} has been disabled successfully` });
+      fetchStudents();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to disable student',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEnable = async (student: any) => {
+    if (!student.userId) {
+      toast({
+        title: 'Error',
+        description: 'This student does not have a user account to enable',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to enable ${student.name}? They will be able to mark attendance and perform actions again.`)) return;
+    
+    try {
+      await api.updateStudent(student.id, { isActive: true });
+      toast({ title: 'Success', description: `${student.name} has been enabled successfully` });
+      fetchStudents();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to enable student',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getStudentStatus = (student: any) => {
+    if (!student.userId || !student.user) {
+      return { label: 'No Account', variant: 'secondary' as const };
+    }
+    return student.user.isActive 
+      ? { label: 'Active', variant: 'default' as const }
+      : { label: 'Disabled', variant: 'destructive' as const };
   };
 
   const openEditDialog = (student: any) => {
@@ -279,52 +339,100 @@ export default function Students() {
               <TableHead>Grade</TableHead>
               <TableHead>Gender</TableHead>
               <TableHead>School</TableHead>
-              {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
+              <TableHead>Status</TableHead>
+              {(canEdit() || canDelete() || isAdmin()) && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : students.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">No students found</TableCell>
+                <TableCell colSpan={7} className="text-center">No students found</TableCell>
               </TableRow>
             ) : (
-              students.map((student: any) => (
-                <TableRow key={student.id}>
-                  <TableCell>{student.name}</TableCell>
-                  <TableCell>{student.rollNo || 'N/A'}</TableCell>
-                  <TableCell>{student.grade}</TableCell>
-                  <TableCell className="capitalize">{student.gender}</TableCell>
-                  <TableCell>{student.school?.name || 'N/A'}</TableCell>
-                  {(canEdit() || canDelete()) && (
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {canEdit() && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(student)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {canDelete() && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(student.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+              students.map((student: any) => {
+                const status = getStudentStatus(student);
+                const isDisabled = student.userId && student.user && !student.user.isActive;
+                
+                return (
+                  <TableRow 
+                    key={student.id}
+                    className={isDisabled ? 'opacity-60' : ''}
+                  >
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {student.name}
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {student.rollNo || 'N/A'}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {student.grade}
+                    </TableCell>
+                    <TableCell className={`capitalize ${isDisabled ? 'text-muted-foreground' : ''}`}>
+                      {student.gender}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {student.school?.name || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={status.variant}>
+                        {status.label}
+                      </Badge>
+                    </TableCell>
+                    {(canEdit() || canDelete() || isAdmin()) && (
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {canEdit() && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(student)}
+                              disabled={isDisabled}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {isAdmin() && student.userId && (
+                            <>
+                              {student.user?.isActive ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDisable(student)}
+                                  title="Disable student"
+                                >
+                                  <Ban className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEnable(student)}
+                                  title="Enable student"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          {canDelete() && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(student.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

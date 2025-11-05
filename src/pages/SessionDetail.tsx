@@ -150,15 +150,21 @@ const SessionDetail = () => {
     }
     // Use API data if available, otherwise fall back to mock data
     if (session.sessionTeachers) {
-      return session.sessionTeachers.map(st => ({
-        id: st.teacher.id,
-        name: st.teacher.name,
-        cnic: st.teacher.cnic,
-        phone: st.teacher.phone,
-        email: st.teacher.email,
-        schoolId: st.teacher.schoolId,
-        rollNo: st.teacher.rollNo || '',
-      }));
+      return session.sessionTeachers
+        .filter(st => {
+          // Filter out disabled teachers - only include active teachers
+          const teacher = st.teacher;
+          return teacher.user && teacher.user.isActive === true;
+        })
+        .map(st => ({
+          id: st.teacher.id,
+          name: st.teacher.name,
+          cnic: st.teacher.cnic,
+          phone: st.teacher.phone,
+          email: st.teacher.email,
+          schoolId: st.teacher.schoolId,
+          rollNo: st.teacher.rollNo || '',
+        }));
     }
     return teachers.filter(t => t.schoolId === session.schoolId);
   }, [session]);
@@ -169,14 +175,21 @@ const SessionDetail = () => {
     }
     // Use API data if available, otherwise fall back to mock data
     if (session.sessionStudents) {
-      return session.sessionStudents.map(ss => ({
-        id: ss.student.id,
-        name: ss.student.name,
-        gender: ss.student.gender,
-        grade: ss.student.grade,
-        schoolId: ss.student.schoolId,
-        rollNo: ss.student.rollNo,
-      }));
+      return session.sessionStudents
+        .filter(ss => {
+          // Filter out disabled students - only include active students or students without user accounts
+          const student = ss.student;
+          // Include if: no userId OR (has userId AND user exists AND isActive is true)
+          return !student.userId || (student.user && student.user.isActive === true);
+        })
+        .map(ss => ({
+          id: ss.student.id,
+          name: ss.student.name,
+          gender: ss.student.gender,
+          grade: ss.student.grade,
+          schoolId: ss.student.schoolId,
+          rollNo: ss.student.rollNo,
+        }));
     }
     return students.filter(s => s.schoolId === session.schoolId);
   }, [session]);
