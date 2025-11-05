@@ -204,6 +204,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Listen for session-expired events to guide UX and logout gracefully
   useEffect(() => {
     const onExpired = () => {
+      // Don't redirect if we're already on the login page
+      const currentPath = window.location.pathname;
+      if (currentPath === '/login') {
+        console.log('Already on login page, skipping redirect');
+        return;
+      }
+      
       // Preserve current route then logout
       const lastPath = window.location.pathname + window.location.search;
       try { localStorage.setItem('pef.lastPath', lastPath); } catch {}
@@ -228,7 +235,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (e.key === STORAGE_KEYS.userRole && e.newValue === null) {
         // Another tab logged out
         logout();
-        window.location.href = '/login';
+        // Don't redirect if already on login page
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     };
     window.addEventListener('storage', onStorage);

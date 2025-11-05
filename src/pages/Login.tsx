@@ -1,13 +1,65 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import LoginForm from '@/components/LoginForm';
+
 const Login = () => {
-  const { isLoading } = useAuth();
+  const { isLoading, role } = useAuth();
   const navigate = useNavigate();
-  const handleLoginSuccess = () => {
-    navigate('/dashboard');
-  };
+  const isNavigatingRef = useRef(false);
+  const isLoginAttemptInProgress = useRef(false);
+
+  // Global safety: Prevent form submissions on this page
+  useEffect(() => {
+    const preventFormSubmit = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'FORM') {
+        console.log('Preventing form submission');
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    };
+
+    // Prevent any form submissions
+    document.addEventListener('submit', preventFormSubmit, true);
+    
+    // Prevent Enter key from submitting forms
+    const preventEnterSubmit = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'FORM') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    };
+    
+    document.addEventListener('keydown', preventEnterSubmit, true);
+
+    return () => {
+      document.removeEventListener('submit', preventFormSubmit, true);
+      document.removeEventListener('keydown', preventEnterSubmit, true);
+    };
+  }, []);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (role && !isNavigatingRef.current && !isLoginAttemptInProgress.current) {
+      console.log('User already logged in, redirecting to dashboard');
+      isNavigatingRef.current = true;
+      navigate('/dashboard', { replace: true });
+    }
+  }, [role, navigate]);
+
+  const handleLoginSuccess = useCallback(() => {
+    console.log('Login successful, navigating to dashboard');
+    if (!isNavigatingRef.current) {
+      isNavigatingRef.current = true;
+      isLoginAttemptInProgress.current = false;
+      // Use replace to prevent back button from returning to login page
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f4674' }}>

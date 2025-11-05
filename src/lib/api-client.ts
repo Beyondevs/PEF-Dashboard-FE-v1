@@ -121,7 +121,8 @@ async function request<T>(
 
   if (!res.ok) {
     // If unauthorized, attempt a single silent refresh then retry once
-    if (res.status === 401 && !url.endsWith('/auth/refresh')) {
+    // BUT skip token refresh for login and refresh endpoints
+    if (res.status === 401 && !url.endsWith('/auth/refresh') && !url.endsWith('/auth/login')) {
       try {
         await performTokenRefresh();
         // Update Authorization header with new token
@@ -138,7 +139,9 @@ async function request<T>(
         } catch {}
         if (!res.ok) {
           const message = (retryJson && (retryJson.message || retryJson.error)) || `HTTP ${retryStatus}`;
-          throw new Error(message);
+          const error: any = new Error(message);
+          error.response = { status: retryStatus, statusCode: retryStatus, data: retryJson };
+          throw error;
         }
         return { data: retryJson as T, status: retryStatus };
       } catch (e) {
@@ -147,11 +150,15 @@ async function request<T>(
           window.dispatchEvent(new CustomEvent('pef:session-expired'));
         } catch {}
         // Bubble up 401 after failed refresh so caller can handle logout
-        throw new Error('401 Unauthorized');
+        const error: any = new Error('401 Unauthorized');
+        error.response = { status: 401, statusCode: 401 };
+        throw error;
       }
     }
     const message = (json && (json.message || json.error)) || `HTTP ${status}`;
-    throw new Error(message);
+    const error: any = new Error(message);
+    error.response = { status, statusCode: status, data: json };
+    throw error;
   }
 
   return { data: json as T, status };
