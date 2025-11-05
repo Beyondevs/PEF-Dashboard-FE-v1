@@ -138,8 +138,33 @@ const Attendance = () => {
     try {
       setIsLoading(true);
       
-      // Batch API calls for all pending changes
-      const savePromises = changes.map(recordId => 
+      // Combine all attendance records to find originals
+      const allAttendance = [...apiTeacherAttendance, ...apiStudentAttendance];
+      const attendanceMap = new Map(allAttendance.map(att => [att.id, att]));
+      
+      // Filter changes: only toggle records where desired value differs from original
+      const changesToSave = changes.filter(recordId => {
+        const originalRecord = attendanceMap.get(recordId);
+        if (!originalRecord) {
+          console.warn(`Original record not found for ${recordId}`);
+          return false;
+        }
+        const desiredValue = attendanceChanges[recordId];
+        const originalValue = originalRecord.present;
+        // Only toggle if desired value is different from original
+        return desiredValue !== originalValue;
+      });
+
+      if (changesToSave.length === 0) {
+        toast.info('No actual changes to save (all values match original)');
+        setAttendanceChanges({});
+        setEditMode(false);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Batch API calls for records that need to be toggled
+      const savePromises = changesToSave.map(recordId => 
         toggleAttendance(recordId).catch(error => {
           console.error(`Failed to save attendance for record ${recordId}:`, error);
           return { error: true, recordId };
@@ -153,7 +178,7 @@ const Attendance = () => {
       const successCount = results.length - errors.length;
 
       if (errors.length > 0) {
-        toast.error(`Failed to save ${errors.length} of ${changes.length} changes. Please try again.`);
+        toast.error(`Failed to save ${errors.length} of ${changesToSave.length} changes. Please try again.`);
         // Don't clear changes if there were errors
         return;
       }
@@ -408,7 +433,7 @@ const Attendance = () => {
                               <span className="text-sm font-medium">Mark Attendance:</span>
                               <Switch
                                 checked={currentStatus}
-                                onCheckedChange={() => handleToggleAttendance(att.id, att.present)}
+                                onCheckedChange={() => handleToggleAttendance(att.id, currentStatus)}
                                 className="data-[state=checked]:bg-primary"
                               />
                             </div>
@@ -458,7 +483,7 @@ const Attendance = () => {
                             <TableCell>
                               <Switch
                                 checked={currentStatus}
-                                onCheckedChange={() => handleToggleAttendance(att.id, att.present)}
+                                onCheckedChange={() => handleToggleAttendance(att.id, currentStatus)}
                               />
                             </TableCell>
                           )}
@@ -532,7 +557,7 @@ const Attendance = () => {
                               <span className="text-sm font-medium">Mark Attendance:</span>
                               <Switch
                                 checked={currentStatus}
-                                onCheckedChange={() => handleToggleAttendance(att.id, att.present)}
+                                onCheckedChange={() => handleToggleAttendance(att.id, currentStatus)}
                                 className="data-[state=checked]:bg-primary"
                               />
                             </div>
@@ -584,7 +609,7 @@ const Attendance = () => {
                             <TableCell>
                               <Switch
                                 checked={currentStatus}
-                                onCheckedChange={() => handleToggleAttendance(att.id, att.present)}
+                                onCheckedChange={() => handleToggleAttendance(att.id, currentStatus)}
                               />
                             </TableCell>
                           )}
