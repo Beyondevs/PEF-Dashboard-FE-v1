@@ -74,15 +74,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserId(user.id);
       setEmail(user.email);
       
-      // Set user name based on role
+      // Set user name from API response (preferred) or fallback to role-based default
+      if (user.name) {
+        setUserName(user.name);
+      } else {
+        // Fallback to role-based defaults if name not provided
       const nameMap: Record<UserRole, string> = {
         admin: 'Administrator',
         client: 'Client User',
-        trainer: 'Trainer Ahmed Khan',
-        teacher: 'Teacher Fatima Ali',
-        student: 'Student Ali Ahmed',
+          trainer: 'Trainer',
+          teacher: 'Teacher',
+          student: 'Student',
       };
       setUserName(nameMap[userRole] || 'User');
+      }
 
       scheduleProactiveRefresh(accessToken);
     } catch (error) {
@@ -129,21 +134,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // Validate token with backend (this call benefits from request-time refresh)
       const response = await getProfile();
-      const { role: userRole, id, email: userEmail } = response.data;
+      const { role: userRole, id, email: userEmail, profile } = response.data;
       
       setRole(userRole);
       setUserId(id);
       setEmail(userEmail);
       
-      // Set user name based on role
+      // Set user name from profile (preferred) or fallback to role-based default
+      if (profile?.name) {
+        setUserName(profile.name);
+      } else {
+        // Fallback to role-based defaults if name not provided
       const nameMap: Record<UserRole, string> = {
         admin: 'Administrator',
         client: 'Client User',
-        trainer: 'Trainer Ahmed Khan',
-        teacher: 'Teacher Fatima Ali',
-        student: 'Student Ali Ahmed',
+          trainer: 'Trainer',
+          teacher: 'Teacher',
+          student: 'Student',
       };
       setUserName(nameMap[userRole] || 'User');
+      }
 
       scheduleProactiveRefresh(storedToken);
     } catch (error) {

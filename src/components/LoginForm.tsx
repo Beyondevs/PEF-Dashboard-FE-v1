@@ -50,7 +50,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           type="text"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
-          placeholder="Mobile: +92xxxxxxxxxx | CNIC: 12345-6789012-3 | Email: user@example.com"
           required
           disabled={isLoading}
         />
