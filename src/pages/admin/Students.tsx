@@ -86,6 +86,9 @@ export default function Students() {
         params.search = debouncedSearchTerm.trim();
       }
       
+      // Include disabled students for management page
+      params.includeDisabled = true;
+      
       const response = await api.getStudents(params);
       setStudents(response.data.data);
       setPagination(prev => ({

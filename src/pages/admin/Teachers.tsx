@@ -90,6 +90,9 @@ export default function Teachers() {
         params.search = debouncedSearchTerm.trim();
       }
       
+      // Include disabled teachers for management page
+      params.includeDisabled = true;
+      
       const response = await api.getTeachers(params);
       setTeachers(response.data.data);
       setPagination(prev => ({
