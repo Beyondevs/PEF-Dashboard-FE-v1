@@ -29,6 +29,7 @@ export default function Schools() {
   const [tehsils, setTehsils] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -48,18 +49,30 @@ export default function Schools() {
   const { canEdit, canDelete } = useAuth();
   const { toast } = useToast();
 
+  // Debounce search term (300ms delay)
   useEffect(() => {
-    fetchSchools();
-    fetchGeography();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const fetchSchools = async (page = pagination.page) => {
     try {
       setLoading(true);
-      const response = await api.getSchools({ 
+      const params: Record<string, string | number> = { 
         page, 
         pageSize: pagination.pageSize
-      });
+      };
+      
+      // Add search parameter if provided
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        params.search = debouncedSearchTerm.trim();
+      }
+      
+      const response = await api.getSchools(params);
       setSchools(response.data.data);
       setPagination(prev => ({
         ...prev,
@@ -77,6 +90,15 @@ export default function Schools() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchGeography();
+  }, []);
+
+  // Fetch schools when search or page changes
+  useEffect(() => {
+    fetchSchools();
+  }, [debouncedSearchTerm, pagination.page]);
 
   const fetchGeography = async () => {
     try {
@@ -155,21 +177,11 @@ export default function Schools() {
     setIsDialogOpen(true);
   };
 
-  const handleSearch = () => {
-    // Search is now client-side only
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
-
   const handlePageChange = (newPage: number) => {
-    fetchSchools(newPage);
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
-
-  const filteredSchools = schools.filter((school: any) =>
-    school.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    school.emisCode?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const filteredDistricts = districts.filter((d: any) => 
     !formData.divisionId || d.divisionId === formData.divisionId
@@ -309,12 +321,12 @@ export default function Schools() {
               <TableRow>
                 <TableCell colSpan={7} className="text-center">Loading...</TableCell>
               </TableRow>
-            ) : filteredSchools.length === 0 ? (
+            ) : schools.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center">No schools found</TableCell>
               </TableRow>
             ) : (
-              filteredSchools.map((school: any) => (
+              schools.map((school: any) => (
                 <TableRow key={school.id}>
                   <TableCell>{school.emisCode}</TableCell>
                   <TableCell>{school.name}</TableCell>
@@ -358,7 +370,7 @@ export default function Schools() {
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} schools
-            {searchTerm && ` (${filteredSchools.length} filtered)`}
+            {debouncedSearchTerm && ' (filtered)'}
           </div>
           <div className="flex items-center gap-2">
             <Button

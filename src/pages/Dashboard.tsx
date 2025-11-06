@@ -8,7 +8,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getDashboardAggregate, getAttendanceList, getSessions } from '@/lib/api';
+import { getDashboardAggregate } from '@/lib/api';
 
 const Dashboard = () => {
   const { filters } = useFilters();
@@ -31,25 +31,21 @@ const Dashboard = () => {
   const [attendanceStatusToday, setAttendanceStatusToday] = useState<{ present: number; absent: number; total: number }>({ present: 0, absent: 0, total: 0 });
   const [coursePerformance, setCoursePerformance] = useState<Array<{ courseName: string; averageScore: number; sampleSize: number }>>([]);
   const [weeklyProgress, setWeeklyProgress] = useState<Array<{ weekStart: string; sessions: number; attendanceRate: number }>>([]);
+  const [overallAttendanceRate, setOverallAttendanceRate] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError] = useState(false);
 
-  // Attendance data by personType for filtering
-  const [teacherAttendanceData, setTeacherAttendanceData] = useState<any[]>([]);
-  const [studentAttendanceData, setStudentAttendanceData] = useState<any[]>([]);
-  const [sessionsData, setSessionsData] = useState<any[]>([]);
+  // Backend-calculated graph data (no local calculations needed)
+  const [attendanceTrendsDetailed, setAttendanceTrendsDetailed] = useState<Array<{ date: string; teachers: number; students: number; both: number }>>([]);
+  const [scoreDistribution, setScoreDistribution] = useState<Array<{ range: string; count: number }>>([]);
+  const [sessionsProgressDetailed, setSessionsProgressDetailed] = useState<Array<{ date: string; sessions: number; attendanceRate: number; teachersRate: number; studentsRate: number }>>([]);
 
   // Filter states for graphs
   const [attendanceTrendsFilter, setAttendanceTrendsFilter] = useState<'both' | 'teachers' | 'students'>('both');
   const [attendanceTodayFilter, setAttendanceTodayFilter] = useState<'both' | 'teachers' | 'students'>('both');
   const [sessionsProgressFilter, setSessionsProgressFilter] = useState<'both' | 'teachers' | 'students'>('both');
 
-  // Back-compat placeholders (FE now uses slim metrics only)
-  const apiSessions: any[] = [];
-  const apiAttendance: any[] = [];
-  const apiAssessments: any[] = [];
-
-  // Today's sessions state
+  // Today's sessions state (for "What's Happening Now" section)
   const [todaySessions, setTodaySessions] = useState<any[]>([]);
 
   // Calculate date ranges
@@ -78,6 +74,7 @@ const Dashboard = () => {
         const agg = await getDashboardAggregate(params);
         const payload = agg.data as any;
 
+        // Store all backend-calculated data directly (no local calculations)
         setTeachersInTraining(payload.teachersInTraining || 0);
         setStudentsInTraining(payload.studentsInTraining || 0);
         setTotalSessions(payload.totalSessions || 0);
@@ -86,59 +83,25 @@ const Dashboard = () => {
         setAttendanceStatusToday(payload.attendanceStatusToday || { present: 0, absent: 0, total: 0 });
         setCoursePerformance(Array.isArray(payload.coursePerformance) ? payload.coursePerformance : []);
         setWeeklyProgress(Array.isArray(payload.weeklyProgress) ? payload.weeklyProgress : []);
-
-        // Fetch attendance data by personType for last 30 days
-        const attendanceParams: Record<string, string | number> = {
-          page: 1,
-          pageSize: 1000, // Large number to get all records
-          from: last30DaysStart,
-          to: today,
-        };
         
-        if (filters.division) attendanceParams.divisionId = filters.division;
-        if (filters.district) attendanceParams.districtId = filters.district;
-        if (filters.tehsil) attendanceParams.tehsilId = filters.tehsil;
-        if (filters.school) attendanceParams.schoolId = filters.school;
+        // Store overall attendance rate from backend
+        if (payload.overallAttendanceRate !== undefined) {
+          setOverallAttendanceRate(payload.overallAttendanceRate);
+        }
 
-        const [teacherAttendance, studentAttendance] = await Promise.all([
-          getAttendanceList({ ...attendanceParams, personType: 'teacher' }),
-          getAttendanceList({ ...attendanceParams, personType: 'student' }),
-        ]);
-
-        setTeacherAttendanceData(teacherAttendance.data.data || []);
-        setStudentAttendanceData(studentAttendance.data.data || []);
-
-        // Fetch sessions for last 30 days
-        const sessionsParams: Record<string, string | number> = {
-          page: 1,
-          pageSize: 1000,
-        };
+        // Store detailed graph data from backend (all calculations done on backend)
+        if (payload.attendanceTrendsDetailed) {
+          setAttendanceTrendsDetailed(payload.attendanceTrendsDetailed);
+        }
+        if (payload.scoreDistribution) {
+          setScoreDistribution(payload.scoreDistribution);
+        }
+        if (payload.sessionsProgressDetailed) {
+          setSessionsProgressDetailed(payload.sessionsProgressDetailed);
+        }
         
-        if (filters.division) sessionsParams.divisionId = filters.division;
-        if (filters.district) sessionsParams.districtId = filters.district;
-        if (filters.tehsil) sessionsParams.tehsilId = filters.tehsil;
-        if (filters.school) sessionsParams.schoolId = filters.school;
-
-        const sessionsResponse = await getSessions(sessionsParams);
-        const allSessions = sessionsResponse.data.data || [];
-        
-        // Filter sessions to last 30 days
-        const filteredSessions = allSessions.filter((s: any) => {
-          const sessionDate = new Date(s.date);
-          const startDate = new Date(last30DaysStart);
-          const endDate = new Date(today);
-          return sessionDate >= startDate && sessionDate <= endDate;
-        });
-        
-        setSessionsData(filteredSessions);
-
-        // Filter today's sessions
-        const todaySessionsData = allSessions.filter((s: any) => {
-          const sessionDate = new Date(s.date).toISOString().split('T')[0];
-          return sessionDate === today;
-        });
-        
-        setTodaySessions(todaySessionsData);
+        // Note: No longer fetching paginated attendance/sessions data
+        // All calculations are done on backend with complete dataset
         
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -151,161 +114,63 @@ const Dashboard = () => {
   }, [today, last30DaysStart, filters.division, filters.district, filters.tehsil, filters.school]);
 
   const stats = useMemo(() => {
+    // Calculate total assessments and average score from coursePerformance
+    const totalAssessments = coursePerformance.reduce((sum, c) => sum + (c.sampleSize || 0), 0);
+    const weightedScoreSum = coursePerformance.reduce((sum, c) => sum + (c.averageScore * (c.sampleSize || 0)), 0);
+    const avgScore = totalAssessments > 0 ? weightedScoreSum / totalAssessments : 0;
+    
     return {
       teachersToday: teachersInTraining,
       studentsToday: studentsInTraining,
       activeSessions: totalSessions, // renamed meaning on FE card
       activeSchools: activeSchools,
-      completedSessions: 0,
+      completedSessions: totalSessions, // Use totalSessions as completed sessions
       totalTeachers: teachersInTraining,
       totalStudents: studentsInTraining,
-      avgAttendanceRate: 0,
-      totalAssessments: 0,
-      avgScore: 0,
+      avgAttendanceRate: overallAttendanceRate, // Use overallAttendanceRate from backend
+      totalAssessments: totalAssessments,
+      avgScore: avgScore,
     };
-  }, [teachersInTraining, studentsInTraining, totalSessions, activeSchools]);
+  }, [teachersInTraining, studentsInTraining, totalSessions, activeSchools, overallAttendanceRate, coursePerformance]);
 
-  // Calculate attendance trends by personType for last 30 days
+  // Use backend-calculated attendance trends (no local calculations)
   const attendanceTrendsData = useMemo(() => {
-    const dateKey = (d: Date) => d.toISOString().slice(0, 10);
-    
-    // Build date range for last 30 days
-    const dates: string[] = [];
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      dates.push(dateKey(date));
-    }
-
-    // Process teacher attendance by date
-    const teacherAttendanceByDate: Record<string, { total: number; present: number }> = {};
-    teacherAttendanceData.forEach((att: any) => {
-      const date = dateKey(new Date(att.markedAt || att.timestamp));
-      if (!teacherAttendanceByDate[date]) {
-        teacherAttendanceByDate[date] = { total: 0, present: 0 };
-      }
-      teacherAttendanceByDate[date].total += 1;
-      if (att.present) {
-        teacherAttendanceByDate[date].present += 1;
-      }
-    });
-
-    // Process student attendance by date
-    const studentAttendanceByDate: Record<string, { total: number; present: number }> = {};
-    studentAttendanceData.forEach((att: any) => {
-      const date = dateKey(new Date(att.markedAt || att.timestamp));
-      if (!studentAttendanceByDate[date]) {
-        studentAttendanceByDate[date] = { total: 0, present: 0 };
-      }
-      studentAttendanceByDate[date].total += 1;
-      if (att.present) {
-        studentAttendanceByDate[date].present += 1;
-      }
-    });
-
-    // Build series data
-    return dates.map(date => {
-      const teacherBucket = teacherAttendanceByDate[date] || { total: 0, present: 0 };
-      const studentBucket = studentAttendanceByDate[date] || { total: 0, present: 0 };
-      
-      const teacherRate = teacherBucket.total > 0 
-        ? Math.round((teacherBucket.present / teacherBucket.total) * 100) 
-        : 0;
-      const studentRate = studentBucket.total > 0 
-        ? Math.round((studentBucket.present / studentBucket.total) * 100) 
-        : 0;
-
-      return {
-        date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        teachers: teacherRate,
-        students: studentRate,
-        both: Math.round((teacherRate + studentRate) / 2), // Average when both selected
-      };
-    });
-  }, [teacherAttendanceData, studentAttendanceData]);
+    return (attendanceTrendsDetailed || []).map(item => ({
+      date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      teachers: Math.round(item.teachers),
+      students: Math.round(item.students),
+      both: Math.round(item.both),
+    }));
+  }, [attendanceTrendsDetailed]);
 
   const sessionsPerDay = useMemo(() => {
     return attendanceTrendsData;
   }, [attendanceTrendsData]);
 
-  // Calculate today's attendance by personType
+  // Use backend-calculated today's attendance (no local calculations)
   const attendanceData = useMemo(() => {
-    const todayStart = new Date(today);
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(today);
-    todayEnd.setHours(23, 59, 59, 999);
-
-    let teacherPresent = 0;
-    let teacherAbsent = 0;
-    let studentPresent = 0;
-    let studentAbsent = 0;
-
-    teacherAttendanceData.forEach((att: any) => {
-      const attDate = new Date(att.markedAt || att.timestamp);
-      if (attDate >= todayStart && attDate <= todayEnd) {
-        if (att.present) {
-          teacherPresent += 1;
-        } else {
-          teacherAbsent += 1;
-        }
-      }
-    });
-
-    studentAttendanceData.forEach((att: any) => {
-      const attDate = new Date(att.markedAt || att.timestamp);
-      if (attDate >= todayStart && attDate <= todayEnd) {
-        if (att.present) {
-          studentPresent += 1;
-        } else {
-          studentAbsent += 1;
-        }
-      }
-    });
-
-    let present = 0;
-    let absent = 0;
-
-    if (attendanceTodayFilter === 'teachers') {
-      present = teacherPresent;
-      absent = teacherAbsent;
-    } else if (attendanceTodayFilter === 'students') {
-      present = studentPresent;
-      absent = studentAbsent;
-    } else {
-      present = teacherPresent + studentPresent;
-      absent = teacherAbsent + studentAbsent;
-    }
-
-    // Fallback to keep chart visible if no data
-    if (present === 0 && absent === 0) {
-      present = 100;
-      absent = 30;
-    }
-
+    const { present, absent, total } = attendanceStatusToday;
+    // Use backend data directly
     return [
-      { name: 'Present', value: present, fill: 'hsl(var(--chart-2))' },
-      { name: 'Absent', value: absent, fill: 'hsl(var(--chart-5))' },
+      { name: 'Present', value: present || 0, fill: 'hsl(var(--chart-2))' },
+      { name: 'Absent', value: absent || 0, fill: 'hsl(var(--chart-5))' },
     ];
-  }, [teacherAttendanceData, studentAttendanceData, attendanceTodayFilter, today]);
+  }, [attendanceStatusToday]);
   
+  // Use backend-calculated score distribution (no local calculations)
   const performanceData = useMemo(() => {
-    // Approximate score distribution from coursePerformance sample sizes and averages
-    const scoreRanges = [
-      { range: '0-4', count: 0, fill: 'hsl(var(--chart-5))' },
-      { range: '5-6', count: 0, fill: 'hsl(var(--chart-3))' },
-      { range: '7-8', count: 0, fill: 'hsl(var(--chart-2))' },
-      { range: '9-10', count: 0, fill: 'hsl(var(--chart-1))' },
+    const fillColors = [
+      'hsl(var(--chart-5))',
+      'hsl(var(--chart-3))',
+      'hsl(var(--chart-2))',
+      'hsl(var(--chart-1))',
     ];
-    (coursePerformance || []).forEach(c => {
-      const avg = c.averageScore;
-      const weight = Math.max(1, c.sampleSize || 0);
-      if (avg < 5) scoreRanges[0].count += weight;
-      else if (avg < 7) scoreRanges[1].count += weight;
-      else if (avg < 9) scoreRanges[2].count += weight;
-      else scoreRanges[3].count += weight;
-    });
-    return scoreRanges;
-  }, [coursePerformance]);
+    return (scoreDistribution || []).map((item, index) => ({
+      range: item.range,
+      count: item.count,
+      fill: fillColors[index] || 'hsl(var(--chart-1))',
+    }));
+  }, [scoreDistribution]);
   
   const courseData = useMemo(() => {
     const colorMap: Record<string, string> = {
@@ -321,87 +186,32 @@ const Dashboard = () => {
     }));
   }, [coursePerformance]);
   
-  // Calculate last 30 days sessions progress with attendance by personType
+  // Use backend-calculated sessions progress (no local calculations)
   const sessionsProgressData = useMemo(() => {
-    const dateKey = (d: Date) => d.toISOString().slice(0, 10);
-    
-    // Build date range for last 30 days
-    const dates: string[] = [];
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      dates.push(dateKey(date));
-    }
-
-    // Count sessions per day
-    const sessionsByDate: Record<string, number> = {};
-    sessionsData.forEach((session: any) => {
-      const date = dateKey(new Date(session.date));
-      sessionsByDate[date] = (sessionsByDate[date] || 0) + 1;
-    });
-
-    // Calculate attendance by date and personType
-    const teacherAttendanceByDate: Record<string, { total: number; present: number }> = {};
-    const studentAttendanceByDate: Record<string, { total: number; present: number }> = {};
-
-    teacherAttendanceData.forEach((att: any) => {
-      const date = dateKey(new Date(att.markedAt || att.timestamp));
-      if (!teacherAttendanceByDate[date]) {
-        teacherAttendanceByDate[date] = { total: 0, present: 0 };
-      }
-      teacherAttendanceByDate[date].total += 1;
-      if (att.present) {
-        teacherAttendanceByDate[date].present += 1;
-      }
-    });
-
-    studentAttendanceData.forEach((att: any) => {
-      const date = dateKey(new Date(att.markedAt || att.timestamp));
-      if (!studentAttendanceByDate[date]) {
-        studentAttendanceByDate[date] = { total: 0, present: 0 };
-      }
-      studentAttendanceByDate[date].total += 1;
-      if (att.present) {
-        studentAttendanceByDate[date].present += 1;
-      }
-    });
-
-    // Build series data
-    return dates.map(date => {
-      const sessions = sessionsByDate[date] || 0;
-      const teacherBucket = teacherAttendanceByDate[date] || { total: 0, present: 0 };
-      const studentBucket = studentAttendanceByDate[date] || { total: 0, present: 0 };
-
-      let attendanceRate = 0;
+    return (sessionsProgressDetailed || []).map(item => {
+      // Apply filter to get the right attendance rate
+      let attendanceRate = item.attendanceRate;
       if (sessionsProgressFilter === 'teachers') {
-        attendanceRate = teacherBucket.total > 0 
-          ? Math.round((teacherBucket.present / teacherBucket.total) * 100) 
-          : 0;
+        attendanceRate = item.teachersRate;
       } else if (sessionsProgressFilter === 'students') {
-        attendanceRate = studentBucket.total > 0 
-          ? Math.round((studentBucket.present / studentBucket.total) * 100) 
-          : 0;
-      } else {
-        const totalPresent = teacherBucket.present + studentBucket.present;
-        const total = teacherBucket.total + studentBucket.total;
-        attendanceRate = total > 0 ? Math.round((totalPresent / total) * 100) : 0;
+        attendanceRate = item.studentsRate;
       }
-
+      
       return {
-        day: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        sessions: sessions,
-        attendanceRate: attendanceRate,
+        day: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        sessions: item.sessions,
+        attendanceRate: Math.round(attendanceRate),
       };
     });
-  }, [sessionsData, teacherAttendanceData, studentAttendanceData, sessionsProgressFilter]);
+  }, [sessionsProgressDetailed, sessionsProgressFilter]);
   
   const weeklyProgressSeries = useMemo(() => {
     return sessionsProgressData;
   }, [sessionsProgressData]);
 
-  // Filter ongoing/in_progress sessions for today
+  // Filter ongoing/in_progress sessions for today (using backend data if available)
   const ongoingSessions = useMemo(() => {
-    return todaySessions.filter((session: any) => 
+    return (todaySessions || []).filter((session: any) => 
       session.status === 'in_progress' || session.status === 'published'
     );
   }, [todaySessions]);
