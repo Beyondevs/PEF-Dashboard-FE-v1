@@ -213,6 +213,7 @@ sessions.filter(s => s.status === 'Completed').forEach((session, sessionIdx) => 
       id: `assess_${sessionIdx}_${idx}`,
       sessionId: session.id,
       studentId: att.personId,
+      subjectType: 'student',
       scoredBy: session.trainerId,
       maxScore: 10,
       score,

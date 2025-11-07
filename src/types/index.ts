@@ -78,10 +78,14 @@ export interface Attendance {
   timestamp: string;
 }
 
+export type AssessmentSubjectType = 'student' | 'teacher';
+
 export interface Assessment {
   id: string;
   sessionId: string;
-  studentId: string;
+  subjectType: AssessmentSubjectType;
+  studentId?: string;
+  teacherId?: string;
   scoredBy: string;
   maxScore: number;
   score: number;

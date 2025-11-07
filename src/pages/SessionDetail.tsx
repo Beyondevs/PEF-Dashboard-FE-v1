@@ -55,7 +55,12 @@ const SessionDetail = () => {
   const { role, isAdmin, canMarkAttendance } = useAuth();
   
   const [localAttendance, setLocalAttendance] = useState(attendance);
-  const [localAssessments, setLocalAssessments] = useState(assessments);
+  const [localAssessments, setLocalAssessments] = useState(
+    assessments.map((a) => ({
+      ...a,
+      subjectType: a.subjectType || 'student',
+    })),
+  );
   const [localSessions, setLocalSessions] = useState(sessions);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [attendanceType, setAttendanceType] = useState<'Teacher' | 'Student'>('Teacher');
@@ -259,17 +264,25 @@ const SessionDetail = () => {
     if (!session) return [];
     // Use API data if available, otherwise fall back to mock data
     if (session.assessments) {
-      return session.assessments.map(ass => ({
-        id: ass.id,
-        sessionId: ass.sessionId,
-        studentId: ass.studentId,
-        scoredBy: ass.scoredBy,
-        maxScore: ass.maxScore,
-        score: ass.score,
-        timestamp: ass.recordedAt,
-      }));
+      return session.assessments
+        .filter(ass => {
+          const subjectType = (ass as any).subjectType?.toString().toLowerCase();
+          return !subjectType || subjectType === 'student';
+        })
+        .map(ass => ({
+          id: ass.id,
+          sessionId: ass.sessionId,
+          studentId: ass.studentId,
+          scoredBy: ass.scoredBy,
+          maxScore: ass.maxScore,
+          score: ass.score,
+          timestamp: ass.recordedAt,
+        }));
     }
-    return localAssessments.filter(a => a.sessionId === session.id);
+    return localAssessments.filter(a => {
+      const subjectType = (a as any).subjectType ?? 'student';
+      return a.sessionId === session.id && subjectType === 'student';
+    });
   }, [session, localAssessments]);
 
   const {
@@ -478,6 +491,7 @@ const SessionDetail = () => {
       if (existingIndex >= 0) {
         updatedAssessments[existingIndex] = {
           ...updatedAssessments[existingIndex],
+          subjectType: 'student',
           score,
           timestamp: new Date().toISOString(),
         };
@@ -486,6 +500,7 @@ const SessionDetail = () => {
           id: `assess_${session.id}_${student.id}`,
           sessionId: session.id,
           studentId: student.id,
+          subjectType: 'student',
           scoredBy: session.trainerId,
           maxScore: 10,
           score,

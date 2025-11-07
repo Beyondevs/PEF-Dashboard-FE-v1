@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -134,11 +134,19 @@ const Assessments = () => {
     fetchSessions();
   }, [filters]);
 
+  const visibleAssessments = useMemo(() => {
+    const dataset = apiError ? assessments : apiAssessments;
+    return dataset.filter((a: any) => {
+      const subjectType = a.subjectType?.toString().toLowerCase();
+      return !subjectType || subjectType === 'student';
+    });
+  }, [apiAssessments, apiError]);
+
   const {
     items: paginatedAssessments,
     startIndex,
     endIndex,
-  } = usePagination(apiError ? assessments : apiAssessments, { 
+  } = usePagination(visibleAssessments, { 
     initialPageSize: pageSize
   });
 
