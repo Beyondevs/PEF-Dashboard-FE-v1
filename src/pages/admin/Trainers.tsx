@@ -266,14 +266,14 @@ export default function Trainers() {
               />
             </>
           )}
-          {canEdit() && (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
+        {canEdit() && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
                 <Button onClick={openCreateDialog}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Trainer
-                </Button>
-              </DialogTrigger>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Trainer
+              </Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{editingTrainer ? 'Edit Trainer' : 'Add New Trainer'}</DialogTitle>
@@ -376,7 +376,7 @@ export default function Trainers() {
               </div>
             </DialogContent>
           </Dialog>
-          )}
+        )}
         </div>
       </div>
 

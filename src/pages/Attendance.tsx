@@ -12,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Save, Calendar as CalendarIcon, Clock, UserCheck, UserX, FileText } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Save, Calendar as CalendarIcon, Clock, FileText, Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCard } from '@/components/MobileCard';
 import { toast } from 'sonner';
@@ -52,6 +53,15 @@ const Attendance = () => {
   const [studentTotalItems, setStudentTotalItems] = useState(0);
   const pageSize = 20;
   const hasManagePermissions = canMarkAttendance();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const fetchAttendance = useCallback(async () => {
     try {
@@ -92,6 +102,11 @@ const Attendance = () => {
         studentFilters.schoolId = filters.school;
       }
 
+      if (debouncedSearchTerm) {
+        teacherFilters.search = debouncedSearchTerm;
+        studentFilters.search = debouncedSearchTerm;
+      }
+
       const [teacherResponse, studentResponse] = await Promise.all([
         getAttendanceList(teacherFilters),
         getAttendanceList(studentFilters),
@@ -121,7 +136,7 @@ const Attendance = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filters, teacherPage, studentPage, pageSize]);
+  }, [filters, teacherPage, studentPage, pageSize, debouncedSearchTerm]);
 
   useEffect(() => {
     fetchAttendance();
@@ -131,6 +146,7 @@ const Attendance = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
     params.personType = activeTab === 'teachers' ? 'Teacher' : 'Student';
+    if (debouncedSearchTerm) params.search = debouncedSearchTerm;
     return params;
   };
 
@@ -233,7 +249,7 @@ const Attendance = () => {
   useEffect(() => {
     setTeacherPage(1);
     setStudentPage(1);
-  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, debouncedSearchTerm]);
 
   if (isLoading) {
     return (
@@ -269,7 +285,16 @@ const Attendance = () => {
           <p className="text-sm sm:text-base text-muted-foreground">View and manage attendance records</p>
           
         </div>
-        <div className="flex flex-wrap gap-2 justify-end">
+        <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search by name or roll number..."
+              className="pl-10"
+            />
+          </div>
           {hasManagePermissions && (
             <>
               <Button

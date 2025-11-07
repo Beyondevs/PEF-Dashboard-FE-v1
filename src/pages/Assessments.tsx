@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, Edit, X, FileText } from 'lucide-react';
+import { Save, Edit, X, FileText, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { useFilters } from '@/contexts/FilterContext';
@@ -50,6 +50,15 @@ const Assessments = () => {
   
   const [isLoading, setIsLoading] = useState(true);
   const pageSize = 20;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const buildFilters = (pageNumber: number, subjectType: 'student' | 'teacher') => {
     const apiFilters: Record<string, string | number> = {
@@ -63,6 +72,7 @@ const Assessments = () => {
     if (filters.district) apiFilters.districtId = filters.district;
     if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
     if (filters.school) apiFilters.schoolId = filters.school;
+    if (debouncedSearchTerm) apiFilters.search = debouncedSearchTerm;
 
     return apiFilters;
   };
@@ -71,6 +81,7 @@ const Assessments = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
     params.subjectType = activeTab === 'students' ? 'student' : 'teacher';
+    if (debouncedSearchTerm) params.search = debouncedSearchTerm;
     return params;
   };
 
@@ -95,7 +106,7 @@ const Assessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [studentPage, filters, pageSize]);
+  }, [studentPage, filters, pageSize, debouncedSearchTerm]);
 
   const fetchTeacherAssessments = useCallback(async () => {
     try {
@@ -118,7 +129,19 @@ const Assessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [teacherPage, filters, pageSize]);
+  }, [teacherPage, filters, pageSize, debouncedSearchTerm]);
+
+  useEffect(() => {
+    setStudentPage(1);
+    setTeacherPage(1);
+  }, [
+    filters.sessionId,
+    filters.division,
+    filters.district,
+    filters.tehsil,
+    filters.school,
+    debouncedSearchTerm,
+  ]);
 
   useEffect(() => {
     if (activeTab === 'students') {
@@ -265,7 +288,16 @@ const Assessments = () => {
           <h1 className="text-3xl font-bold text-foreground">Assessments</h1>
           <p className="text-muted-foreground">View and manage student and teacher assessments</p>
         </div>
-        <div className="flex flex-wrap gap-2 justify-end">
+        <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder={`Search ${activeTab === 'students' ? 'students' : 'teachers'}...`}
+              className="pl-10"
+            />
+          </div>
           {canManageAssessments && (
             <>
               <Button

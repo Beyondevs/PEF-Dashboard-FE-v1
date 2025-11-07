@@ -303,77 +303,77 @@ export default function Students() {
             </>
           )}
 
-          {canEdit() && (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={openCreateDialog}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Student
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Name</Label>
-                    <Input
-                      placeholder="Enter name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Roll No</Label>
-                    <Input
-                      placeholder="Enter roll number"
-                      value={formData.rollNo}
-                      onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Grade</Label>
-                    <Input
-                      type="number"
-                      placeholder="Enter grade"
-                      value={formData.grade}
-                      onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Gender</Label>
-                    <select
-                      className="w-full border rounded-md p-2"
-                      value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    >
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label>School</Label>
-                    <select
-                      className="w-full border rounded-md p-2"
-                      value={formData.schoolId}
-                      onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
-                    >
-                      <option value="">Select school</option>
-                      {schools.map((school: any) => (
-                        <option key={school.id} value={school.id}>
-                          {school.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+        {canEdit() && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Student
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Name</Label>
+                  <Input 
+                    placeholder="Enter name" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Roll No</Label>
+                  <Input 
+                    placeholder="Enter roll number" 
+                    value={formData.rollNo}
+                    onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Grade</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="Enter grade" 
+                    value={formData.grade}
+                    onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Gender</Label>
+                  <select 
+                    className="w-full border rounded-md p-2"
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>School</Label>
+                  <select 
+                    className="w-full border rounded-md p-2"
+                    value={formData.schoolId}
+                    onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
+                  >
+                    <option value="">Select school</option>
+                    {schools.map((school: any) => (
+                      <option key={school.id} value={school.id}>
+                        {school.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                   <Button onClick={handleSave} className="w-full">
                     Save
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
         </div>
       </div>
 
@@ -430,18 +430,18 @@ export default function Students() {
                       </Badge>
                     </TableCell>
                     {(canEdit() || canDelete() || isAdmin()) && (
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {canEdit() && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditDialog(student)}
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {canEdit() && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditDialog(student)}
                               disabled={isDisabled}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
 
                           {isAdmin() && student.userId && (
                             <>
@@ -467,18 +467,18 @@ export default function Students() {
                             </>
                           )}
 
-                          {canDelete() && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDelete(student.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
+                        {canDelete() && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(student.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
                 );
               })

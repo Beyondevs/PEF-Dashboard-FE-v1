@@ -217,9 +217,9 @@ export default function Geography() {
                 </>
               )}
 
-              {canEdit() && (
-                <Dialog open={isDivisionDialogOpen} onOpenChange={setIsDivisionDialogOpen}>
-                  <DialogTrigger asChild>
+            {canEdit() && (
+              <Dialog open={isDivisionDialogOpen} onOpenChange={setIsDivisionDialogOpen}>
+                <DialogTrigger asChild>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -227,36 +227,36 @@ export default function Geography() {
                         setDivisionForm({ name: '', code: '' });
                       }}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Division
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingDivision ? 'Edit Division' : 'Add Division'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Name</Label>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Division
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingDivision ? 'Edit Division' : 'Add Division'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Name</Label>
                         <Input
                           value={divisionForm.name}
                           onChange={(e) => setDivisionForm({ ...divisionForm, name: e.target.value })}
                         />
-                      </div>
-                      <div>
-                        <Label>Code</Label>
+                    </div>
+                    <div>
+                      <Label>Code</Label>
                         <Input
                           value={divisionForm.code}
                           onChange={(e) => setDivisionForm({ ...divisionForm, code: e.target.value })}
                         />
-                      </div>
+                    </div>
                       <Button onClick={handleSaveDivision} className="w-full">
                         Save
                       </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
             </div>
           </div>
 
@@ -346,9 +346,9 @@ export default function Geography() {
                 </>
               )}
 
-              {canEdit() && (
-                <Dialog open={isDistrictDialogOpen} onOpenChange={setIsDistrictDialogOpen}>
-                  <DialogTrigger asChild>
+            {canEdit() && (
+              <Dialog open={isDistrictDialogOpen} onOpenChange={setIsDistrictDialogOpen}>
+                <DialogTrigger asChild>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -356,51 +356,51 @@ export default function Geography() {
                         setDistrictForm({ name: '', code: '', divisionId: '' });
                       }}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add District
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingDistrict ? 'Edit District' : 'Add District'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Name</Label>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add District
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingDistrict ? 'Edit District' : 'Add District'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Name</Label>
                         <Input
                           value={districtForm.name}
                           onChange={(e) => setDistrictForm({ ...districtForm, name: e.target.value })}
                         />
-                      </div>
-                      <div>
-                        <Label>Code</Label>
+                    </div>
+                    <div>
+                      <Label>Code</Label>
                         <Input
                           value={districtForm.code}
                           onChange={(e) => setDistrictForm({ ...districtForm, code: e.target.value })}
                         />
-                      </div>
-                      <div>
-                        <Label>Division</Label>
+                    </div>
+                    <div>
+                      <Label>Division</Label>
                         <select
                           className="w-full border rounded-md p-2"
                           value={districtForm.divisionId}
                           onChange={(e) => setDistrictForm({ ...districtForm, divisionId: e.target.value })}
                         >
-                          <option value="">Select division</option>
-                          {divisions.map((div: any) => (
+                        <option value="">Select division</option>
+                        {divisions.map((div: any) => (
                             <option key={div.id} value={div.id}>
                               {div.name}
                             </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </select>
+                    </div>
                       <Button onClick={handleSaveDistrict} className="w-full">
                         Save
                       </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
             </div>
           </div>
 
@@ -492,9 +492,9 @@ export default function Geography() {
                 </>
               )}
 
-              {canEdit() && (
-                <Dialog open={isTehsilDialogOpen} onOpenChange={setIsTehsilDialogOpen}>
-                  <DialogTrigger asChild>
+            {canEdit() && (
+              <Dialog open={isTehsilDialogOpen} onOpenChange={setIsTehsilDialogOpen}>
+                <DialogTrigger asChild>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -502,51 +502,51 @@ export default function Geography() {
                         setTehsilForm({ name: '', code: '', districtId: '' });
                       }}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Tehsil
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingTehsil ? 'Edit Tehsil' : 'Add Tehsil'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Name</Label>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Tehsil
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingTehsil ? 'Edit Tehsil' : 'Add Tehsil'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Name</Label>
                         <Input
                           value={tehsilForm.name}
                           onChange={(e) => setTehsilForm({ ...tehsilForm, name: e.target.value })}
                         />
-                      </div>
-                      <div>
-                        <Label>Code</Label>
+                    </div>
+                    <div>
+                      <Label>Code</Label>
                         <Input
                           value={tehsilForm.code}
                           onChange={(e) => setTehsilForm({ ...tehsilForm, code: e.target.value })}
                         />
-                      </div>
-                      <div>
-                        <Label>District</Label>
+                    </div>
+                    <div>
+                      <Label>District</Label>
                         <select
                           className="w-full border rounded-md p-2"
                           value={tehsilForm.districtId}
                           onChange={(e) => setTehsilForm({ ...tehsilForm, districtId: e.target.value })}
                         >
-                          <option value="">Select district</option>
-                          {districts.map((dist: any) => (
+                        <option value="">Select district</option>
+                        {districts.map((dist: any) => (
                             <option key={dist.id} value={dist.id}>
                               {dist.name}
                             </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </select>
+                    </div>
                       <Button onClick={handleSaveTehsil} className="w-full">
                         Save
                       </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
             </div>
           </div>
 

@@ -281,86 +281,86 @@ export default function Teachers() {
             </>
           )}
 
-          {canEdit() && (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={openCreateDialog} className="flex-1 sm:flex-initial">
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Add Teacher</span>
-                  <span className="sm:hidden">Add</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
+        {canEdit() && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreateDialog} className="flex-1 sm:flex-initial">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Teacher</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Name</Label>
+                  <Input 
+                    placeholder="Enter name" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input 
+                    type="email" 
+                    placeholder="Enter email" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input 
+                    placeholder="Enter phone" 
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>CNIC</Label>
+                  <Input 
+                    placeholder="Enter CNIC" 
+                    value={formData.cnic}
+                    onChange={(e) => setFormData({ ...formData, cnic: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>School</Label>
+                  <select 
+                    className="w-full border rounded-md p-2"
+                    value={formData.schoolId}
+                    onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
+                  >
+                    <option value="">Select school</option>
+                    {schools.map((school: any) => (
+                      <option key={school.id} value={school.id}>
+                        {school.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {!editingTeacher && (
                   <div>
-                    <Label>Name</Label>
-                    <Input
-                      placeholder="Enter name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    <Label>Password</Label>
+                    <Input 
+                      type="password" 
+                      placeholder="Enter password" 
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     />
                   </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      placeholder="Enter email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Phone</Label>
-                    <Input
-                      placeholder="Enter phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>CNIC</Label>
-                    <Input
-                      placeholder="Enter CNIC"
-                      value={formData.cnic}
-                      onChange={(e) => setFormData({ ...formData, cnic: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>School</Label>
-                    <select
-                      className="w-full border rounded-md p-2"
-                      value={formData.schoolId}
-                      onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
-                    >
-                      <option value="">Select school</option>
-                      {schools.map((school: any) => (
-                        <option key={school.id} value={school.id}>
-                          {school.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {!editingTeacher && (
-                    <div>
-                      <Label>Password</Label>
-                      <Input
-                        type="password"
-                        placeholder="Enter password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      />
-                    </div>
-                  )}
+                )}
                   <Button onClick={handleSave} className="w-full">
                     Save
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
         </div>
       </div>
 
@@ -374,186 +374,186 @@ export default function Teachers() {
             teachers.map((teacher: any) => {
               const status = getTeacherStatus(teacher);
               const isDisabled = !teacher.isActive;
-
+              
               return (
-                <MobileCard
-                  key={teacher.id}
-                  title={teacher.teacherProfile?.name || 'N/A'}
+              <MobileCard
+                key={teacher.id}
+                title={teacher.teacherProfile?.name || 'N/A'}
                   subtitle={<Badge variant={status.variant} className="mt-1">{status.label}</Badge> as any}
-                  metadata={[
+                metadata={[
                     { label: 'Email', value: teacher.email, icon: <Mail className="h-3 w-3" /> },
                     { label: 'Phone', value: teacher.phone || 'N/A', icon: <PhoneIcon className="h-3 w-3" /> },
                     { label: 'CNIC', value: teacher.teacherProfile?.cnic || 'N/A', icon: <CreditCard className="h-3 w-3" /> },
                     { label: 'School', value: teacher.teacherProfile?.school?.name || 'N/A', icon: <School className="h-3 w-3" /> },
-                  ]}
+                ]}
                   actions={
                     (canEdit() || canDelete() || isAdmin()) ? (
-                      <div className="flex gap-2 flex-wrap">
-                        {canEdit() && (
+                  <div className="flex gap-2 flex-wrap">
+                    {canEdit() && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditDialog(teacher)}
+                        disabled={isDisabled}
+                        className="flex-1"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    )}
+                    {isAdmin() && (
+                      <>
+                        {teacher.isActive ? (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => openEditDialog(teacher)}
-                            disabled={isDisabled}
+                            onClick={() => handleDisable(teacher)}
                             className="flex-1"
                           >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
+                            <Ban className="h-4 w-4 mr-2" />
+                            Disable
                           </Button>
-                        )}
-                        {isAdmin() && (
-                          <>
-                            {teacher.isActive ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDisable(teacher)}
-                                className="flex-1"
-                              >
-                                <Ban className="h-4 w-4 mr-2" />
-                                Disable
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEnable(teacher)}
-                                className="flex-1"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Enable
-                              </Button>
-                            )}
-                          </>
-                        )}
-                        {canDelete() && (
+                        ) : (
                           <Button
                             size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(teacher.id)}
+                            variant="outline"
+                            onClick={() => handleEnable(teacher)}
                             className="flex-1"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Enable
                           </Button>
                         )}
-                      </div>
+                      </>
+                    )}
+                    {canDelete() && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(teacher.id)}
+                        className="flex-1"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
                     ) : undefined
                   }
-                />
+              />
               );
             })
           )}
         </div>
       ) : (
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>CNIC</TableHead>
+              <TableHead>School</TableHead>
+              <TableHead>Status</TableHead>
+              {(canEdit() || canDelete() || isAdmin()) && <TableHead>Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>CNIC</TableHead>
-                <TableHead>School</TableHead>
-                <TableHead>Status</TableHead>
-                {(canEdit() || canDelete() || isAdmin()) && <TableHead>Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
                   <TableCell colSpan={7} className="text-center">
                     Loading...
                   </TableCell>
-                </TableRow>
-              ) : teachers.length === 0 ? (
-                <TableRow>
+              </TableRow>
+            ) : teachers.length === 0 ? (
+              <TableRow>
                   <TableCell colSpan={7} className="text-center">
                     No teachers found
                   </TableCell>
-                </TableRow>
-              ) : (
-                teachers.map((teacher: any) => {
-                  const status = getTeacherStatus(teacher);
-                  const isDisabled = !teacher.isActive;
-
-                  return (
+              </TableRow>
+            ) : (
+              teachers.map((teacher: any) => {
+                const status = getTeacherStatus(teacher);
+                const isDisabled = !teacher.isActive;
+                
+                return (
                     <TableRow key={teacher.id} className={isDisabled ? 'opacity-60' : ''}>
-                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                        {teacher.teacherProfile?.name || 'N/A'}
-                      </TableCell>
-                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                        {teacher.email}
-                      </TableCell>
-                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                        {teacher.phone || 'N/A'}
-                      </TableCell>
-                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                        {teacher.teacherProfile?.cnic || 'N/A'}
-                      </TableCell>
-                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                        {teacher.teacherProfile?.school?.name || 'N/A'}
-                      </TableCell>
-                      <TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.teacherProfile?.name || 'N/A'}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.email}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.phone || 'N/A'}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.teacherProfile?.cnic || 'N/A'}
+                    </TableCell>
+                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
+                      {teacher.teacherProfile?.school?.name || 'N/A'}
+                    </TableCell>
+                    <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
-                      </TableCell>
-                      {(canEdit() || canDelete() || isAdmin()) && (
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {canEdit() && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openEditDialog(teacher)}
-                                disabled={isDisabled}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
+                    </TableCell>
+                    {(canEdit() || canDelete() || isAdmin()) && (
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {canEdit() && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditDialog(teacher)}
+                              disabled={isDisabled}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
 
-                            {isAdmin() && (
-                              <>
-                                {teacher.isActive ? (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleDisable(teacher)}
-                                    title="Disable teacher"
-                                  >
-                                    <Ban className="h-4 w-4" />
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleEnable(teacher)}
-                                    title="Enable teacher"
-                                  >
-                                    <CheckCircle className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </>
-                            )}
+                          {isAdmin() && (
+                            <>
+                              {teacher.isActive ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDisable(teacher)}
+                                  title="Disable teacher"
+                                >
+                                  <Ban className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEnable(teacher)}
+                                  title="Enable teacher"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </>
+                          )}
 
-                            {canDelete() && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDelete(teacher.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                        {canDelete() && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(teacher.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
       )}
 
       {/* Pagination */}
