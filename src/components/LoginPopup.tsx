@@ -22,7 +22,7 @@ export const LoginPopup = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-lg border-none bg-transparent p-0 shadow-none">
         <img
-          src="/MaryamNawazPopup.png"
+          src="/maryam-nawaz.png"
           alt="Maryam Nawaz popup"
           className="h-auto w-full rounded-lg"
         />

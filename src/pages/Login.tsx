@@ -99,8 +99,8 @@ const Login = () => {
                   className="h-16 md:h-20"
                 />
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-                Spoken English Training Portal
+              <h1 className="text-1xl md:text-2xl font-bold text-gray-800 mb-2">
+                PEF Spoken English Training Portal
               </h1>
               <p className="text-gray-600 text-base md:text-lg">
                 Monitoring & Management System
