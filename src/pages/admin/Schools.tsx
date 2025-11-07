@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,6 +21,8 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
+import { ImportButton } from '@/components/data-transfer/ImportButton';
 
 export default function Schools() {
   const [schools, setSchools] = useState([]);
@@ -46,7 +48,7 @@ export default function Schools() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete } = useAuth();
+  const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
   // Debounce search term (300ms delay)
@@ -209,14 +211,50 @@ export default function Schools() {
           />
         </div>
 
-        {canEdit() && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add School
+        <div className="flex gap-2">
+          {isAdmin() && (
+            <>
+              <Button
+                variant="outline"
+                size="default"
+                onClick={async () => {
+                  const blob = await api.downloadSchoolsTemplate();
+                  const url = window.URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = 'schools-template.csv';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  window.URL.revokeObjectURL(url);
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Template
               </Button>
-            </DialogTrigger>
+              <ImportButton
+                label="Import"
+                importFn={async (file) => {
+                  const result = await api.importSchools(file);
+                  return result.data as any;
+                }}
+                onSuccess={() => fetchSchools()}
+              />
+              <ExportButton
+                label="Export"
+                exportFn={api.exportSchools}
+                filename="schools.csv"
+              />
+            </>
+          )}
+          {canEdit() && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openCreateDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add School
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingSchool ? 'Edit School' : 'Add New School'}</DialogTitle>
@@ -301,6 +339,7 @@ export default function Schools() {
             </DialogContent>
           </Dialog>
         )}
+      </div>
       </div>
 
       <div className="border rounded-lg">

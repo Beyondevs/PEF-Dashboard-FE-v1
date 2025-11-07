@@ -97,10 +97,16 @@ async function request<T>(
   const token = getAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  // Handle FormData - don't set Content-Type, let browser set it with boundary
+  const isFormData = options.body instanceof FormData;
+  if (isFormData) {
+    delete headers['Content-Type'];
+  }
+
   const doFetch = () => fetch(url, {
     method: options.method || 'GET',
     headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: options.body ? (isFormData ? options.body : JSON.stringify(options.body)) : undefined,
     credentials: 'include',
     signal: options.signal,
   });
@@ -164,12 +170,66 @@ async function request<T>(
   return { data: json as T, status };
 }
 
+async function requestBlob(
+  path: string,
+  options: {
+    method?: HttpMethod;
+    body?: any;
+    headers?: Record<string, string>;
+  } = {},
+): Promise<ApiResponse<Blob>> {
+  const url = path.startsWith('http') ? path : `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+
+  const headers: Record<string, string> = {
+    ...(options.headers || {}),
+  };
+
+  const token = getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const doFetch = () => fetch(url, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body,
+    credentials: 'include',
+  });
+
+  let res = await doFetch();
+
+  if (!res.ok) {
+    // If unauthorized, attempt a single silent refresh then retry once
+    if (res.status === 401 && !url.endsWith('/auth/refresh') && !url.endsWith('/auth/login')) {
+      try {
+        await performTokenRefresh();
+        const newToken = getAccessToken();
+        if (newToken) headers.Authorization = `Bearer ${newToken}`;
+        res = await doFetch();
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } catch (e) {
+        try {
+          window.dispatchEvent(new CustomEvent('pef:session-expired'));
+        } catch {}
+        throw new Error('401 Unauthorized');
+      }
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  }
+
+  const blob = await res.blob();
+  return { data: blob, status: res.status };
+}
+
 export const apiClient = {
   get: <T>(path: string, signal?: AbortSignal) => request<T>(path, { method: 'GET', signal }),
-  post: <T>(path: string, body?: any) => request<T>(path, { method: 'POST', body }),
+  post: <T>(path: string, body?: any, options?: { headers?: Record<string, string> }) => 
+    request<T>(path, { method: 'POST', body, headers: options?.headers }),
   put: <T>(path: string, body?: any) => request<T>(path, { method: 'PUT', body }),
   patch: <T>(path: string, body?: any) => request<T>(path, { method: 'PATCH', body }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  getBlob: (path: string) => requestBlob(path, { method: 'GET' }),
 };
 
 

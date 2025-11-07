@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,6 +23,8 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
+import { ImportButton } from '@/components/data-transfer/ImportButton';
 
 export default function Trainers() {
   const [trainers, setTrainers] = useState([]);
@@ -46,7 +48,7 @@ export default function Trainers() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete } = useAuth();
+  const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
   // Fetch schools on component mount (with pagination to get all)
@@ -217,7 +219,7 @@ export default function Trainers() {
         <p className="text-muted-foreground mt-1">Manage trainer accounts and assignments</p>
       </div>
 
-      <div className="flex justify-between flex-wrap items-center mb-6 sm:flex sm:nowrap">
+      <div className="flex justify-between flex-wrap items-center mb-6 sm:flex sm:nowrap gap-2">
         <div className="relative w-64 mt-2 sm:mt-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -226,19 +228,52 @@ export default function Trainers() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
-
-
-          
         </div>
 
-        {canEdit() && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="mt-2 sm:mt-0" onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Trainer
+        <div className="flex gap-2 flex-wrap mt-2 sm:mt-0">
+          {isAdmin() && (
+            <>
+              <Button
+                variant="outline"
+                size="default"
+                onClick={async () => {
+                  const blob = await api.downloadTrainersTemplate();
+                  const url = window.URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = 'trainers-template.csv';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  window.URL.revokeObjectURL(url);
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Template
               </Button>
-            </DialogTrigger>
+              <ImportButton
+                label="Import"
+                importFn={async (file) => {
+                  const result = await api.importTrainersCSV(file);
+                  return result.data as any;
+                }}
+                onSuccess={() => fetchTrainers()}
+              />
+              <ExportButton
+                label="Export"
+                exportFn={api.exportTrainers}
+                filename="trainers.csv"
+              />
+            </>
+          )}
+          {canEdit() && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openCreateDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Trainer
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{editingTrainer ? 'Edit Trainer' : 'Add New Trainer'}</DialogTitle>
@@ -341,7 +376,8 @@ export default function Trainers() {
               </div>
             </DialogContent>
           </Dialog>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="border rounded-lg">

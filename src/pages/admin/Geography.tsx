@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +22,8 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
+import { ImportButton } from '@/components/data-transfer/ImportButton';
 
 export default function Geography() {
   const [divisions, setDivisions] = useState([]);
@@ -39,7 +41,7 @@ export default function Geography() {
   const [districtForm, setDistrictForm] = useState({ name: '', code: '', divisionId: '' });
   const [tehsilForm, setTehsilForm] = useState({ name: '', code: '', districtId: '' });
   
-  const { canEdit, canDelete } = useAuth();
+  const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -174,34 +176,88 @@ export default function Geography() {
 
         {/* Divisions Tab */}
         <TabsContent value="divisions" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="text-xl font-semibold">Divisions ({divisions.length})</h2>
-            {canEdit() && (
-              <Dialog open={isDivisionDialogOpen} onOpenChange={setIsDivisionDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => { setEditingDivision(null); setDivisionForm({ name: '', code: '' }); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Division
+            <div className="flex flex-wrap gap-2 justify-end">
+              {isAdmin() && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const blob = await api.downloadDivisionsTemplate();
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = 'divisions-template.csv';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Template
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingDivision ? 'Edit Division' : 'Add Division'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Name</Label>
-                      <Input value={divisionForm.name} onChange={(e) => setDivisionForm({ ...divisionForm, name: e.target.value })} />
+                  <ImportButton
+                    label="Import"
+                    size="sm"
+                    importFn={async (file) => {
+                      const response = await api.importDivisions(file);
+                      return response.data;
+                    }}
+                    onSuccess={fetchAll}
+                  />
+                  <ExportButton
+                    label="Export"
+                    size="sm"
+                    exportFn={api.exportDivisions}
+                    filename="divisions.csv"
+                  />
+                </>
+              )}
+
+              {canEdit() && (
+                <Dialog open={isDivisionDialogOpen} onOpenChange={setIsDivisionDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingDivision(null);
+                        setDivisionForm({ name: '', code: '' });
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Division
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{editingDivision ? 'Edit Division' : 'Add Division'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          value={divisionForm.name}
+                          onChange={(e) => setDivisionForm({ ...divisionForm, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Code</Label>
+                        <Input
+                          value={divisionForm.code}
+                          onChange={(e) => setDivisionForm({ ...divisionForm, code: e.target.value })}
+                        />
+                      </div>
+                      <Button onClick={handleSaveDivision} className="w-full">
+                        Save
+                      </Button>
                     </div>
-                    <div>
-                      <Label>Code</Label>
-                      <Input value={divisionForm.code} onChange={(e) => setDivisionForm({ ...divisionForm, code: e.target.value })} />
-                    </div>
-                    <Button onClick={handleSaveDivision} className="w-full">Save</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
 
           <div className="border rounded-lg">
@@ -249,43 +305,103 @@ export default function Geography() {
 
         {/* Districts Tab */}
         <TabsContent value="districts" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="text-xl font-semibold">Districts ({districts.length})</h2>
-            {canEdit() && (
-              <Dialog open={isDistrictDialogOpen} onOpenChange={setIsDistrictDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => { setEditingDistrict(null); setDistrictForm({ name: '', code: '', divisionId: '' }); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add District
+            <div className="flex flex-wrap gap-2 justify-end">
+              {isAdmin() && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const blob = await api.downloadDistrictsTemplate();
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = 'districts-template.csv';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Template
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingDistrict ? 'Edit District' : 'Add District'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Name</Label>
-                      <Input value={districtForm.name} onChange={(e) => setDistrictForm({ ...districtForm, name: e.target.value })} />
+                  <ImportButton
+                    label="Import"
+                    size="sm"
+                    importFn={async (file) => {
+                      const response = await api.importDistricts(file);
+                      return response.data;
+                    }}
+                    onSuccess={fetchAll}
+                  />
+                  <ExportButton
+                    label="Export"
+                    size="sm"
+                    exportFn={api.exportDistricts}
+                    filename="districts.csv"
+                  />
+                </>
+              )}
+
+              {canEdit() && (
+                <Dialog open={isDistrictDialogOpen} onOpenChange={setIsDistrictDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingDistrict(null);
+                        setDistrictForm({ name: '', code: '', divisionId: '' });
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add District
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{editingDistrict ? 'Edit District' : 'Add District'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          value={districtForm.name}
+                          onChange={(e) => setDistrictForm({ ...districtForm, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Code</Label>
+                        <Input
+                          value={districtForm.code}
+                          onChange={(e) => setDistrictForm({ ...districtForm, code: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Division</Label>
+                        <select
+                          className="w-full border rounded-md p-2"
+                          value={districtForm.divisionId}
+                          onChange={(e) => setDistrictForm({ ...districtForm, divisionId: e.target.value })}
+                        >
+                          <option value="">Select division</option>
+                          {divisions.map((div: any) => (
+                            <option key={div.id} value={div.id}>
+                              {div.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <Button onClick={handleSaveDistrict} className="w-full">
+                        Save
+                      </Button>
                     </div>
-                    <div>
-                      <Label>Code</Label>
-                      <Input value={districtForm.code} onChange={(e) => setDistrictForm({ ...districtForm, code: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label>Division</Label>
-                      <select className="w-full border rounded-md p-2" value={districtForm.divisionId} onChange={(e) => setDistrictForm({ ...districtForm, divisionId: e.target.value })}>
-                        <option value="">Select division</option>
-                        {divisions.map((div: any) => (
-                          <option key={div.id} value={div.id}>{div.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <Button onClick={handleSaveDistrict} className="w-full">Save</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
 
           <div className="border rounded-lg">
@@ -335,43 +451,103 @@ export default function Geography() {
 
         {/* Tehsils Tab */}
         <TabsContent value="tehsils" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="text-xl font-semibold">Tehsils ({tehsils.length})</h2>
-            {canEdit() && (
-              <Dialog open={isTehsilDialogOpen} onOpenChange={setIsTehsilDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => { setEditingTehsil(null); setTehsilForm({ name: '', code: '', districtId: '' }); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Tehsil
+            <div className="flex flex-wrap gap-2 justify-end">
+              {isAdmin() && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const blob = await api.downloadTehsilsTemplate();
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = 'tehsils-template.csv';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Template
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingTehsil ? 'Edit Tehsil' : 'Add Tehsil'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Name</Label>
-                      <Input value={tehsilForm.name} onChange={(e) => setTehsilForm({ ...tehsilForm, name: e.target.value })} />
+                  <ImportButton
+                    label="Import"
+                    size="sm"
+                    importFn={async (file) => {
+                      const response = await api.importTehsils(file);
+                      return response.data;
+                    }}
+                    onSuccess={fetchAll}
+                  />
+                  <ExportButton
+                    label="Export"
+                    size="sm"
+                    exportFn={api.exportTehsils}
+                    filename="tehsils.csv"
+                  />
+                </>
+              )}
+
+              {canEdit() && (
+                <Dialog open={isTehsilDialogOpen} onOpenChange={setIsTehsilDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingTehsil(null);
+                        setTehsilForm({ name: '', code: '', districtId: '' });
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Tehsil
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{editingTehsil ? 'Edit Tehsil' : 'Add Tehsil'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          value={tehsilForm.name}
+                          onChange={(e) => setTehsilForm({ ...tehsilForm, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Code</Label>
+                        <Input
+                          value={tehsilForm.code}
+                          onChange={(e) => setTehsilForm({ ...tehsilForm, code: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>District</Label>
+                        <select
+                          className="w-full border rounded-md p-2"
+                          value={tehsilForm.districtId}
+                          onChange={(e) => setTehsilForm({ ...tehsilForm, districtId: e.target.value })}
+                        >
+                          <option value="">Select district</option>
+                          {districts.map((dist: any) => (
+                            <option key={dist.id} value={dist.id}>
+                              {dist.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <Button onClick={handleSaveTehsil} className="w-full">
+                        Save
+                      </Button>
                     </div>
-                    <div>
-                      <Label>Code</Label>
-                      <Input value={tehsilForm.code} onChange={(e) => setTehsilForm({ ...tehsilForm, code: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label>District</Label>
-                      <select className="w-full border rounded-md p-2" value={tehsilForm.districtId} onChange={(e) => setTehsilForm({ ...tehsilForm, districtId: e.target.value })}>
-                        <option value="">Select district</option>
-                        {districts.map((dist: any) => (
-                          <option key={dist.id} value={dist.id}>{dist.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <Button onClick={handleSaveTehsil} className="w-full">Save</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
 
           <div className="border rounded-lg">

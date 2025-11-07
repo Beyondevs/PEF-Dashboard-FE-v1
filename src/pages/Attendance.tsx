@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -12,17 +12,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Download, Save, Calendar as CalendarIcon, Clock, UserCheck, UserX } from 'lucide-react';
+import { Save, Calendar as CalendarIcon, Clock, UserCheck, UserX, FileText } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCard } from '@/components/MobileCard';
-import { attendance, sessions, teachers, students } from '@/lib/mockData';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
 import PaginationControls from '@/components/PaginationControls';
-import { getAttendanceList, toggleAttendance } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
+import { ImportButton } from '@/components/data-transfer/ImportButton';
+import {
+  getAttendanceList,
+  toggleAttendance,
+  exportAttendance,
+  importAttendanceCSV,
+  downloadAttendanceTemplate,
+} from '@/lib/api';
 
 const Attendance = () => {
   const { filters } = useFilters();
+  const { canMarkAttendance } = useAuth();
   const isMobile = useIsMobile();
   const [editMode, setEditMode] = useState(false);
   const [attendanceChanges, setAttendanceChanges] = useState<Record<string, boolean>>({});
@@ -42,90 +51,87 @@ const Attendance = () => {
   const [teacherTotalItems, setTeacherTotalItems] = useState(0);
   const [studentTotalItems, setStudentTotalItems] = useState(0);
   const pageSize = 20;
+  const hasManagePermissions = canMarkAttendance();
 
-  // Fetch attendance from API
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      try {
-        setIsLoading(true);
-        setApiError(false);
-        
-        // Transform filters to API format
-        const teacherFilters: any = {
-          page: teacherPage,
-          pageSize,
-          personType: 'teacher',
-        };
-        
-        const studentFilters: any = {
-          page: studentPage,
-          pageSize,
-          personType: 'student',
-        };
-        
-        // Add session filter if present
-        if (filters.sessionId) {
-          teacherFilters.sessionId = filters.sessionId;
-          studentFilters.sessionId = filters.sessionId;
-        }
-        
-        // Add other filters
-        if (filters.division) {
-          teacherFilters.divisionId = filters.division;
-          studentFilters.divisionId = filters.division;
-        }
-        if (filters.district) {
-          teacherFilters.districtId = filters.district;
-          studentFilters.districtId = filters.district;
-        }
-        if (filters.tehsil) {
-          teacherFilters.tehsilId = filters.tehsil;
-          studentFilters.tehsilId = filters.tehsil;
-        }
-        if (filters.school) {
-          teacherFilters.schoolId = filters.school;
-          studentFilters.schoolId = filters.school;
-        }
-        
-        // Fetch both teacher and student attendance in parallel
-        const [teacherResponse, studentResponse] = await Promise.all([
-          getAttendanceList(teacherFilters),
-          getAttendanceList(studentFilters)
-        ]);
-        
-        setApiTeacherAttendance(teacherResponse.data.data || []);
-        setApiStudentAttendance(studentResponse.data.data || []);
-        
-        // Set pagination info from API response
-        if (teacherResponse.data.totalPages !== undefined) {
-          setTeacherTotalPages(teacherResponse.data.totalPages);
-        } else if (teacherResponse.data.total !== undefined) {
-          setTeacherTotalPages(Math.ceil(teacherResponse.data.total / pageSize));
-        }
-        setTeacherTotalItems(teacherResponse.data.totalItems || teacherResponse.data.total || 0);
-        
-        if (studentResponse.data.totalPages !== undefined) {
-          setStudentTotalPages(studentResponse.data.totalPages);
-        } else if (studentResponse.data.total !== undefined) {
-          setStudentTotalPages(Math.ceil(studentResponse.data.total / pageSize));
-        }
-        setStudentTotalItems(studentResponse.data.totalItems || studentResponse.data.total || 0);
-        
-      } catch (error) {
-        console.error('Failed to fetch attendance:', error);
-        setApiError(true);
-        setApiTeacherAttendance([]);
-        setApiStudentAttendance([]);
-      } finally {
-        setIsLoading(false);
+  const fetchAttendance = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setApiError(false);
+
+      const teacherFilters: any = {
+        page: teacherPage,
+        pageSize,
+        personType: 'teacher',
+      };
+
+      const studentFilters: any = {
+        page: studentPage,
+        pageSize,
+        personType: 'student',
+      };
+
+      if (filters.sessionId) {
+        teacherFilters.sessionId = filters.sessionId;
+        studentFilters.sessionId = filters.sessionId;
       }
-    };
 
+      if (filters.division) {
+        teacherFilters.divisionId = filters.division;
+        studentFilters.divisionId = filters.division;
+      }
+      if (filters.district) {
+        teacherFilters.districtId = filters.district;
+        studentFilters.districtId = filters.district;
+      }
+      if (filters.tehsil) {
+        teacherFilters.tehsilId = filters.tehsil;
+        studentFilters.tehsilId = filters.tehsil;
+      }
+      if (filters.school) {
+        teacherFilters.schoolId = filters.school;
+        studentFilters.schoolId = filters.school;
+      }
+
+      const [teacherResponse, studentResponse] = await Promise.all([
+        getAttendanceList(teacherFilters),
+        getAttendanceList(studentFilters),
+      ]);
+
+      setApiTeacherAttendance(teacherResponse.data.data || []);
+      setApiStudentAttendance(studentResponse.data.data || []);
+
+      if (teacherResponse.data.totalPages !== undefined) {
+        setTeacherTotalPages(teacherResponse.data.totalPages);
+      } else if (teacherResponse.data.total !== undefined) {
+        setTeacherTotalPages(Math.ceil(teacherResponse.data.total / pageSize));
+      }
+      setTeacherTotalItems(teacherResponse.data.totalItems || teacherResponse.data.total || 0);
+
+      if (studentResponse.data.totalPages !== undefined) {
+        setStudentTotalPages(studentResponse.data.totalPages);
+      } else if (studentResponse.data.total !== undefined) {
+        setStudentTotalPages(Math.ceil(studentResponse.data.total / pageSize));
+      }
+      setStudentTotalItems(studentResponse.data.totalItems || studentResponse.data.total || 0);
+    } catch (error) {
+      console.error('Failed to fetch attendance:', error);
+      setApiError(true);
+      setApiTeacherAttendance([]);
+      setApiStudentAttendance([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters, teacherPage, studentPage, pageSize]);
+
+  useEffect(() => {
     fetchAttendance();
-  }, [teacherPage, studentPage, filters]);
+  }, [fetchAttendance]);
 
-  const handleExport = () => {
-    toast.success('Export generated successfully');
+  const buildExportParams = () => {
+    const params: Record<string, string> = {};
+    if (filters.sessionId) params.sessionId = filters.sessionId;
+    params.personType = activeTab === 'teachers' ? 'Teacher' : 'Student';
+    return params;
   };
 
   const handleSaveChanges = async () => {
@@ -187,52 +193,7 @@ const Attendance = () => {
       toast.success(`Successfully saved ${successCount} change(s)`);
       setAttendanceChanges({});
       setEditMode(false);
-      
-      // Refresh data with current page numbers
-      const teacherFilters: any = {
-        page: teacherPage,
-        pageSize,
-        personType: 'teacher',
-      };
-      
-      const studentFilters: any = {
-        page: studentPage,
-        pageSize,
-        personType: 'student',
-      };
-      
-      if (filters.sessionId) {
-        teacherFilters.sessionId = filters.sessionId;
-        studentFilters.sessionId = filters.sessionId;
-      }
-      if (filters.division) {
-        teacherFilters.divisionId = filters.division;
-        studentFilters.divisionId = filters.division;
-      }
-      if (filters.district) {
-        teacherFilters.districtId = filters.district;
-        studentFilters.districtId = filters.district;
-      }
-      if (filters.tehsil) {
-        teacherFilters.tehsilId = filters.tehsil;
-        studentFilters.tehsilId = filters.tehsil;
-      }
-      if (filters.school) {
-        teacherFilters.schoolId = filters.school;
-        studentFilters.schoolId = filters.school;
-      }
-      
-      try {
-        const [teacherResponse, studentResponse] = await Promise.all([
-          getAttendanceList(teacherFilters),
-          getAttendanceList(studentFilters)
-        ]);
-        setApiTeacherAttendance(teacherResponse.data.data || []);
-        setApiStudentAttendance(studentResponse.data.data || []);
-      } catch (e) {
-        // Ignore refresh error to avoid UX interruption
-        console.error('Failed to refresh attendance data:', e);
-      }
+      await fetchAttendance();
     } catch (error) {
       console.error('Failed to save changes:', error);
       toast.error('Failed to save changes. Please try again.');
@@ -254,55 +215,7 @@ const Attendance = () => {
     // Discard all unsaved changes and reset to last saved state
     setAttendanceChanges({});
     setEditMode(false);
-    
-    // Refresh data to ensure UI shows last saved state
-    const teacherFilters: any = {
-      page: teacherPage,
-      pageSize,
-      personType: 'teacher',
-    };
-    
-    const studentFilters: any = {
-      page: studentPage,
-      pageSize,
-      personType: 'student',
-    };
-    
-    if (filters.sessionId) {
-      teacherFilters.sessionId = filters.sessionId;
-      studentFilters.sessionId = filters.sessionId;
-    }
-    if (filters.division) {
-      teacherFilters.divisionId = filters.division;
-      studentFilters.divisionId = filters.division;
-    }
-    if (filters.district) {
-      teacherFilters.districtId = filters.district;
-      studentFilters.districtId = filters.district;
-    }
-    if (filters.tehsil) {
-      teacherFilters.tehsilId = filters.tehsil;
-      studentFilters.tehsilId = filters.tehsil;
-    }
-    if (filters.school) {
-      teacherFilters.schoolId = filters.school;
-      studentFilters.schoolId = filters.school;
-    }
-    
-    // Silently refresh data in background
-    Promise.all([
-      getAttendanceList(teacherFilters).catch(() => null),
-      getAttendanceList(studentFilters).catch(() => null)
-    ]).then(([teacherResponse, studentResponse]) => {
-      if (teacherResponse?.data) {
-        setApiTeacherAttendance(teacherResponse.data.data || []);
-      }
-      if (studentResponse?.data) {
-        setApiStudentAttendance(studentResponse.data.data || []);
-      }
-    }).catch(() => {
-      // Ignore refresh errors
-    });
+    fetchAttendance();
   };
 
   const getAttendanceStatus = (recordId: string, originalStatus: boolean) => {
@@ -356,26 +269,66 @@ const Attendance = () => {
           <p className="text-sm sm:text-base text-muted-foreground">View and manage attendance records</p>
           
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button 
-            variant={editMode ? 'default' : 'outline'}
-            onClick={editMode ? handleCancelEdit : () => setEditMode(true)}
-            className="flex-1 sm:flex-initial"
-          >
-            <span className="hidden sm:inline">{editMode ? 'Cancel Edit' : 'Edit Mode'}</span>
-            <span className="sm:hidden">{editMode ? 'Cancel' : 'Edit'}</span>
-          </Button>
-          {editMode && Object.keys(attendanceChanges).length > 0 && (
-            <Button onClick={handleSaveChanges} className="flex-1 sm:flex-initial">
-              <Save className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Save Changes ({Object.keys(attendanceChanges).length})</span>
-              <span className="sm:hidden">Save ({Object.keys(attendanceChanges).length})</span>
-            </Button>
+        <div className="flex flex-wrap gap-2 justify-end">
+          {hasManagePermissions && (
+            <>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const blob = await downloadAttendanceTemplate();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'attendance-template.csv';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                  } catch (error) {
+                    console.error('Failed to download attendance template:', error);
+                    toast.error('Failed to download template');
+                  }
+                }}
+                className="flex-1 sm:flex-initial"
+              >
+                <FileText className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Template</span>
+                <span className="sm:hidden">Template</span>
+              </Button>
+              <ImportButton
+                label="Import"
+                importFn={async (file) => {
+                  const response = await importAttendanceCSV(file);
+                  return response.data as any;
+                }}
+                onSuccess={() => fetchAttendance()}
+              />
+              <ExportButton
+                label="Export"
+                exportFn={async () => {
+                  const params = buildExportParams();
+                  return exportAttendance(params);
+                }}
+                filename={activeTab === 'teachers' ? 'attendance-teachers.csv' : 'attendance-students.csv'}
+              />
+              <Button
+                variant={editMode ? 'default' : 'outline'}
+                onClick={editMode ? handleCancelEdit : () => setEditMode(true)}
+                className="flex-1 sm:flex-initial"
+              >
+                <span className="hidden sm:inline">{editMode ? 'Cancel Edit' : 'Edit Mode'}</span>
+                <span className="sm:hidden">{editMode ? 'Cancel' : 'Edit'}</span>
+              </Button>
+              {editMode && Object.keys(attendanceChanges).length > 0 && (
+                <Button onClick={handleSaveChanges} className="flex-1 sm:flex-initial">
+                  <Save className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Save Changes ({Object.keys(attendanceChanges).length})</span>
+                  <span className="sm:hidden">Save ({Object.keys(attendanceChanges).length})</span>
+                </Button>
+              )}
+            </>
           )}
-          <Button variant="outline" onClick={handleExport} className="flex-1 sm:flex-initial">
-            <Download className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
         </div>
       </div>
 

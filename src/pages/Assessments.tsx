@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -11,20 +11,26 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Download, Save, Edit, X } from 'lucide-react';
+import { Save, Edit, X, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { useFilters } from '@/contexts/FilterContext';
 import PaginationControls from '@/components/PaginationControls';
-import { 
-  getAssessments, 
-  bulkUpsertStudentAssessments, 
-  bulkUpsertTeacherAssessments, 
-  updateAssessment 
+import {
+  getAssessments,
+  updateAssessment,
+  downloadAssessmentsTemplate,
+  exportAssessmentsCSV,
+  importAssessmentsCSV,
 } from '@/lib/api';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
+import { ImportButton } from '@/components/data-transfer/ImportButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Assessments = () => {
   const { filters } = useFilters();
+  const { role, isAdmin } = useAuth();
+  const canManageAssessments = isAdmin() || role === 'trainer';
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const [editMode, setEditMode] = useState(false);
   
@@ -61,63 +67,70 @@ const Assessments = () => {
     return apiFilters;
   };
 
-  // Fetch student assessments
+  const buildExportParams = () => {
+    const params: Record<string, string> = {};
+    if (filters.sessionId) params.sessionId = filters.sessionId;
+    params.subjectType = activeTab === 'students' ? 'student' : 'teacher';
+    return params;
+  };
+
+  const fetchStudentAssessments = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      const response = await getAssessments(buildFilters(studentPage, 'student'));
+      const { data, totalItems, totalPages } = response.data;
+
+      const computedTotalItems = totalItems ?? data?.length ?? 0;
+      const computedTotalPages =
+        totalPages ?? (computedTotalItems > 0 ? Math.ceil(computedTotalItems / pageSize) : 1);
+
+      setStudentAssessments(data ?? []);
+      setStudentTotalItems(computedTotalItems);
+      setStudentTotalPages(computedTotalPages);
+    } catch (error) {
+      console.error('Failed to fetch student assessments:', error);
+      setStudentAssessments([]);
+      toast.error('Failed to load student assessments');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [studentPage, filters, pageSize]);
+
+  const fetchTeacherAssessments = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      const response = await getAssessments(buildFilters(teacherPage, 'teacher'));
+      const { data, totalItems, totalPages } = response.data;
+
+      const computedTotalItems = totalItems ?? data?.length ?? 0;
+      const computedTotalPages =
+        totalPages ?? (computedTotalItems > 0 ? Math.ceil(computedTotalItems / pageSize) : 1);
+
+      setTeacherAssessments(data ?? []);
+      setTeacherTotalItems(computedTotalItems);
+      setTeacherTotalPages(computedTotalPages);
+    } catch (error) {
+      console.error('Failed to fetch teacher assessments:', error);
+      setTeacherAssessments([]);
+      toast.error('Failed to load teacher assessments');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [teacherPage, filters, pageSize]);
+
   useEffect(() => {
-    const fetchStudentAssessments = async () => {
-      try {
-        setIsLoading(true);
-
-        const response = await getAssessments(buildFilters(studentPage, 'student'));
-        const { data, totalItems, totalPages } = response.data;
-
-        const computedTotalItems = totalItems ?? data?.length ?? 0;
-        const computedTotalPages = totalPages ?? (computedTotalItems > 0 ? Math.ceil(computedTotalItems / pageSize) : 1);
-
-        setStudentAssessments(data ?? []);
-        setStudentTotalItems(computedTotalItems);
-        setStudentTotalPages(computedTotalPages);
-      } catch (error) {
-        console.error('Failed to fetch student assessments:', error);
-        setStudentAssessments([]);
-        toast.error('Failed to load student assessments');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (activeTab === 'students') {
       fetchStudentAssessments();
     }
-  }, [studentPage, filters, activeTab]);
+  }, [activeTab, fetchStudentAssessments]);
 
-  // Fetch teacher assessments
   useEffect(() => {
-    const fetchTeacherAssessments = async () => {
-      try {
-        setIsLoading(true);
-
-        const response = await getAssessments(buildFilters(teacherPage, 'teacher'));
-        const { data, totalItems, totalPages } = response.data;
-
-        const computedTotalItems = totalItems ?? data?.length ?? 0;
-        const computedTotalPages = totalPages ?? (computedTotalItems > 0 ? Math.ceil(computedTotalItems / pageSize) : 1);
-
-        setTeacherAssessments(data ?? []);
-        setTeacherTotalItems(computedTotalItems);
-        setTeacherTotalPages(computedTotalPages);
-      } catch (error) {
-        console.error('Failed to fetch teacher assessments:', error);
-        setTeacherAssessments([]);
-        toast.error('Failed to load teacher assessments');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (activeTab === 'teachers') {
       fetchTeacherAssessments();
     }
-  }, [teacherPage, filters, activeTab]);
+  }, [activeTab, fetchTeacherAssessments]);
 
   const handleStudentScoreChange = (assessmentId: string, value: string) => {
     const score = parseFloat(value);
@@ -161,21 +174,8 @@ const Assessments = () => {
       toast.success('Student assessments updated successfully');
       setStudentChanges({});
       setEditMode(false);
-      
-      // Refresh data
-      const apiFilters: any = {
-        page: studentPage,
-        pageSize,
-        subjectType: 'student',
-      };
-      if (filters.sessionId) apiFilters.sessionId = filters.sessionId;
-      if (filters.division) apiFilters.divisionId = filters.division;
-      if (filters.district) apiFilters.districtId = filters.district;
-      if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
-      if (filters.school) apiFilters.schoolId = filters.school;
-      
-      const response = await getAssessments(apiFilters);
-      setStudentAssessments(response.data.data || []);
+
+      await fetchStudentAssessments();
     } catch (error) {
       console.error('Failed to save student assessments:', error);
       toast.error('Failed to save changes');
@@ -204,21 +204,8 @@ const Assessments = () => {
       toast.success('Teacher assessments updated successfully');
       setTeacherChanges({});
       setEditMode(false);
-      
-      // Refresh data
-      const apiFilters: any = {
-        page: teacherPage,
-        pageSize,
-        subjectType: 'teacher',
-      };
-      if (filters.sessionId) apiFilters.sessionId = filters.sessionId;
-      if (filters.division) apiFilters.divisionId = filters.division;
-      if (filters.district) apiFilters.districtId = filters.district;
-      if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
-      if (filters.school) apiFilters.schoolId = filters.school;
-      
-      const response = await getAssessments(apiFilters);
-      setTeacherAssessments(response.data.data || []);
+
+      await fetchTeacherAssessments();
     } catch (error) {
       console.error('Failed to save teacher assessments:', error);
       toast.error('Failed to save changes');
@@ -229,43 +216,6 @@ const Assessments = () => {
     setEditMode(false);
     setStudentChanges({});
     setTeacherChanges({});
-  };
-
-  const handleExport = () => {
-    const data = activeTab === 'students' ? studentAssessments : teacherAssessments;
-    const csvContent = generateCSV(data, activeTab);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${activeTab}-assessments-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    toast.success(`${activeTab === 'students' ? 'Student' : 'Teacher'} assessments exported successfully`);
-  };
-
-  const generateCSV = (data: any[], type: 'students' | 'teachers') => {
-    if (type === 'students') {
-      const headers = ['Student', 'Session', 'Date', 'Score', 'Max Score', 'Percentage'];
-      const rows = data.map((assessment) => [
-        assessment.student?.name || 'N/A',
-        assessment.session?.title || 'N/A',
-        assessment.session?.date ? new Date(assessment.session.date).toLocaleDateString() : 'N/A',
-        assessment.score,
-        assessment.maxScore,
-        ((assessment.score / assessment.maxScore) * 100).toFixed(1) + '%',
-      ]);
-      return [headers, ...rows].map((row) => row.join(',')).join('\n');
-    } else {
-      const headers = ['Teacher', 'Session', 'Date', 'Score', 'Max Score', 'Percentage'];
-      const rows = data.map((assessment) => [
-        assessment.teacher?.name || 'N/A',
-        assessment.session?.title || 'N/A',
-        assessment.session?.date ? new Date(assessment.session.date).toLocaleDateString() : 'N/A',
-        assessment.score,
-        assessment.maxScore,
-        ((assessment.score / assessment.maxScore) * 100).toFixed(1) + '%',
-      ]);
-      return [headers, ...rows].map((row) => row.join(',')).join('\n');
-    }
   };
 
   const getScoreBadge = (score: number, maxScore: number) => {
@@ -310,33 +260,80 @@ const Assessments = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Assessments</h1>
           <p className="text-muted-foreground">View and manage student and teacher assessments</p>
         </div>
-        <div className="flex gap-2">
-          {editMode ? (
+        <div className="flex flex-wrap gap-2 justify-end">
+          {canManageAssessments && (
             <>
-              <Button onClick={activeTab === 'students' ? handleSaveStudentChanges : handleSaveTeacherChanges}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes ({activeTab === 'students' ? Object.keys(studentChanges).length : Object.keys(teacherChanges).length})
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const blob = await downloadAssessmentsTemplate();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'assessments-template.csv';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                  } catch (error) {
+                    console.error('Failed to download assessments template:', error);
+                    toast.error('Failed to download template');
+                  }
+                }}
+                className="flex-1 sm:flex-initial"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Template
               </Button>
-              <Button variant="outline" onClick={handleCancelEdit}>
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button onClick={() => setEditMode(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button variant="outline" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
+              <ImportButton
+                label="Import"
+                importFn={async (file) => {
+                  const response = await importAssessmentsCSV(file);
+                  return response.data as any;
+                }}
+                onSuccess={() => {
+                  fetchStudentAssessments();
+                  fetchTeacherAssessments();
+                }}
+              />
+              <ExportButton
+                label="Export"
+                exportFn={async () => {
+                  const params = buildExportParams();
+                  return exportAssessmentsCSV(params);
+                }}
+                filename={activeTab === 'students' ? 'student-assessments.csv' : 'teacher-assessments.csv'}
+              />
+              {editMode ? (
+                <>
+                  <Button
+                    onClick={activeTab === 'students' ? handleSaveStudentChanges : handleSaveTeacherChanges}
+                    className="flex-1 sm:flex-initial"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes (
+                    {activeTab === 'students'
+                      ? Object.keys(studentChanges).length
+                      : Object.keys(teacherChanges).length}
+                    )
+                  </Button>
+                  <Button variant="outline" onClick={handleCancelEdit} className="flex-1 sm:flex-initial">
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => setEditMode(true)} className="flex-1 sm:flex-initial">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
             </>
           )}
         </div>

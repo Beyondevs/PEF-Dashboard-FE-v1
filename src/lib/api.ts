@@ -167,4 +167,183 @@ export const createStudent = (data: any) => apiClient.post('/students', data);
 export const updateStudent = (id: string, data: any) => apiClient.patch(`/students/${id}`, data);
 export const deleteStudent = (id: string) => apiClient.delete(`/students/${id}`);
 
+// ==================== DATA TRANSFER - IMPORT/EXPORT ====================
+
+// Helper to create FormData for file upload
+const createFormData = (file: File): FormData => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return formData;
+};
+
+// Helper to download blob response as file
+const downloadBlob = async (url: string, filename: string): Promise<Blob> => {
+  const response = await apiClient.getBlob(url);
+  return response.data;
+};
+
+// Divisions
+export const exportDivisions = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/divisions/export');
+  return response.data;
+};
+
+export const importDivisions = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/divisions/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadDivisionsTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/divisions/template');
+  return response.data;
+};
+
+// Districts
+export const exportDistricts = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/districts/export');
+  return response.data;
+};
+
+export const importDistricts = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/districts/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadDistrictsTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/districts/template');
+  return response.data;
+};
+
+// Tehsils
+export const exportTehsils = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/tehsils/export');
+  return response.data;
+};
+
+export const importTehsils = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/tehsils/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadTehsilsTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/tehsils/template');
+  return response.data;
+};
+
+// Schools
+export const exportSchools = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/schools/export');
+  return response.data;
+};
+
+export const importSchools = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/schools/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadSchoolsTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/schools/template');
+  return response.data;
+};
+
+// Trainers
+export const exportTrainers = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/trainers/export');
+  return response.data;
+};
+
+export const importTrainersCSV = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/trainers/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadTrainersTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/trainers/template');
+  return response.data;
+};
+
+// Teachers
+export const exportTeachers = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/teachers/export');
+  return response.data;
+};
+
+export const importTeachersCSV = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/teachers/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadTeachersTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/teachers/template');
+  return response.data;
+};
+
+// Students
+export const exportStudents = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/students/export');
+  return response.data;
+};
+
+export const importStudentsCSV = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/students/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadStudentsTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/students/template');
+  return response.data;
+};
+
+// Attendance
+export const exportAttendance = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/data-transfer/attendance/export${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
+export const importAttendanceCSV = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/attendance/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadAttendanceTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/attendance/template');
+  return response.data;
+};
+
+// Assessments
+export const exportAssessmentsCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/data-transfer/assessments/export${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
+export const importAssessmentsCSV = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/assessments/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadAssessmentsTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/assessments/template');
+  return response.data;
+};
+
 

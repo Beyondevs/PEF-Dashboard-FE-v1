@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Ban, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Ban, CheckCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFilters } from '@/contexts/FilterContext';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
+import { ImportButton } from '@/components/data-transfer/ImportButton';
 
 export default function Students() {
   const { filters } = useFilters();
@@ -265,75 +267,114 @@ export default function Students() {
           </div>
         </div>
 
-        {canEdit() && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Student
+        <div className="flex flex-wrap gap-2 justify-end">
+          {isAdmin() && (
+            <>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const blob = await api.downloadStudentsTemplate();
+                  const url = window.URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = 'students-template.csv';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  window.URL.revokeObjectURL(url);
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Template
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Name</Label>
-                  <Input 
-                    placeholder="Enter name" 
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
+              <ImportButton
+                label="Import"
+                importFn={async (file) => {
+                  const response = await api.importStudentsCSV(file);
+                  return response.data;
+                }}
+                onSuccess={() => fetchStudents()}
+              />
+              <ExportButton
+                label="Export"
+                exportFn={api.exportStudents}
+                filename="students.csv"
+              />
+            </>
+          )}
+
+          {canEdit() && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openCreateDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Student
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      placeholder="Enter name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Roll No</Label>
+                    <Input
+                      placeholder="Enter roll number"
+                      value={formData.rollNo}
+                      onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Grade</Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter grade"
+                      value={formData.grade}
+                      onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Gender</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={formData.gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    >
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>School</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={formData.schoolId}
+                      onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
+                    >
+                      <option value="">Select school</option>
+                      {schools.map((school: any) => (
+                        <option key={school.id} value={school.id}>
+                          {school.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Button onClick={handleSave} className="w-full">
+                    Save
+                  </Button>
                 </div>
-                <div>
-                  <Label>Roll No</Label>
-                  <Input 
-                    placeholder="Enter roll number" 
-                    value={formData.rollNo}
-                    onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Grade</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="Enter grade" 
-                    value={formData.grade}
-                    onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Gender</Label>
-                  <select 
-                    className="w-full border rounded-md p-2"
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>School</Label>
-                  <select 
-                    className="w-full border rounded-md p-2"
-                    value={formData.schoolId}
-                    onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
-                  >
-                    <option value="">Select school</option>
-                    {schools.map((school: any) => (
-                      <option key={school.id} value={school.id}>
-                        {school.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <Button onClick={handleSave} className="w-full">Save</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       <div className="border rounded-lg">
@@ -389,18 +430,19 @@ export default function Students() {
                       </Badge>
                     </TableCell>
                     {(canEdit() || canDelete() || isAdmin()) && (
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {canEdit() && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(student)}
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {canEdit() && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(student)}
                               disabled={isDisabled}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+
                           {isAdmin() && student.userId && (
                             <>
                               {student.user?.isActive ? (
@@ -424,18 +466,19 @@ export default function Students() {
                               )}
                             </>
                           )}
-                        {canDelete() && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(student.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  )}
+
+                          {canDelete() && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(student.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
                 </TableRow>
                 );
               })
