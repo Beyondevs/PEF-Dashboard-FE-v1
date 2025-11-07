@@ -270,14 +270,14 @@ const SessionDetail = () => {
           return !subjectType || subjectType === 'student';
         })
         .map(ass => ({
-          id: ass.id,
-          sessionId: ass.sessionId,
-          studentId: ass.studentId,
-          scoredBy: ass.scoredBy,
-          maxScore: ass.maxScore,
-          score: ass.score,
-          timestamp: ass.recordedAt,
-        }));
+        id: ass.id,
+        sessionId: ass.sessionId,
+        studentId: ass.studentId,
+        scoredBy: ass.scoredBy,
+        maxScore: ass.maxScore,
+        score: ass.score,
+        timestamp: ass.recordedAt,
+      }));
     }
     return localAssessments.filter(a => {
       const subjectType = (a as any).subjectType ?? 'student';

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -10,269 +10,270 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Download, Save, Plus } from 'lucide-react';
-import { assessments, sessions, students } from '@/lib/mockData';
+import { Input } from '@/components/ui/input';
+import { Download, Save, Edit, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFilters } from '@/contexts/FilterContext';
 import PaginationControls from '@/components/PaginationControls';
-import { usePagination } from '@/hooks/usePagination';
-import { getAssessments, bulkUpsertAssessments, updateAssessment, getSessions, getTeacherLeaderboard } from '@/lib/api';
+import { 
+  getAssessments, 
+  bulkUpsertStudentAssessments, 
+  bulkUpsertTeacherAssessments, 
+  updateAssessment 
+} from '@/lib/api';
 
 const Assessments = () => {
   const { filters } = useFilters();
-  const [scoreChanges, setScoreChanges] = useState<Record<string, number>>({});
-  const [newEntries, setNewEntries] = useState<Array<{ studentId: string; sessionId: string; score: number; maxScore: number }>>([]);
-  const [quickEntryScores, setQuickEntryScores] = useState<Record<string, number>>({});
-  const [selectedSessionId, setSelectedSessionId] = useState<string>('');
-  
-  // API data state
-  const [apiAssessments, setApiAssessments] = useState<any[]>([]);
-  const [apiSessions, setApiSessions] = useState<any[]>([]);
-  const [teacherPerformance, setTeacherPerformance] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [apiError, setApiError] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
+  const [editMode, setEditMode] = useState(false);
+  
+  // Student assessments state
+  const [studentAssessments, setStudentAssessments] = useState<any[]>([]);
+  const [studentChanges, setStudentChanges] = useState<Record<string, number>>({});
+  const [studentPage, setStudentPage] = useState(1);
+  const [studentTotalPages, setStudentTotalPages] = useState(1);
+  const [studentTotalItems, setStudentTotalItems] = useState(0);
+  
+  // Teacher assessments state
+  const [teacherAssessments, setTeacherAssessments] = useState<any[]>([]);
+  const [teacherChanges, setTeacherChanges] = useState<Record<string, number>>({});
+  const [teacherPage, setTeacherPage] = useState(1);
+  const [teacherTotalPages, setTeacherTotalPages] = useState(1);
+  const [teacherTotalItems, setTeacherTotalItems] = useState(0);
+  
+  const [isLoading, setIsLoading] = useState(true);
   const pageSize = 20;
 
-  // Fetch assessments from API
+  const buildFilters = (pageNumber: number, subjectType: 'student' | 'teacher') => {
+    const apiFilters: Record<string, string | number> = {
+      page: pageNumber,
+      pageSize,
+      subjectType,
+    };
+
+    if (filters.sessionId) apiFilters.sessionId = filters.sessionId;
+    if (filters.division) apiFilters.divisionId = filters.division;
+    if (filters.district) apiFilters.districtId = filters.district;
+    if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
+    if (filters.school) apiFilters.schoolId = filters.school;
+
+    return apiFilters;
+  };
+
+  // Fetch student assessments
   useEffect(() => {
-    const fetchAssessments = async () => {
+    const fetchStudentAssessments = async () => {
       try {
         setIsLoading(true);
-        setApiError(false);
-        
-        // Transform filters to API format
-        const apiFilters: any = {
-          page: currentPage,
-          pageSize,
-        };
-        
-        // Add session filter if present
-        if (filters.sessionId) {
-          apiFilters.sessionId = filters.sessionId;
-        }
-        
-        // Add other filters
-        if (filters.division) apiFilters.divisionId = filters.division;
-        if (filters.district) apiFilters.districtId = filters.district;
-        if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
-        if (filters.school) apiFilters.schoolId = filters.school;
-        
-        const response = await getAssessments(apiFilters);
-        
-        setApiAssessments(response.data.data || []);
-        setTotalPages((response.data as any).totalPages || Math.ceil((response.data.total || 0) / pageSize));
-        setTotalItems(response.data.total || 0);
-        
+
+        const response = await getAssessments(buildFilters(studentPage, 'student'));
+        const { data, totalItems, totalPages } = response.data;
+
+        const computedTotalItems = totalItems ?? data?.length ?? 0;
+        const computedTotalPages = totalPages ?? (computedTotalItems > 0 ? Math.ceil(computedTotalItems / pageSize) : 1);
+
+        setStudentAssessments(data ?? []);
+        setStudentTotalItems(computedTotalItems);
+        setStudentTotalPages(computedTotalPages);
       } catch (error) {
-        console.error('Failed to fetch assessments:', error);
-        setApiError(true);
-        setApiAssessments([]);
+        console.error('Failed to fetch student assessments:', error);
+        setStudentAssessments([]);
+        toast.error('Failed to load student assessments');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAssessments();
-  }, [currentPage, filters]);
+    if (activeTab === 'students') {
+      fetchStudentAssessments();
+    }
+  }, [studentPage, filters, activeTab]);
 
-  // Fetch teacher performance data
+  // Fetch teacher assessments
   useEffect(() => {
-    const fetchTeacherPerformance = async () => {
+    const fetchTeacherAssessments = async () => {
       try {
-        const params: Record<string, string | number> = {
-          topN: 1000, // Get a large number
-        };
-        
-        // Add geography filters if selected
-        if (filters.division) params.divisionId = filters.division;
-        if (filters.district) params.districtId = filters.district;
-        if (filters.school) params.schoolId = filters.school;
-        
-        const response = await getTeacherLeaderboard(params);
-        setTeacherPerformance(response.data || []);
+        setIsLoading(true);
+
+        const response = await getAssessments(buildFilters(teacherPage, 'teacher'));
+        const { data, totalItems, totalPages } = response.data;
+
+        const computedTotalItems = totalItems ?? data?.length ?? 0;
+        const computedTotalPages = totalPages ?? (computedTotalItems > 0 ? Math.ceil(computedTotalItems / pageSize) : 1);
+
+        setTeacherAssessments(data ?? []);
+        setTeacherTotalItems(computedTotalItems);
+        setTeacherTotalPages(computedTotalPages);
       } catch (error) {
-        console.error('Failed to fetch teacher performance:', error);
-        setTeacherPerformance([]);
+        console.error('Failed to fetch teacher assessments:', error);
+        setTeacherAssessments([]);
+        toast.error('Failed to load teacher assessments');
+      } finally {
+        setIsLoading(false);
       }
     };
 
     if (activeTab === 'teachers') {
-      fetchTeacherPerformance();
+      fetchTeacherAssessments();
     }
-  }, [activeTab, filters.division, filters.district, filters.school]);
+  }, [teacherPage, filters, activeTab]);
 
-  // Fetch sessions for the selector
-  useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        const params: Record<string, string | number> = {
-          page: 1,
-          pageSize: 1000, // Get a large number of sessions for the selector
-        };
-        
-        // Add geography filters if selected
-        if (filters.division) params.divisionId = filters.division;
-        if (filters.district) params.districtId = filters.district;
-        if (filters.tehsil) params.tehsilId = filters.tehsil;
-        if (filters.school) params.schoolId = filters.school;
-        
-        const response = await getSessions(params);
-        setApiSessions(response.data.data || []);
-      } catch (error) {
-        console.error('Failed to fetch sessions:', error);
-        setApiSessions([]);
-      }
-    };
-
-    fetchSessions();
-  }, [filters]);
-
-  const visibleAssessments = useMemo(() => {
-    const dataset = apiError ? assessments : apiAssessments;
-    return dataset.filter((a: any) => {
-      const subjectType = a.subjectType?.toString().toLowerCase();
-      return !subjectType || subjectType === 'student';
-    });
-  }, [apiAssessments, apiError]);
-
-  const {
-    items: paginatedAssessments,
-    startIndex,
-    endIndex,
-  } = usePagination(visibleAssessments, { 
-    initialPageSize: pageSize
-  });
-
-  const handleExport = () => {
-    toast.success('Export generated successfully');
+  const handleStudentScoreChange = (assessmentId: string, value: string) => {
+    const score = parseFloat(value);
+    if (!isNaN(score)) {
+      setStudentChanges((prev) => ({ ...prev, [assessmentId]: score }));
+    } else {
+      const { [assessmentId]: _, ...rest } = studentChanges;
+      setStudentChanges(rest);
+    }
   };
 
-  const handleSaveChanges = async () => {
-    try {
-      const totalChanges = Object.keys(scoreChanges).length + newEntries.length;
-      
-      if (totalChanges === 0) {
-        toast.info('No changes to save');
-        return;
-      }
+  const handleTeacherScoreChange = (assessmentId: string, value: string) => {
+    const score = parseFloat(value);
+    if (!isNaN(score)) {
+      setTeacherChanges((prev) => ({ ...prev, [assessmentId]: score }));
+    } else {
+      const { [assessmentId]: _, ...rest } = teacherChanges;
+      setTeacherChanges(rest);
+    }
+  };
 
-      // Update existing assessments
-      const updatePromises = Object.entries(scoreChanges).map(([assessmentId, newScore]) =>
-        updateAssessment(assessmentId, { score: newScore })
+  const handleSaveStudentChanges = async () => {
+    if (Object.keys(studentChanges).length === 0) {
+      toast.info('No changes to save');
+      return;
+    }
+
+    try {
+      await Promise.all(
+        Object.entries(studentChanges).map(([assessmentId, score]) => {
+          const assessment = studentAssessments.find((a) => a.id === assessmentId);
+          if (!assessment) return Promise.resolve();
+          
+          return updateAssessment(assessmentId, {
+            score,
+            maxScore: assessment.maxScore,
+          });
+        })
       );
 
-      // Create new assessments (if any)
-      const createPromises = newEntries.map(entry => {
-        const data = { assessments: [{ studentId: entry.studentId, score: entry.score, maxScore: entry.maxScore }] };
-        console.log('Sending new entry data:', data);
-        return bulkUpsertAssessments(entry.sessionId, data);
-      });
-
-      // Execute all updates
-      await Promise.all([...updatePromises, ...createPromises]);
-
-      toast.success(`Assessment scores updated for ${totalChanges} records`);
-      setScoreChanges({});
-      setNewEntries([]);
+      toast.success('Student assessments updated successfully');
+      setStudentChanges({});
+      setEditMode(false);
       
-      // Refresh the data
-      const response = await getAssessments({
-        page: currentPage,
+      // Refresh data
+      const apiFilters: any = {
+        page: studentPage,
         pageSize,
-        ...(filters.sessionId && { sessionId: filters.sessionId }),
-        ...(filters.division && { divisionId: filters.division }),
-        ...(filters.district && { districtId: filters.district }),
-        ...(filters.tehsil && { tehsilId: filters.tehsil }),
-        ...(filters.school && { schoolId: filters.school }),
-      });
+        subjectType: 'student',
+      };
+      if (filters.sessionId) apiFilters.sessionId = filters.sessionId;
+      if (filters.division) apiFilters.divisionId = filters.division;
+      if (filters.district) apiFilters.districtId = filters.district;
+      if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
+      if (filters.school) apiFilters.schoolId = filters.school;
       
-      setApiAssessments(response.data.data || []);
-      setTotalPages((response.data as any).totalPages || Math.ceil((response.data.total || 0) / pageSize));
-      setTotalItems(response.data.total || 0);
-      
+      const response = await getAssessments(apiFilters);
+      setStudentAssessments(response.data.data || []);
     } catch (error) {
-      console.error('Failed to save assessment changes:', error);
-      toast.error('Failed to save changes. Please try again.');
+      console.error('Failed to save student assessments:', error);
+      toast.error('Failed to save changes');
     }
   };
 
-  const updateScore = (assessmentId: string, newScore: number) => {
-    setScoreChanges(prev => ({
-      ...prev,
-      [assessmentId]: newScore,
-    }));
+  const handleSaveTeacherChanges = async () => {
+    if (Object.keys(teacherChanges).length === 0) {
+      toast.info('No changes to save');
+      return;
+    }
+
+    try {
+      await Promise.all(
+        Object.entries(teacherChanges).map(([assessmentId, score]) => {
+          const assessment = teacherAssessments.find((a) => a.id === assessmentId);
+          if (!assessment) return Promise.resolve();
+          
+          return updateAssessment(assessmentId, {
+            score,
+            maxScore: assessment.maxScore,
+          });
+        })
+      );
+
+      toast.success('Teacher assessments updated successfully');
+      setTeacherChanges({});
+      setEditMode(false);
+      
+      // Refresh data
+      const apiFilters: any = {
+        page: teacherPage,
+        pageSize,
+        subjectType: 'teacher',
+      };
+      if (filters.sessionId) apiFilters.sessionId = filters.sessionId;
+      if (filters.division) apiFilters.divisionId = filters.division;
+      if (filters.district) apiFilters.districtId = filters.district;
+      if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
+      if (filters.school) apiFilters.schoolId = filters.school;
+      
+      const response = await getAssessments(apiFilters);
+      setTeacherAssessments(response.data.data || []);
+    } catch (error) {
+      console.error('Failed to save teacher assessments:', error);
+      toast.error('Failed to save changes');
+    }
   };
 
-  const getScore = (assessmentId: string, originalScore: number) => {
-    return scoreChanges[assessmentId] !== undefined ? scoreChanges[assessmentId] : originalScore;
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setStudentChanges({});
+    setTeacherChanges({});
+  };
+
+  const handleExport = () => {
+    const data = activeTab === 'students' ? studentAssessments : teacherAssessments;
+    const csvContent = generateCSV(data, activeTab);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${activeTab}-assessments-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    toast.success(`${activeTab === 'students' ? 'Student' : 'Teacher'} assessments exported successfully`);
+  };
+
+  const generateCSV = (data: any[], type: 'students' | 'teachers') => {
+    if (type === 'students') {
+      const headers = ['Student', 'Session', 'Date', 'Score', 'Max Score', 'Percentage'];
+      const rows = data.map((assessment) => [
+        assessment.student?.name || 'N/A',
+        assessment.session?.title || 'N/A',
+        assessment.session?.date ? new Date(assessment.session.date).toLocaleDateString() : 'N/A',
+        assessment.score,
+        assessment.maxScore,
+        ((assessment.score / assessment.maxScore) * 100).toFixed(1) + '%',
+      ]);
+      return [headers, ...rows].map((row) => row.join(',')).join('\n');
+    } else {
+      const headers = ['Teacher', 'Session', 'Date', 'Score', 'Max Score', 'Percentage'];
+      const rows = data.map((assessment) => [
+        assessment.teacher?.name || 'N/A',
+        assessment.session?.title || 'N/A',
+        assessment.session?.date ? new Date(assessment.session.date).toLocaleDateString() : 'N/A',
+        assessment.score,
+        assessment.maxScore,
+        ((assessment.score / assessment.maxScore) * 100).toFixed(1) + '%',
+      ]);
+      return [headers, ...rows].map((row) => row.join(',')).join('\n');
+    }
   };
 
   const getScoreBadge = (score: number, maxScore: number) => {
     const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return <Badge className="bg-secondary">Excellent</Badge>;
-    if (percentage >= 60) return <Badge variant="default">Good</Badge>;
-    if (percentage >= 40) return <Badge variant="outline">Average</Badge>;
+    if (percentage >= 80) return <Badge className="bg-green-500">Excellent</Badge>;
+    if (percentage >= 60) return <Badge className="bg-blue-500">Good</Badge>;
+    if (percentage >= 40) return <Badge className="bg-yellow-500">Average</Badge>;
     return <Badge variant="destructive">Needs Improvement</Badge>;
-  };
-
-  const handleQuickEntryScoreChange = (studentId: string, score: number) => {
-    setQuickEntryScores(prev => ({
-      ...prev,
-      [studentId]: score,
-    }));
-  };
-
-  const handleQuickEntrySave = async () => {
-    if (!selectedSessionId) {
-      toast.error('Please select a session first');
-      return;
-    }
-
-    const entries = Object.entries(quickEntryScores)
-      .filter(([_, score]) => score > 0)
-      .map(([studentId, score]) => ({
-        studentId,
-        score,
-        maxScore: 10, // Default max score, can be made configurable
-      }));
-
-    if (entries.length === 0) {
-      toast.error('Please enter at least one score');
-      return;
-    }
-
-    try {
-      console.log('Sending quick entry data:', { assessments: entries });
-      await bulkUpsertAssessments(selectedSessionId, { assessments: entries });
-      toast.success(`Added ${entries.length} assessment scores`);
-      setQuickEntryScores({});
-      
-      // Refresh the data
-      const response = await getAssessments({
-        page: currentPage,
-        pageSize,
-        ...(filters.sessionId && { sessionId: filters.sessionId }),
-        ...(filters.division && { divisionId: filters.division }),
-        ...(filters.district && { districtId: filters.district }),
-        ...(filters.tehsil && { tehsilId: filters.tehsil }),
-        ...(filters.school && { schoolId: filters.school }),
-      });
-      
-      setApiAssessments(response.data.data || []);
-      setTotalPages((response.data as any).totalPages || Math.ceil((response.data.total || 0) / pageSize));
-      setTotalItems(response.data.total || 0);
-      
-    } catch (error) {
-      console.error('Failed to save quick entry scores:', error);
-      toast.error('Failed to save scores. Please try again.');
-    }
   };
 
   if (isLoading) {
@@ -280,8 +281,8 @@ const Assessments = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Student Assessments</h1>
-            <p className="text-muted-foreground">View and manage student assessment scores</p>
+            <h1 className="text-3xl font-bold text-foreground">Assessments</h1>
+            <p className="text-muted-foreground">View and manage assessments</p>
           </div>
         </div>
         <div className="space-y-4">
@@ -301,23 +302,37 @@ const Assessments = () => {
     );
   }
 
+  const studentStartIndex = (studentPage - 1) * pageSize + 1;
+  const studentEndIndex = Math.min(studentPage * pageSize, studentTotalItems);
+  
+  const teacherStartIndex = (teacherPage - 1) * pageSize + 1;
+  const teacherEndIndex = Math.min(teacherPage * pageSize, teacherTotalItems);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Assessments</h1>
-          <p className="text-muted-foreground">View and manage student assessments and teacher performance</p>
-          
+          <p className="text-muted-foreground">View and manage student and teacher assessments</p>
         </div>
         <div className="flex gap-2">
-          {activeTab === 'students' && (
+          {editMode ? (
             <>
-              {(Object.keys(scoreChanges).length > 0 || newEntries.length > 0) && (
-                <Button onClick={handleSaveChanges}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes ({Object.keys(scoreChanges).length + newEntries.length})
-                </Button>
-              )}
+              <Button onClick={activeTab === 'students' ? handleSaveStudentChanges : handleSaveTeacherChanges}>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes ({activeTab === 'students' ? Object.keys(studentChanges).length : Object.keys(teacherChanges).length})
+              </Button>
+              <Button variant="outline" onClick={handleCancelEdit}>
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => setEditMode(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
               <Button variant="outline" onClick={handleExport}>
                 <Download className="h-4 w-4 mr-2" />
                 Export
@@ -327,24 +342,16 @@ const Assessments = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="students" value={activeTab} onValueChange={(v) => setActiveTab(v as 'students' | 'teachers')} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'students' | 'teachers')} className="space-y-4">
         <TabsList>
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="teachers">Teachers</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students">
-          <Tabs defaultValue="view" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="view">View Assessments</TabsTrigger>
-              <TabsTrigger value="edit">Edit Scores</TabsTrigger>
-              <TabsTrigger value="entry">Quick Entry</TabsTrigger>
-            </TabsList>
-
-        <TabsContent value="view">
           <Card>
             <CardHeader>
-              <CardTitle>Assessment Records</CardTitle>
+              <CardTitle>Student Assessment Records</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -361,268 +368,135 @@ const Assessments = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedAssessments.map(assessment => {
-                      // Use data from API response instead of mock data
-                      const student = assessment.student;
-                      const session = assessment.session;
-                      const percentage = ((assessment.score / assessment.maxScore) * 100).toFixed(1);
+                    {studentAssessments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          No student assessments found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      studentAssessments.map((assessment) => {
+                        const percentage = ((assessment.score / assessment.maxScore) * 100).toFixed(1);
+                        const currentScore = studentChanges[assessment.id] ?? assessment.score;
 
-                      return (
-                        <TableRow key={assessment.id}>
-                          <TableCell className="font-medium">{student?.name || 'N/A'}</TableCell>
-                          <TableCell>{session?.title || 'N/A'}</TableCell>
-                          <TableCell>{session?.date ? new Date(session.date).toLocaleDateString() : 'N/A'}</TableCell>
-                          <TableCell className="text-right font-semibold">{assessment.score}</TableCell>
-                          <TableCell className="text-right">{assessment.maxScore}</TableCell>
-                          <TableCell className="text-right text-primary font-semibold">
-                            {percentage}%
-                          </TableCell>
-                          <TableCell>{getScoreBadge(assessment.score, assessment.maxScore)}</TableCell>
-                        </TableRow>
-                      );
-                    })}
+                        return (
+                          <TableRow key={assessment.id}>
+                            <TableCell className="font-medium">{assessment.student?.name || 'N/A'}</TableCell>
+                            <TableCell>{assessment.session?.title || 'N/A'}</TableCell>
+                            <TableCell>
+                              {assessment.session?.date ? new Date(assessment.session.date).toLocaleDateString() : 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {editMode ? (
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={assessment.maxScore}
+                                  step="0.01"
+                                  value={currentScore}
+                                  onChange={(e) => handleStudentScoreChange(assessment.id, e.target.value)}
+                                  className="w-20"
+                                />
+                              ) : (
+                                <span className="font-semibold">{assessment.score}</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">{assessment.maxScore}</TableCell>
+                            <TableCell className="text-right text-primary font-semibold">{percentage}%</TableCell>
+                            <TableCell>{getScoreBadge(assessment.score, assessment.maxScore)}</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
               </div>
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                pageInfo={
-                  totalItems > 0
-                    ? `Showing ${startIndex}-${endIndex} of ${totalItems} assessments`
-                    : undefined
-                }
-                className="mt-6"
-              />
+              {studentTotalItems > 0 && (
+                <PaginationControls
+                  currentPage={studentPage}
+                  totalPages={studentTotalPages}
+                  onPageChange={setStudentPage}
+                  pageInfo={`Showing ${studentStartIndex}-${studentEndIndex} of ${studentTotalItems} assessments`}
+                  className="mt-6"
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="edit">
+        <TabsContent value="teachers">
           <Card>
             <CardHeader>
-              <CardTitle>Edit Assessment Scores</CardTitle>
+              <CardTitle>Teacher Assessment Records</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student</TableHead>
+                      <TableHead>Teacher</TableHead>
+                      <TableHead>School</TableHead>
                       <TableHead>Session</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Edit Score</TableHead>
+                      <TableHead className="text-right">Score</TableHead>
                       <TableHead className="text-right">Max Score</TableHead>
                       <TableHead className="text-right">Percentage</TableHead>
                       <TableHead>Performance</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedAssessments.map(assessment => {
-                      // Use data from API response instead of mock data
-                      const student = assessment.student;
-                      const session = assessment.session;
-                      const currentScore = getScore(assessment.id, assessment.score);
-                      const hasChanges = scoreChanges[assessment.id] !== undefined;
-                      const percentage = ((currentScore / assessment.maxScore) * 100).toFixed(1);
-
-                      return (
-                        <TableRow key={assessment.id} className={hasChanges ? 'bg-muted/50' : ''}>
-                          <TableCell className="font-medium">{student?.name || 'N/A'}</TableCell>
-                          <TableCell>{session?.title || 'N/A'}</TableCell>
-                          <TableCell>{session?.date ? new Date(session.date).toLocaleDateString() : 'N/A'}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end">
-                              <Input
-                                type="number"
-                                min="0"
-                                max={assessment.maxScore}
-                                value={currentScore}
-                                onChange={(e) => updateScore(assessment.id, parseFloat(e.target.value) || 0)}
-                                className="w-20 text-right"
-                                step="0.01"
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">{assessment.maxScore}</TableCell>
-                          <TableCell className="text-right text-primary font-semibold">
-                            {percentage}%
-                          </TableCell>
-                          <TableCell>{getScoreBadge(currentScore, assessment.maxScore)}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                pageInfo={
-                  totalItems > 0
-                    ? `Showing ${startIndex}-${endIndex} of ${totalItems} assessments`
-                    : undefined
-                }
-                className="mt-6"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="entry">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Entry Grid</CardTitle>
-              <p className="text-sm text-muted-foreground mt-2">
-                Enter assessment scores (0-10) for students. The "Last Assessment" badge shows the most recent score for each student.
-              </p>
-              <div className="flex items-center gap-4 mt-4">
-                <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
-                  <SelectTrigger className="w-[300px]">
-                    <SelectValue placeholder="Select a session" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {apiSessions.length === 0 ? (
-                      <SelectItem value="" disabled>No sessions available</SelectItem>
-                    ) : (
-                      apiSessions.map(session => (
-                        <SelectItem key={session?.id} value={session?.id || ''}>
-                          {session?.title} - {session?.date ? new Date(session.date).toLocaleDateString() : 'No date'}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <Button 
-                  onClick={handleQuickEntrySave}
-                  disabled={!selectedSessionId || Object.keys(quickEntryScores).length === 0}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Scores ({Object.keys(quickEntryScores).length})
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  {apiAssessments
-                    .map(assessment => assessment.student)
-                    .filter((student, index, self) => 
-                      student && self.findIndex(s => s?.id === student.id) === index
-                    )
-                    .slice(0, 12)
-                    .map(student => {
-                      // Find the most recent assessment score for this student
-                      const studentAssessment = apiAssessments
-                        .filter(assessment => assessment.student?.id === student?.id)
-                        .sort((a, b) => new Date(b.recordedAt || b.createdAt).getTime() - new Date(a.recordedAt || a.createdAt).getTime())[0];
-                      
-                      const lastScore = studentAssessment?.score;
-                      const hasExistingScore = lastScore !== undefined && lastScore !== null;
-                      
-                      return (
-                        <div key={student?.id} className="border rounded-lg p-4 space-y-3">
-                          <div>
-                            <div className="font-medium">{student?.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              Grade {student?.grade}
-                            </div>
-                            {hasExistingScore && (
-                              <div className="mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  Last Assessment: {lastScore}/10
-                                </Badge>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <Input
-                              type="number"
-                              placeholder={hasExistingScore ? `Update from ${lastScore}` : "Enter Score"}
-                              className="flex-1"
-                              min="0"
-                              max="10"
-                              step="0.01"
-                              value={quickEntryScores[student?.id || ''] || ''}
-                              onChange={(e) => handleQuickEntryScoreChange(student?.id || '', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        <TabsContent value="teachers">
-          <Card>
-            <CardHeader>
-              <CardTitle>Teacher Performance Metrics</CardTitle>
-              <p className="text-sm text-muted-foreground mt-2">
-                View teacher performance based on attendance and student assessment scores
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Rank</TableHead>
-                      <TableHead>Teacher</TableHead>
-                      <TableHead>School</TableHead>
-                      <TableHead className="text-right">Attendance Rate</TableHead>
-                      <TableHead className="text-right">Avg Student Score</TableHead>
-                      <TableHead className="text-right">Composite Score</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teacherPerformance.length === 0 ? (
+                    {teacherAssessments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
-                          {isLoading ? 'Loading teacher performance data...' : 'No teacher performance data available'}
+                        <TableCell colSpan={8} className="text-center text-muted-foreground">
+                          No teacher assessments found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      teacherPerformance.map((item: any) => (
-                        <TableRow key={item.teacher?.id}>
-                          <TableCell className="font-medium">
-                            <Badge variant="outline">#{item.rank}</Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">{item.teacher?.name || 'N/A'}</TableCell>
-                          <TableCell>{item.teacher?.school || 'N/A'}</TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-semibold">{item.metrics?.attendanceRate?.toFixed(1) || 0}%</span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-semibold">{(item.metrics?.avgStudentScore || 0).toFixed(1)}</span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge 
-                              variant={
-                                item.metrics?.compositeScore >= 70 ? "default" :
-                                item.metrics?.compositeScore >= 50 ? "secondary" : "outline"
-                              }
-                              className="font-semibold"
-                            >
-                              {(item.metrics?.compositeScore || 0).toFixed(1)}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      teacherAssessments.map((assessment) => {
+                        const percentage = ((assessment.score / assessment.maxScore) * 100).toFixed(1);
+                        const currentScore = teacherChanges[assessment.id] ?? assessment.score;
+
+                        return (
+                          <TableRow key={assessment.id}>
+                            <TableCell className="font-medium">{assessment.teacher?.name || 'N/A'}</TableCell>
+                            <TableCell>{assessment.teacher?.school?.name || 'N/A'}</TableCell>
+                            <TableCell>{assessment.session?.title || 'N/A'}</TableCell>
+                            <TableCell>
+                              {assessment.session?.date ? new Date(assessment.session.date).toLocaleDateString() : 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {editMode ? (
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={assessment.maxScore}
+                                  step="0.01"
+                                  value={currentScore}
+                                  onChange={(e) => handleTeacherScoreChange(assessment.id, e.target.value)}
+                                  className="w-20"
+                                />
+                              ) : (
+                                <span className="font-semibold">{assessment.score}</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">{assessment.maxScore}</TableCell>
+                            <TableCell className="text-right text-primary font-semibold">{percentage}%</TableCell>
+                            <TableCell>{getScoreBadge(assessment.score, assessment.maxScore)}</TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
               </div>
-              {teacherPerformance.length > 0 && (
-                <div className="mt-4 text-sm text-muted-foreground">
-                  Showing {teacherPerformance.length} teachers
-                </div>
+              {teacherTotalItems > 0 && (
+                <PaginationControls
+                  currentPage={teacherPage}
+                  totalPages={teacherTotalPages}
+                  onPageChange={setTeacherPage}
+                  pageInfo={`Showing ${teacherStartIndex}-${teacherEndIndex} of ${teacherTotalItems} assessments`}
+                  className="mt-6"
+                />
               )}
             </CardContent>
           </Card>

@@ -78,9 +78,16 @@ export const getAttendanceList = (params: Record<string, string | number | boole
 // Assessments
 export const getAssessments = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
-  return apiClient.get<{ data: Assessment[]; page: number; pageSize: number; total: number }>(`/assessments${qs ? `?${qs}` : ''}`);
+  return apiClient.get<{
+    data: Assessment[];
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  }>(`/assessments${qs ? `?${qs}` : ''}`);
 };
-export const bulkUpsertAssessments = (sessionId: string, body: any) => apiClient.put(`/assessments/sessions/${sessionId}`, body);
+export const bulkUpsertStudentAssessments = (sessionId: string, body: any) => apiClient.put(`/assessments/sessions/${sessionId}/students`, body);
+export const bulkUpsertTeacherAssessments = (sessionId: string, body: any) => apiClient.put(`/assessments/sessions/${sessionId}/teachers`, body);
 export const updateAssessment = (id: string, body: any) => apiClient.patch(`/assessments/${id}`, body);
 
 // Leaderboard
