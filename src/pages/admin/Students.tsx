@@ -212,15 +212,10 @@ export default function Students() {
   };
 
   const getStudentStatus = (student: any) => {
-    // Students without user accounts are rare (only old records), show as "No Account"
-    // New students will always have accounts
-    if (!student.userId || !student.user) {
-      return { label: 'No Account', variant: 'secondary' as const };
+    if (student.user?.isActive === false) {
+      return { label: 'Disabled', variant: 'destructive' as const };
     }
-    // Students with user accounts show Active/Disabled based on isActive
-    return student.user.isActive 
-      ? { label: 'Active', variant: 'default' as const }
-      : { label: 'Disabled', variant: 'destructive' as const };
+    return { label: 'Active', variant: 'default' as const };
   };
 
   const openEditDialog = (student: any) => {

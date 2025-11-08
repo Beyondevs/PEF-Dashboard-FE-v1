@@ -22,6 +22,7 @@ interface ImportResult {
   errorCount: number;
   duplicates: Array<{ row: number; identifier: string; reason: string }>;
   errors: Array<{ row: number; data: any; errors: string[] }>;
+  created?: Array<{ row: number; identifier: string; defaultPassword?: string }>;
 }
 
 interface ImportResultsDialogProps {
@@ -52,6 +53,19 @@ export function ImportResultsDialog({
       lines.push('-----------');
       result.duplicates.forEach((dup) => {
         lines.push(`Row ${dup.row}: ${dup.identifier} - ${dup.reason}`);
+      });
+      lines.push('');
+    }
+
+    if (result.created && result.created.length > 0) {
+      lines.push('Created Accounts:');
+      lines.push('-----------------');
+      result.created.forEach((created) => {
+        lines.push(
+          `Row ${created.row}: ${created.identifier}${
+            created.defaultPassword ? ` (Password: ${created.defaultPassword})` : ''
+          }`,
+        );
       });
       lines.push('');
     }
@@ -119,8 +133,41 @@ export function ImportResultsDialog({
           </div>
 
           {/* Expandable Lists */}
-          {(result.duplicates.length > 0 || result.errors.length > 0) && (
+          {(result.duplicates.length > 0 ||
+            result.errors.length > 0 ||
+            (result.created && result.created.length > 0)) && (
             <Accordion type="single" collapsible className="w-full">
+              {result.created && result.created.length > 0 && (
+                <AccordionItem value="created">
+                  <AccordionTrigger>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span>Created Accounts ({result.created.length})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {result.created.map((created, idx) => (
+                        <div
+                          key={idx}
+                          className="p-2 bg-green-50 dark:bg-green-950 rounded text-sm border border-green-200 dark:border-green-800"
+                        >
+                          <div className="font-medium">Row {created.row}</div>
+                          <div className="text-muted-foreground">
+                            {created.identifier}
+                          </div>
+                          {created.defaultPassword && (
+                            <div className="text-xs mt-1 font-mono">
+                              Password: {created.defaultPassword}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
               {result.duplicates.length > 0 && (
                 <AccordionItem value="duplicates">
                   <AccordionTrigger>
