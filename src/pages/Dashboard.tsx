@@ -4,15 +4,18 @@ import { Users, UserCheck, Calendar, School, TrendingUp, Activity, Award, Clock,
 import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getDashboardAggregate } from '@/lib/api';
 
 const Dashboard = () => {
-  const { filters } = useFilters();
+  const { filters, resetFilters } = useFilters();
   const { role } = useAuth();
+  const isTrainer = role === 'trainer';
+  const isAdmin = role === 'admin';
+  const isClient = role === 'client';
   const today = new Date().toISOString().split('T')[0];
   const toDateOnly = (d: any) => {
     if (!d) return undefined;
@@ -55,6 +58,17 @@ const Dashboard = () => {
     return date.toISOString().split('T')[0];
   }, []);
 
+  const hasClientResetFiltersRef = useRef(false);
+
+  useEffect(() => {
+    if (isClient && !hasClientResetFiltersRef.current) {
+      resetFilters();
+      hasClientResetFiltersRef.current = true;
+    } else if (!isClient && hasClientResetFiltersRef.current) {
+      hasClientResetFiltersRef.current = false;
+    }
+  }, [isClient, resetFilters]);
+
   // Fetch data from API
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -64,15 +78,16 @@ const Dashboard = () => {
         // Build API params with filters
         const params: Record<string, string> = { date: today };
         
-        // Add date range filters
-        if (filters.startDate) params.from = filters.startDate;
-        if (filters.endDate) params.to = filters.endDate;
-        
-        // Add geography filters if selected
-        if (filters.division) params.divisionId = filters.division;
-        if (filters.district) params.districtId = filters.district;
-        if (filters.tehsil) params.tehsilId = filters.tehsil;
-        if (filters.school) params.schoolId = filters.school;
+        // Apply geography and date filters for non-client roles only
+        if (!isClient) {
+          if (filters.startDate) params.from = filters.startDate;
+          if (filters.endDate) params.to = filters.endDate;
+          
+          if (filters.division) params.divisionId = filters.division;
+          if (filters.district) params.districtId = filters.district;
+          if (filters.tehsil) params.tehsilId = filters.tehsil;
+          if (filters.school) params.schoolId = filters.school;
+        }
 
         // Fetch slim aggregated dashboard payload
         const agg = await getDashboardAggregate(params);
@@ -115,7 +130,17 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [today, last30DaysStart, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
+  }, [
+    today,
+    last30DaysStart,
+    filters.division,
+    filters.district,
+    filters.tehsil,
+    filters.school,
+    filters.startDate,
+    filters.endDate,
+    isClient,
+  ]);
 
   const stats = useMemo(() => {
     // Calculate total assessments and average score from coursePerformance
@@ -226,7 +251,11 @@ const Dashboard = () => {
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-sm md:text-base text-muted-foreground">
-            {role === 'trainer' ? "Overview of today's training activities" : "Your teaching performance overview"}
+            {isTrainer
+              ? "Overview of today's training activities"
+              : (isAdmin || isClient)
+                ? "System-wide training performance overview"
+                : "Your teaching performance overview"}
           </p>
         </div>
         <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -250,14 +279,18 @@ const Dashboard = () => {
       <div>
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          {role === 'trainer' ? "Overview of today's training activities" : "Your teaching performance overview"}
+          {isTrainer
+            ? "Overview of today's training activities"
+            : (isAdmin || isClient)
+              ? "System-wide training performance overview"
+              : "Your teaching performance overview"}
         </p>
         
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {role === 'trainer' ? (
+        {isTrainer ? (
           <>
             <Card className="border-l-4 border-l-primary">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -460,9 +493,9 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />
-                {role === 'trainer' ? 'Today\'s Attendance' : 'Score Distribution'}
+                {isTrainer ? 'Today\'s Attendance' : 'Score Distribution'}
             </CardTitle>
-              {role === 'trainer' && (
+              {isTrainer && (
                 <Tabs value={attendanceTodayFilter} onValueChange={(v) => setAttendanceTodayFilter(v as 'both' | 'teachers' | 'students')}>
                   <TabsList className="h-8">
                     <TabsTrigger value="both" className="text-xs">Both</TabsTrigger>
@@ -474,7 +507,7 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {role === 'trainer' ? (
+            {isTrainer ? (
               <ChartContainer
                 config={{
                   present: { label: 'Present', color: 'hsl(var(--chart-2))' },
@@ -647,15 +680,15 @@ const Dashboard = () => {
               {!isLoading && ongoingSessions.length === 0 && (
                 <div className="text-xs text-muted-foreground">No active sessions today</div>
               )}
-              {(role === 'trainer' || role === 'admin') && (
+              {(isTrainer || isAdmin || isClient) && (
                 <div className="p-4 sm:p-6 rounded-lg bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border-2 border-primary/20">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-2">
                     <div>
                       <h3 className="text-lg sm:text-xl font-bold text-foreground mb-1">
-                        {role === 'admin' ? 'System-wide Training Activity' : 'Ongoing Training in Punjab'}
+                        {isAdmin ? 'System-wide Training Activity' : 'Ongoing Training in Punjab'}
                       </h3>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        {role === 'admin' ? 'Complete overview across all regions' : 'Real-time training activity across the region'}
+                        {isAdmin ? 'Complete overview across all regions' : 'Real-time training activity across the region'}
                       </p>
                     </div>
                     <Link to="/reports/today">
@@ -694,7 +727,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {(role === 'trainer' || role === 'admin') ? (
+              {(isTrainer || isAdmin || isClient) ? (
                 <div className="space-y-4">
                   <h4 className="font-semibold text-foreground flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
