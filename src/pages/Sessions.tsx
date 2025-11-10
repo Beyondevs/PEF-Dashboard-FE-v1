@@ -149,6 +149,27 @@ const Sessions = () => {
     return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
   };
 
+  const formatDateForInput = (value: string | Date | null | undefined) => {
+    if (!value) return '';
+
+    const normalize = (date: Date) => {
+      const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      return adjusted.toISOString().split('T')[0];
+    };
+
+    if (value instanceof Date) {
+      return normalize(value);
+    }
+
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return normalize(parsed);
+    }
+
+    const [datePart] = value.split('T');
+    return datePart ?? value;
+  };
+
   const getSchoolName = (schoolId: string) => {
     const school = apiSchools.find(s => s.id === schoolId);
     return school ? school.name : 'Select school';
@@ -292,7 +313,7 @@ const Sessions = () => {
     setEditingSession(session);
     setFormData({
       title: session.title || '',
-      date: session.date ? new Date(session.date).toISOString().split('T')[0] : '',
+      date: formatDateForInput(session.date),
       startTime: session.startTime || '',
       endTime: session.endTime || '',
       schoolId: session.schoolId || '',
