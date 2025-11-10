@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
+import { useFilters } from '@/contexts/FilterContext';
 
 export default function Schools() {
   const [schools, setSchools] = useState([]);
@@ -48,6 +49,7 @@ export default function Schools() {
     pageSize: 10,
     total: 0,
   });
+  const { filters } = useFilters();
   const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
@@ -73,6 +75,20 @@ export default function Schools() {
       if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
         params.search = debouncedSearchTerm.trim();
       }
+
+      // Apply global filters
+      if (filters.division) {
+        params.divisionId = filters.division;
+      }
+      if (filters.district) {
+        params.districtId = filters.district;
+      }
+      if (filters.tehsil) {
+        params.tehsilId = filters.tehsil;
+      }
+      if (filters.school) {
+        params.schoolId = filters.school;
+      }
       
       const response = await api.getSchools(params);
       setSchools(response.data.data);
@@ -97,10 +113,22 @@ export default function Schools() {
     fetchGeography();
   }, []);
 
-  // Fetch schools when search or page changes
+  // Fetch schools when search, filters, or page changes
   useEffect(() => {
     fetchSchools();
-  }, [debouncedSearchTerm, pagination.page]);
+  }, [
+    debouncedSearchTerm,
+    pagination.page,
+    filters.division,
+    filters.district,
+    filters.tehsil,
+    filters.school,
+  ]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
   const fetchGeography = async () => {
     try {
