@@ -274,11 +274,11 @@ export default function Trainers() {
                 Add Trainer
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingTrainer ? 'Edit Trainer' : 'Add New Trainer'}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-4 pb-2">
                 <div>
                   <Label>Name</Label>
                   <Input 
