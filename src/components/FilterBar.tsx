@@ -417,7 +417,9 @@ export const FilterBar = () => {
           size="sm"
           onClick={() => {
             resetFilters();
-            setSessions([]);
+            if (!isTrainer) {
+              setSessions([]);
+            }
             setIsLoadingSessions(false);
           }}
           className="text-xs md:text-sm shrink-0 w-full sm:w-auto"
