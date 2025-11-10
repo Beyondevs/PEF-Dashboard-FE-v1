@@ -75,7 +75,18 @@ export interface Attendance {
   personId: string;
   present: boolean;
   markedBy: string;
-  timestamp: string;
+  markedAt?: string;
+  timestamp?: string;
+  rollNumber?: string | null;
+  personName?: string;
+  personGrade?: number | null;
+  personRollNumber?: string | null;
+  session?: {
+    id: string;
+    title: string;
+    date: string;
+    schoolId?: string;
+  };
 }
 
 export type AssessmentSubjectType = 'student' | 'teacher';

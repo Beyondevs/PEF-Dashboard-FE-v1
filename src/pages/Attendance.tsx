@@ -499,7 +499,7 @@ const Attendance = () => {
             </CardHeader>
             <CardContent>
               {isMobile ? (
-                <div className="space-y-3">
+                    <div className="space-y-3">
                   {apiStudentAttendance.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
                       {isLoading ? 'Loading student attendance...' : 'No student attendance records found for the selected filters.'}
@@ -508,6 +508,7 @@ const Attendance = () => {
                     apiStudentAttendance.map(att => {
                       const currentStatus = getAttendanceStatus(att.id, att.present);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
+                      const rollNumber = att.personRollNumber ?? att.rollNumber ?? 'N/A';
                       
                       return (
                         <MobileCard
@@ -515,7 +516,8 @@ const Attendance = () => {
                           title={att.personName}
                           subtitle={att.session?.title}
                           badges={[
-                            { label: `Grade ${att.gradeLevel || 'N/A'}`, variant: "secondary" },
+                            { label: `Roll ${rollNumber}`, variant: 'outline' },
+                            { label: `Grade ${att.personGrade ?? att.gradeLevel ?? 'N/A'}`, variant: 'secondary' },
                             { label: currentStatus ? 'Present' : 'Absent', variant: currentStatus ? 'default' : 'destructive' }
                           ]}
                           metadata={[
@@ -523,6 +525,11 @@ const Attendance = () => {
                               label: "Date",
                               value: new Date(att.session?.date).toLocaleDateString(),
                               icon: <CalendarIcon className="h-3 w-3" />
+                            },
+                            {
+                              label: 'Roll Number',
+                              value: rollNumber,
+                              icon: <FileText className="h-3 w-3" />
                             },
                             {
                               label: "Marked At",
@@ -552,6 +559,7 @@ const Attendance = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student</TableHead>
+                    <TableHead>Roll No.</TableHead>
                     <TableHead>Grade</TableHead>
                     <TableHead>Session</TableHead>
                     <TableHead>Date</TableHead>
@@ -571,10 +579,12 @@ const Attendance = () => {
                     apiStudentAttendance.map(att => {
                       const currentStatus = getAttendanceStatus(att.id, att.present);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
+                      const rollNumber = att.personRollNumber ?? att.rollNumber ?? '—';
                       
                       return (
                         <TableRow key={att.id} className={hasChanges ? 'bg-muted/50' : ''}>
                           <TableCell className="font-medium">{att.personName}</TableCell>
+                          <TableCell className="font-mono">{rollNumber}</TableCell>
                           <TableCell>Grade {att.personGrade || 'N/A'}</TableCell>
                           <TableCell>{att.session?.title}</TableCell>
                           <TableCell>{new Date(att.session?.date).toLocaleDateString()}</TableCell>
