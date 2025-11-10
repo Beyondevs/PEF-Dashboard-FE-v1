@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
+import PaginationControls from '@/components/PaginationControls';
 
 export default function Geography() {
   const [divisions, setDivisions] = useState([]);
@@ -40,6 +41,10 @@ export default function Geography() {
   const [divisionForm, setDivisionForm] = useState({ name: '', code: '' });
   const [districtForm, setDistrictForm] = useState({ name: '', code: '', divisionId: '' });
   const [tehsilForm, setTehsilForm] = useState({ name: '', code: '', districtId: '' });
+  const [divisionPage, setDivisionPage] = useState(1);
+  const [districtPage, setDistrictPage] = useState(1);
+  const [tehsilPage, setTehsilPage] = useState(1);
+  const PAGE_SIZE = 10;
   
   const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
@@ -59,6 +64,9 @@ export default function Geography() {
       setDivisions(divsRes.data);
       setDistricts(distsRes.data);
       setTehsils(tehsRes.data);
+      setDivisionPage(1);
+      setDistrictPage(1);
+      setTehsilPage(1);
     } catch (error) {
       toast({
         title: 'Error',
@@ -158,6 +166,57 @@ export default function Geography() {
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to delete tehsil', variant: 'destructive' });
     }
+  };
+
+  const paginate = <T,>(items: T[], page: number) => {
+    const start = (page - 1) * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+  };
+
+  const divisionTotalPages = Math.ceil(divisions.length / PAGE_SIZE) || 1;
+  const districtTotalPages = Math.ceil(districts.length / PAGE_SIZE) || 1;
+  const tehsilTotalPages = Math.ceil(tehsils.length / PAGE_SIZE) || 1;
+
+  useEffect(() => {
+    if (divisionPage > divisionTotalPages) {
+      setDivisionPage(divisionTotalPages);
+    }
+  }, [divisionPage, divisionTotalPages]);
+
+  useEffect(() => {
+    if (districtPage > districtTotalPages) {
+      setDistrictPage(districtTotalPages);
+    }
+  }, [districtPage, districtTotalPages]);
+
+  useEffect(() => {
+    if (tehsilPage > tehsilTotalPages) {
+      setTehsilPage(tehsilTotalPages);
+    }
+  }, [tehsilPage, tehsilTotalPages]);
+
+  const paginatedDivisions = useMemo(
+    () => paginate(divisions, divisionPage),
+    [divisions, divisionPage],
+  );
+
+  const paginatedDistricts = useMemo(
+    () => paginate(districts, districtPage),
+    [districts, districtPage],
+  );
+
+  const paginatedTehsils = useMemo(
+    () => paginate(tehsils, tehsilPage),
+    [tehsils, tehsilPage],
+  );
+
+  const buildPageInfo = (total: number, page: number) => {
+    if (total === 0) {
+      return 'No records found';
+    }
+    const start = (page - 1) * PAGE_SIZE + 1;
+    const end = Math.min(page * PAGE_SIZE, total);
+    return `Showing ${start}-${end} of ${total}`;
   };
 
   return (
@@ -275,7 +334,7 @@ export default function Geography() {
                 ) : divisions.length === 0 ? (
                   <TableRow><TableCell colSpan={3} className="text-center">No divisions found</TableCell></TableRow>
                 ) : (
-                  divisions.map((div: any) => (
+                  paginatedDivisions.map((div: any) => (
                     <TableRow key={div.id}>
                       <TableCell>{div.name}</TableCell>
                       <TableCell>{div.code || 'N/A'}</TableCell>
@@ -301,6 +360,13 @@ export default function Geography() {
               </TableBody>
             </Table>
           </div>
+          <PaginationControls
+            currentPage={divisionPage}
+            totalPages={divisionTotalPages}
+            onPageChange={setDivisionPage}
+            className="mt-4"
+            pageInfo={buildPageInfo(divisions.length, divisionPage)}
+          />
         </TabsContent>
 
         {/* Districts Tab */}
@@ -420,7 +486,7 @@ export default function Geography() {
                 ) : districts.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="text-center">No districts found</TableCell></TableRow>
                 ) : (
-                  districts.map((dist: any) => (
+                  paginatedDistricts.map((dist: any) => (
                     <TableRow key={dist.id}>
                       <TableCell>{dist.name}</TableCell>
                       <TableCell>{dist.code || 'N/A'}</TableCell>
@@ -447,6 +513,13 @@ export default function Geography() {
               </TableBody>
             </Table>
           </div>
+          <PaginationControls
+            currentPage={districtPage}
+            totalPages={districtTotalPages}
+            onPageChange={setDistrictPage}
+            className="mt-4"
+            pageInfo={buildPageInfo(districts.length, districtPage)}
+          />
         </TabsContent>
 
         {/* Tehsils Tab */}
@@ -566,7 +639,7 @@ export default function Geography() {
                 ) : tehsils.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="text-center">No tehsils found</TableCell></TableRow>
                 ) : (
-                  tehsils.map((teh: any) => (
+                  paginatedTehsils.map((teh: any) => (
                     <TableRow key={teh.id}>
                       <TableCell>{teh.name}</TableCell>
                       <TableCell>{teh.code || 'N/A'}</TableCell>
@@ -593,6 +666,13 @@ export default function Geography() {
               </TableBody>
             </Table>
           </div>
+          <PaginationControls
+            currentPage={tehsilPage}
+            totalPages={tehsilTotalPages}
+            onPageChange={setTehsilPage}
+            className="mt-4"
+            pageInfo={buildPageInfo(tehsils.length, tehsilPage)}
+          />
         </TabsContent>
       </Tabs>
     </div>
