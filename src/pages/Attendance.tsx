@@ -32,7 +32,7 @@ import {
 
 const Attendance = () => {
   const { filters } = useFilters();
-  const { canMarkAttendance } = useAuth();
+  const { canMarkAttendance, isAdmin } = useAuth();
   const isMobile = useIsMobile();
   const [editMode, setEditMode] = useState(false);
   const [attendanceChanges, setAttendanceChanges] = useState<Record<string, boolean>>({});
@@ -53,6 +53,7 @@ const Attendance = () => {
   const [studentTotalItems, setStudentTotalItems] = useState(0);
   const pageSize = 20;
   const hasManagePermissions = canMarkAttendance();
+  const showDataTransferButtons = isAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
@@ -295,7 +296,7 @@ const Attendance = () => {
               className="pl-10"
             />
           </div>
-          {hasManagePermissions && (
+          {showDataTransferButtons && (
             <>
               <Button
                 variant="outline"
@@ -337,6 +338,10 @@ const Attendance = () => {
                 }}
                 filename={activeTab === 'teachers' ? 'attendance-teachers.csv' : 'attendance-students.csv'}
               />
+            </>
+          )}
+          {hasManagePermissions && (
+            <>
               <Button
                 variant={editMode ? 'default' : 'outline'}
                 onClick={editMode ? handleCancelEdit : () => setEditMode(true)}

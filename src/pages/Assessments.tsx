@@ -30,7 +30,9 @@ import { useAuth } from '@/contexts/AuthContext';
 const Assessments = () => {
   const { filters } = useFilters();
   const { role, isAdmin } = useAuth();
-  const canManageAssessments = isAdmin() || role === 'trainer';
+  const isAdminUser = isAdmin();
+  const canManageAssessments = isAdminUser || role === 'trainer';
+  const showDataTransferButtons = isAdminUser;
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const [editMode, setEditMode] = useState(false);
   
@@ -298,73 +300,81 @@ const Assessments = () => {
               className="pl-10"
             />
           </div>
-          {canManageAssessments && (
+          {(showDataTransferButtons || canManageAssessments) && (
             <>
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  try {
-                    const blob = await downloadAssessmentsTemplate();
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'assessments-template.csv';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                  } catch (error) {
-                    console.error('Failed to download assessments template:', error);
-                    toast.error('Failed to download template');
-                  }
-                }}
-                className="flex-1 sm:flex-initial"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Template
-              </Button>
-              <ImportButton
-                label="Import"
-                importFn={async (file) => {
-                  const response = await importAssessmentsCSV(file);
-                  return response.data as any;
-                }}
-                onSuccess={() => {
-                  fetchStudentAssessments();
-                  fetchTeacherAssessments();
-                }}
-              />
-              <ExportButton
-                label="Export"
-                exportFn={async () => {
-                  const params = buildExportParams();
-                  return exportAssessmentsCSV(params);
-                }}
-                filename={activeTab === 'students' ? 'student-assessments.csv' : 'teacher-assessments.csv'}
-              />
-              {editMode ? (
+              {showDataTransferButtons && (
                 <>
                   <Button
-                    onClick={activeTab === 'students' ? handleSaveStudentChanges : handleSaveTeacherChanges}
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        const blob = await downloadAssessmentsTemplate();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'assessments-template.csv';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                      } catch (error) {
+                        console.error('Failed to download assessments template:', error);
+                        toast.error('Failed to download template');
+                      }
+                    }}
                     className="flex-1 sm:flex-initial"
                   >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Changes (
-                    {activeTab === 'students'
-                      ? Object.keys(studentChanges).length
-                      : Object.keys(teacherChanges).length}
-                    )
+                    <FileText className="h-4 w-4 mr-2" />
+                    Template
                   </Button>
-                  <Button variant="outline" onClick={handleCancelEdit} className="flex-1 sm:flex-initial">
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
+                  <ImportButton
+                    label="Import"
+                    importFn={async (file) => {
+                      const response = await importAssessmentsCSV(file);
+                      return response.data as any;
+                    }}
+                    onSuccess={() => {
+                      fetchStudentAssessments();
+                      fetchTeacherAssessments();
+                    }}
+                  />
+                  <ExportButton
+                    label="Export"
+                    exportFn={async () => {
+                      const params = buildExportParams();
+                      return exportAssessmentsCSV(params);
+                    }}
+                    filename={activeTab === 'students' ? 'student-assessments.csv' : 'teacher-assessments.csv'}
+                  />
                 </>
-              ) : (
-                <Button onClick={() => setEditMode(true)} className="flex-1 sm:flex-initial">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
+              )}
+              {canManageAssessments && (
+                <>
+                  {editMode ? (
+                    <>
+                      <Button
+                        onClick={activeTab === 'students' ? handleSaveStudentChanges : handleSaveTeacherChanges}
+                        className="flex-1 sm:flex-initial"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes (
+                        {activeTab === 'students'
+                          ? Object.keys(studentChanges).length
+                          : Object.keys(teacherChanges).length}
+                        )
+                      </Button>
+                      <Button variant="outline" onClick={handleCancelEdit} className="flex-1 sm:flex-initial">
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button onClick={() => setEditMode(true)} className="flex-1 sm:flex-initial">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  )}
+                </>
               )}
             </>
           )}
