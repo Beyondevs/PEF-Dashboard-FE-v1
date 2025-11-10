@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -10,13 +10,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, Edit, Trash2, Users, ClipboardCheck, Download, Calendar as CalendarIcon, School as SchoolIcon, Clock } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, FileText, Search, Calendar as CalendarIcon, School as SchoolIcon, Clock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCard } from '@/components/MobileCard';
-import { trainers } from '@/lib/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFilters } from '@/contexts/FilterContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -37,7 +36,9 @@ import {
 } from '@/components/ui/select';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
-import { getSessions, createSession, updateSession, deleteSession, getSchools, getDivisions, getDistricts, getTehsils, getTrainers } from '@/lib/api';
+import { getSessions, createSession, updateSession, deleteSession, getSchools, getDivisions, getDistricts, getTehsils, getTrainers, exportSessionsCSV, importSessionsCSV, downloadSessionsTemplate } from '@/lib/api';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
+import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown } from 'lucide-react';
@@ -62,6 +63,8 @@ const Sessions = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 10;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -76,42 +79,50 @@ const Sessions = () => {
   const [schoolSearchOpen, setSchoolSearchOpen] = useState(false);
   const [trainerSearchOpen, setTrainerSearchOpen] = useState(false);
 
+  const fetchSessions = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setApiError(false);
+
+      const params: Record<string, string | number> = {
+        page: currentPage,
+        pageSize,
+      };
+
+      if (filters.division) params.divisionId = filters.division;
+      if (filters.district) params.districtId = filters.district;
+      if (filters.tehsil) params.tehsilId = filters.tehsil;
+      if (filters.school) params.schoolId = filters.school;
+      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+
+      const response = await getSessions(params);
+
+      setApiSessions(response.data.data || []);
+      const total = (response.data as any).totalItems || (response.data as any).total || 0;
+      setTotalItems(total);
+      setTotalPages(Math.ceil(total / pageSize));
+    } catch (error) {
+      console.error('Failed to fetch sessions:', error);
+      setApiError(true);
+      setApiSessions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, debouncedSearchTerm, filters.division, filters.district, filters.tehsil, filters.school]);
+
   // Fetch sessions from API
   useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        setIsLoading(true);
-        setApiError(false);
-        
-        const params: Record<string, string | number> = {
-          page: currentPage,
-          pageSize,
-        };
-        
-        // Add geography filters if selected
-        if (filters.division) params.divisionId = filters.division;
-        if (filters.district) params.districtId = filters.district;
-        if (filters.tehsil) params.tehsilId = filters.tehsil;
-        if (filters.school) params.schoolId = filters.school;
-        
-        const response = await getSessions(params);
-        
-        setApiSessions(response.data.data || []);
-        const totalItems = (response.data as any).totalItems || (response.data as any).total || 0;
-        setTotalItems(totalItems);
-        setTotalPages(Math.ceil(totalItems / pageSize));
-        
-      } catch (error) {
-        console.error('Failed to fetch sessions:', error);
-        setApiError(true);
-        setApiSessions([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchSessions();
-  }, [currentPage, filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [fetchSessions]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+      setCurrentPage(1);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Fetch schools and trainers for create form
   useEffect(() => {
@@ -180,8 +191,21 @@ const Sessions = () => {
     return trainer ? (trainer.trainerProfile?.name || trainer.email) : 'Select trainer';
   };
 
-  const handleExport = () => {
-    toast.success('Export generated successfully');
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await downloadSessionsTemplate();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'sessions-template.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download template:', error);
+      toast.error('Failed to download template. Please try again.');
+    }
   };
 
   const handleCreateSession = async () => {
@@ -218,14 +242,7 @@ const Sessions = () => {
       });
       
       // Refresh sessions list
-      const response = await getSessions({
-        page: currentPage,
-        pageSize,
-      });
-      setApiSessions(response.data.data || []);
-      const totalItems = (response.data as any).totalItems || (response.data as any).total || 0;
-      setTotalItems(totalItems);
-      setTotalPages(Math.ceil(totalItems / pageSize));
+      await fetchSessions();
       
     } catch (error) {
       console.error('Failed to create session:', error);
@@ -269,14 +286,7 @@ const Sessions = () => {
       });
       
       // Refresh sessions list
-      const response = await getSessions({
-        page: currentPage,
-        pageSize,
-      });
-      setApiSessions(response.data.data || []);
-      const totalItems = (response.data as any).totalItems || (response.data as any).total || 0;
-      setTotalItems(totalItems);
-      setTotalPages(Math.ceil(totalItems / pageSize));
+      await fetchSessions();
       
     } catch (error) {
       console.error('Failed to update session:', error);
@@ -294,14 +304,7 @@ const Sessions = () => {
       toast.success('Session deleted successfully');
       
       // Refresh sessions list
-      const response = await getSessions({
-        page: currentPage,
-        pageSize,
-      });
-      setApiSessions(response.data.data || []);
-      const totalItems = (response.data as any).totalItems || (response.data as any).total || 0;
-      setTotalItems(totalItems);
-      setTotalPages(Math.ceil(totalItems / pageSize));
+      await fetchSessions();
       
     } catch (error) {
       console.error('Failed to delete session:', error);
@@ -356,11 +359,29 @@ const Sessions = () => {
           <p className="text-sm sm:text-base text-muted-foreground">Manage and monitor all training sessions</p>
           
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport} className="flex-1 sm:flex-initial">
-            <Download className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
+        <div className="flex flex-wrap gap-2 justify-end">
+          {isAdmin() && (
+            <>
+              <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1 sm:flex-initial">
+                <FileText className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Template</span>
+                <span className="sm:hidden">Template</span>
+              </Button>
+              <ImportButton
+                label="Import"
+                importFn={async (file) => {
+                  const response = await importSessionsCSV(file);
+                  return response.data as any;
+                }}
+                onSuccess={fetchSessions}
+              />
+              <ExportButton
+                label="Export"
+                exportFn={exportSessionsCSV}
+                filename="sessions.csv"
+              />
+            </>
+          )}
           {isAdmin() && (
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
@@ -662,6 +683,18 @@ const Sessions = () => {
               </DialogContent>
             </Dialog>
           )}
+        </div>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="relative flex-1 sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search sessions by title..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+            aria-label="Search sessions by title"
+          />
         </div>
       </div>
 

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFilters } from '@/contexts/FilterContext';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
@@ -50,6 +51,7 @@ export default function Trainers() {
   });
   const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
+  const { filters } = useFilters();
 
   // Fetch schools on component mount (with pagination to get all)
   useEffect(() => {
@@ -95,6 +97,19 @@ export default function Trainers() {
         pageSize: pagination.pageSize
       };
       
+      if (filters.division) {
+        params.divisionId = filters.division;
+      }
+      if (filters.district) {
+        params.districtId = filters.district;
+      }
+      if (filters.tehsil) {
+        params.tehsilId = filters.tehsil;
+      }
+      if (filters.school) {
+        params.schoolId = filters.school;
+      }
+      
       // Add search parameter if provided
       if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
         params.search = debouncedSearchTerm.trim();
@@ -117,12 +132,24 @@ export default function Trainers() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearchTerm, pagination.pageSize]);
+  }, [
+    debouncedSearchTerm,
+    pagination.pageSize,
+    filters.division,
+    filters.district,
+    filters.tehsil,
+    filters.school,
+  ]);
 
-  // Fetch trainers when component mounts, search changes, or page changes
+  // Fetch trainers when component mounts, search changes, filters, or page changes
   useEffect(() => {
     fetchTrainers(pagination.page);
   }, [fetchTrainers, pagination.page]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
   const handleSave = async () => {
     try {

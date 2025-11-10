@@ -1,4 +1,4 @@
-import { Download, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { Download, CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -23,6 +23,8 @@ interface ImportResult {
   duplicates: Array<{ row: number; identifier: string; reason: string }>;
   errors: Array<{ row: number; data: any; errors: string[] }>;
   created?: Array<{ row: number; identifier: string; defaultPassword?: string }>;
+  updatedCount?: number;
+  updated?: Array<{ row: number; identifier: string }>;
 }
 
 interface ImportResultsDialogProps {
@@ -53,6 +55,15 @@ export function ImportResultsDialog({
       lines.push('-----------');
       result.duplicates.forEach((dup) => {
         lines.push(`Row ${dup.row}: ${dup.identifier} - ${dup.reason}`);
+      });
+      lines.push('');
+    }
+
+    if (result.updated && result.updated.length > 0) {
+      lines.push('Updated Sessions:');
+      lines.push('-----------------');
+      result.updated.forEach((updated) => {
+        lines.push(`Row ${updated.row}: ${updated.identifier}`);
       });
       lines.push('');
     }
@@ -104,7 +115,7 @@ export function ImportResultsDialog({
 
         <div className="space-y-4">
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="p-3 border rounded-lg">
               <div className="text-sm text-muted-foreground">Total Rows</div>
               <div className="text-2xl font-bold">{result.totalRows}</div>
@@ -114,6 +125,13 @@ export function ImportResultsDialog({
               <div className="text-2xl font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
                 <CheckCircle className="h-5 w-5" />
                 {result.successCount}
+              </div>
+            </div>
+            <div className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-950">
+              <div className="text-sm text-muted-foreground">Updated</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <RefreshCw className="h-5 w-5" />
+                {result.updatedCount ?? result.updated?.length ?? 0}
               </div>
             </div>
             <div className="p-3 border rounded-lg bg-yellow-50 dark:bg-yellow-950">
@@ -135,8 +153,35 @@ export function ImportResultsDialog({
           {/* Expandable Lists */}
           {(result.duplicates.length > 0 ||
             result.errors.length > 0 ||
-            (result.created && result.created.length > 0)) && (
+            (result.created && result.created.length > 0) ||
+            (result.updated && result.updated.length > 0)) && (
             <Accordion type="single" collapsible className="w-full">
+              {result.updated && result.updated.length > 0 && (
+                <AccordionItem value="updated">
+                  <AccordionTrigger>
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 text-blue-600" />
+                      <span>Updated ({result.updatedCount ?? result.updated.length})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {result.updated.map((updated, idx) => (
+                        <div
+                          key={idx}
+                          className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm border border-blue-200 dark:border-blue-800"
+                        >
+                          <div className="font-medium">Row {updated.row}</div>
+                          <div className="text-muted-foreground">
+                            {updated.identifier}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
               {result.created && result.created.length > 0 && (
                 <AccordionItem value="created">
                   <AccordionTrigger>

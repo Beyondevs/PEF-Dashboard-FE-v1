@@ -346,4 +346,22 @@ export const downloadAssessmentsTemplate = async (): Promise<Blob> => {
   return response.data;
 };
 
+// Sessions
+export const exportSessionsCSV = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/sessions/export');
+  return response.data;
+};
+
+export const importSessionsCSV = async (file: File) => {
+  const formData = createFormData(file);
+  return apiClient.post('/data-transfer/sessions/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const downloadSessionsTemplate = async (): Promise<Blob> => {
+  const response = await apiClient.getBlob('/data-transfer/sessions/template');
+  return response.data;
+};
+
 
