@@ -131,6 +131,12 @@ export const FilterBar = () => {
   // Fetch sessions based on current filters
   useEffect(() => {
     const fetchSessions = async () => {
+      if (!isTrainer && !filters.school) {
+        setSessions([]);
+        setIsLoadingSessions(false);
+        return;
+      }
+
       try {
         setIsLoadingSessions(true);
         const params: Record<string, string | number> = {
@@ -145,30 +151,24 @@ export const FilterBar = () => {
         if (filters.tehsil) params.tehsilId = filters.tehsil;
         if (filters.school) params.schoolId = filters.school;
         } else {
-          // For trainers, filter to only show today's sessions
-          const today = new Date();
-          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-          const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-          params.from = todayStart.toISOString();
-          params.to = todayEnd.toISOString();
+          // For trainers, show sessions from 1 Nov 2025 to current date
+          const current = new Date();
+          const fromDate = new Date('2025-11-01T00:00:00.000Z');
+          const toDate = new Date(
+            current.getFullYear(),
+            current.getMonth(),
+            current.getDate(),
+            23,
+            59,
+            59,
+            999
+          );
+          params.from = fromDate.toISOString();
+          params.to = toDate.toISOString();
         }
 
         const response = await getSessions(params);
-        let fetchedSessions = response.data.data || [];
-        
-        // Additional client-side filtering for trainers (date-only comparison)
-        if (isTrainer) {
-          const today = new Date();
-          const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          
-          fetchedSessions = fetchedSessions.filter((session: Session) => {
-            const sessionDate = new Date(session.date);
-            const sessionDateOnly = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate());
-            return sessionDateOnly.getTime() === todayDateOnly.getTime();
-          });
-        }
-        
-        setSessions(fetchedSessions);
+        setSessions(response.data.data || []);
       } catch (error) {
         console.error('Failed to fetch sessions:', error);
         setSessions([]);
@@ -194,7 +194,7 @@ export const FilterBar = () => {
 
         {!isTrainer && (
         <Select
-          value={filters.division}
+          value={filters.division ?? ''}
           onValueChange={(value) => {
             if (value === "clear") {
               setFilters(prev => ({ 
@@ -240,7 +240,7 @@ export const FilterBar = () => {
 
         {!isTrainer && (
         <Select
-          value={filters.district}
+          value={filters.district ?? ''}
           onValueChange={(value) => {
             if (value === "clear") {
               setFilters(prev => ({ 
@@ -286,7 +286,7 @@ export const FilterBar = () => {
 
         {!isTrainer && (
         <Select
-          value={filters.tehsil}
+          value={filters.tehsil ?? ''}
           onValueChange={(value) => {
             if (value === "clear") {
               setFilters(prev => ({ 
@@ -330,7 +330,7 @@ export const FilterBar = () => {
 
         {!isTrainer && (
         <Select
-          value={filters.school}
+          value={filters.school ?? ''}
           onValueChange={(value) => {
             if (value === "clear") {
               setFilters(prev => ({ 
@@ -371,7 +371,7 @@ export const FilterBar = () => {
         )}
 
         <Select
-          value={filters.sessionId}
+          value={filters.sessionId ?? ''}
           onValueChange={(value) => {
             if (value === "clear") {
               setFilters(prev => ({ ...prev, sessionId: undefined }));
@@ -379,10 +379,20 @@ export const FilterBar = () => {
               setFilters(prev => ({ ...prev, sessionId: value }));
             }
           }}
-          disabled={isLoadingSessions}
+          disabled={isTrainer ? isLoadingSessions : isLoadingSessions || !filters.school}
         >
           <SelectTrigger className="w-full sm:w-[180px] md:w-[240px] text-xs md:text-sm">
-            <SelectValue placeholder={isLoadingSessions ? "Loading sessions..." : "Session"} />
+            <SelectValue
+              placeholder={
+                isTrainer
+                  ? isLoadingSessions ? "Loading sessions..." : "Session"
+                  : !filters.school
+                    ? "Select school first"
+                    : isLoadingSessions
+                      ? "Loading sessions..."
+                      : "Session"
+              }
+            />
           </SelectTrigger>
           <SelectContent className="z-50">
             {filters.sessionId && (
@@ -402,7 +412,16 @@ export const FilterBar = () => {
           </SelectContent>
         </Select>
 
-        <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs md:text-sm shrink-0 w-full sm:w-auto">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            resetFilters();
+            setSessions([]);
+            setIsLoadingSessions(false);
+          }}
+          className="text-xs md:text-sm shrink-0 w-full sm:w-auto"
+        >
           <RotateCcw className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
           <span className="hidden sm:inline">Reset Filters</span>
           <span className="sm:hidden">Reset</span>
