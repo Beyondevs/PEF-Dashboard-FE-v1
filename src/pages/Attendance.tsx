@@ -103,14 +103,15 @@ const Attendance = () => {
         studentFilters.schoolId = filters.school;
       }
 
-      if (filters.startDate) {
-        teacherFilters.from = filters.startDate;
-        studentFilters.from = filters.startDate;
-      }
-      if (filters.endDate) {
-        teacherFilters.to = filters.endDate;
-        studentFilters.to = filters.endDate;
-      }
+      // TODO: Date range filter - Temporarily disabled for future work
+      // if (filters.startDate) {
+      //   teacherFilters.from = filters.startDate;
+      //   studentFilters.from = filters.startDate;
+      // }
+      // if (filters.endDate) {
+      //   teacherFilters.to = filters.endDate;
+      //   studentFilters.to = filters.endDate;
+      // }
 
       if (debouncedSearchTerm) {
         teacherFilters.search = debouncedSearchTerm;
@@ -156,8 +157,9 @@ const Attendance = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
     params.personType = activeTab === 'teachers' ? 'Teacher' : 'Student';
-    if (filters.startDate) params.startDate = filters.startDate;
-    if (filters.endDate) params.endDate = filters.endDate;
+    // TODO: Date range filter - Temporarily disabled for future work
+    // if (filters.startDate) params.startDate = filters.startDate;
+    // if (filters.endDate) params.endDate = filters.endDate;
     if (debouncedSearchTerm) params.search = debouncedSearchTerm;
     return params;
   };

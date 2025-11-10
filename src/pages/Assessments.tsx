@@ -74,8 +74,9 @@ const Assessments = () => {
     if (filters.district) apiFilters.districtId = filters.district;
     if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
     if (filters.school) apiFilters.schoolId = filters.school;
-    if (filters.startDate) apiFilters.from = filters.startDate;
-    if (filters.endDate) apiFilters.to = filters.endDate;
+    // TODO: Date range filter - Temporarily disabled for future work
+    // if (filters.startDate) apiFilters.from = filters.startDate;
+    // if (filters.endDate) apiFilters.to = filters.endDate;
     if (debouncedSearchTerm) apiFilters.search = debouncedSearchTerm;
 
     return apiFilters;
@@ -85,8 +86,9 @@ const Assessments = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
     params.subjectType = activeTab === 'students' ? 'student' : 'teacher';
-    if (filters.startDate) params.startDate = filters.startDate;
-    if (filters.endDate) params.endDate = filters.endDate;
+    // TODO: Date range filter - Temporarily disabled for future work
+    // if (filters.startDate) params.startDate = filters.startDate;
+    // if (filters.endDate) params.endDate = filters.endDate;
     if (debouncedSearchTerm) params.search = debouncedSearchTerm;
     return params;
   };

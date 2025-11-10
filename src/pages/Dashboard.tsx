@@ -80,8 +80,9 @@ const Dashboard = () => {
         
         // Apply geography and date filters for non-client roles only
         if (!isClient) {
-          if (filters.startDate) params.from = filters.startDate;
-          if (filters.endDate) params.to = filters.endDate;
+          // TODO: Date range filter - Temporarily disabled for future work
+          // if (filters.startDate) params.from = filters.startDate;
+          // if (filters.endDate) params.to = filters.endDate;
           
           if (filters.division) params.divisionId = filters.division;
           if (filters.district) params.districtId = filters.district;
@@ -137,8 +138,9 @@ const Dashboard = () => {
     filters.district,
     filters.tehsil,
     filters.school,
-    filters.startDate,
-    filters.endDate,
+    // TODO: Date range filter - Temporarily disabled for future work
+    // filters.startDate,
+    // filters.endDate,
     isClient,
   ]);
 
