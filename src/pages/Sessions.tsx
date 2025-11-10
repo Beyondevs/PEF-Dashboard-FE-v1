@@ -93,6 +93,8 @@ const Sessions = () => {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      if (filters.startDate) params.from = filters.startDate;
+      if (filters.endDate) params.to = filters.endDate;
       if (debouncedSearchTerm) params.search = debouncedSearchTerm;
 
       const response = await getSessions(params);

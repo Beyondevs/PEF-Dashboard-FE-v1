@@ -64,6 +64,10 @@ const Dashboard = () => {
         // Build API params with filters
         const params: Record<string, string> = { date: today };
         
+        // Add date range filters
+        if (filters.startDate) params.from = filters.startDate;
+        if (filters.endDate) params.to = filters.endDate;
+        
         // Add geography filters if selected
         if (filters.division) params.divisionId = filters.division;
         if (filters.district) params.districtId = filters.district;
@@ -111,7 +115,7 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [today, last30DaysStart, filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [today, last30DaysStart, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
 
   const stats = useMemo(() => {
     // Calculate total assessments and average score from coursePerformance

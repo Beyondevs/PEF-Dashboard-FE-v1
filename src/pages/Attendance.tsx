@@ -103,6 +103,15 @@ const Attendance = () => {
         studentFilters.schoolId = filters.school;
       }
 
+      if (filters.startDate) {
+        teacherFilters.from = filters.startDate;
+        studentFilters.from = filters.startDate;
+      }
+      if (filters.endDate) {
+        teacherFilters.to = filters.endDate;
+        studentFilters.to = filters.endDate;
+      }
+
       if (debouncedSearchTerm) {
         teacherFilters.search = debouncedSearchTerm;
         studentFilters.search = debouncedSearchTerm;
@@ -147,6 +156,8 @@ const Attendance = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
     params.personType = activeTab === 'teachers' ? 'Teacher' : 'Student';
+    if (filters.startDate) params.startDate = filters.startDate;
+    if (filters.endDate) params.endDate = filters.endDate;
     if (debouncedSearchTerm) params.search = debouncedSearchTerm;
     return params;
   };

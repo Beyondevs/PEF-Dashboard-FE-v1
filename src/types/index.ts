@@ -154,4 +154,6 @@ export interface FilterState {
   tehsil?: string;
   school?: string;
   sessionId?: string;
+  startDate?: string;  // ISO date string (YYYY-MM-DD)
+  endDate?: string;    // ISO date string (YYYY-MM-DD)
 }

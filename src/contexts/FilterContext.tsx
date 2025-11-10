@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { FilterState } from '@/types';
 
 interface FilterContextType {
@@ -9,7 +9,12 @@ interface FilterContextType {
 
 const FILTER_STORAGE_KEY = 'pef_dashboard_filters';
 
-const defaultFilters: FilterState = {};
+const getTodayISO = () => new Date().toISOString().split('T')[0];
+
+const defaultFilters: FilterState = {
+  startDate: getTodayISO(),
+  endDate: getTodayISO(),
+};
 
 // Load filters from localStorage
 const loadFiltersFromStorage = (): FilterState => {
@@ -36,7 +41,16 @@ const saveFiltersToStorage = (filters: FilterState) => {
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
 export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [filters, setFiltersState] = useState<FilterState>(() => loadFiltersFromStorage());
+  const [filters, setFiltersState] = useState<FilterState>(() => {
+    const stored = loadFiltersFromStorage();
+    // Ensure dates are always set (either from storage or default to today)
+    return {
+      ...defaultFilters,
+      ...stored,
+      startDate: stored.startDate || getTodayISO(),
+      endDate: stored.endDate || getTodayISO(),
+    };
+  });
 
   // Wrapper to save to localStorage whenever filters change
   const setFilters: React.Dispatch<React.SetStateAction<FilterState>> = (value) => {
@@ -48,17 +62,13 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const resetFilters = () => {
-    setFiltersState(defaultFilters);
-    saveFiltersToStorage(defaultFilters);
+    const resetToDefaults: FilterState = {
+      startDate: getTodayISO(),
+      endDate: getTodayISO(),
+    };
+    setFiltersState(resetToDefaults);
+    saveFiltersToStorage(resetToDefaults);
   };
-
-  // Load from storage on mount
-  useEffect(() => {
-    const storedFilters = loadFiltersFromStorage();
-    if (Object.keys(storedFilters).length > 0) {
-      setFiltersState(storedFilters);
-    }
-  }, []);
 
   return (
     <FilterContext.Provider value={{ filters, setFilters, resetFilters }}>
