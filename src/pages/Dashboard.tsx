@@ -26,21 +26,21 @@ const Dashboard = () => {
   
   // API data state
   // Slim backend payload state
-  const [teachersInTraining, setTeachersInTraining] = useState<number>(0);
-  const [studentsInTraining, setStudentsInTraining] = useState<number>(0);
+  const [teachersTaught, setTeachersTaught] = useState<number>(0);
+  const [studentsTaught, setStudentsTaught] = useState<number>(0);
+  const [teachersEnrolled, setTeachersEnrolled] = useState<number>(0);
+  const [studentsEnrolled, setStudentsEnrolled] = useState<number>(0);
   const [totalSessions, setTotalSessions] = useState<number>(0);
   const [activeSchools, setActiveSchools] = useState<number>(0);
   const [activityTrends, setActivityTrends] = useState<Array<{ date: string; attendanceRate: number }>>([]);
   const [attendanceStatusToday, setAttendanceStatusToday] = useState<{ present: number; absent: number; total: number }>({ present: 0, absent: 0, total: 0 });
-  const [coursePerformance, setCoursePerformance] = useState<Array<{ courseName: string; averageScore: number; sampleSize: number }>>([]);
-  const [weeklyProgress, setWeeklyProgress] = useState<Array<{ weekStart: string; sessions: number; attendanceRate: number }>>([]);
   const [overallAttendanceRate, setOverallAttendanceRate] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError] = useState(false);
 
   // Backend-calculated graph data (no local calculations needed)
   const [attendanceTrendsDetailed, setAttendanceTrendsDetailed] = useState<Array<{ date: string; teachers: number; students: number; both: number }>>([]);
-  const [scoreDistribution, setScoreDistribution] = useState<Array<{ range: string; count: number }>>([]);
+  const [weekdaySessionsDistribution, setWeekdaySessionsDistribution] = useState<Array<{ day: string; sessions: number }>>([]);
   const [sessionsProgressDetailed, setSessionsProgressDetailed] = useState<Array<{ date: string; sessions: number; attendanceRate: number; teachersRate: number; studentsRate: number }>>([]);
 
   // Filter states for graphs
@@ -95,14 +95,19 @@ const Dashboard = () => {
         const payload = agg.data as any;
 
         // Store all backend-calculated data directly (no local calculations)
-        setTeachersInTraining(payload.teachersInTraining || 0);
-        setStudentsInTraining(payload.studentsInTraining || 0);
+        setTeachersTaught(payload.teachersTaught ?? payload.teachersInTraining ?? 0);
+        setStudentsTaught(payload.studentsTaught ?? payload.studentsInTraining ?? 0);
+        setTeachersEnrolled(payload.teachersEnrolled ?? payload.teachersInTraining ?? 0);
+        setStudentsEnrolled(payload.studentsEnrolled ?? payload.studentsInTraining ?? 0);
         setTotalSessions(payload.totalSessions || 0);
         setActiveSchools(payload.activeSchools || 0);
         setActivityTrends(Array.isArray(payload.activityTrends) ? payload.activityTrends : []);
         setAttendanceStatusToday(payload.attendanceStatusToday || { present: 0, absent: 0, total: 0 });
-        setCoursePerformance(Array.isArray(payload.coursePerformance) ? payload.coursePerformance : []);
-        setWeeklyProgress(Array.isArray(payload.weeklyProgress) ? payload.weeklyProgress : []);
+        setWeekdaySessionsDistribution(
+          Array.isArray(payload.weekdaySessionsDistribution)
+            ? payload.weekdaySessionsDistribution
+            : []
+        );
         
         // Store overall attendance rate from backend
         if (payload.overallAttendanceRate !== undefined) {
@@ -112,9 +117,6 @@ const Dashboard = () => {
         // Store detailed graph data from backend (all calculations done on backend)
         if (payload.attendanceTrendsDetailed) {
           setAttendanceTrendsDetailed(payload.attendanceTrendsDetailed);
-        }
-        if (payload.scoreDistribution) {
-          setScoreDistribution(payload.scoreDistribution);
         }
         if (payload.sessionsProgressDetailed) {
           setSessionsProgressDetailed(payload.sessionsProgressDetailed);
@@ -145,24 +147,27 @@ const Dashboard = () => {
   ]);
 
   const stats = useMemo(() => {
-    // Calculate total assessments and average score from coursePerformance
-    const totalAssessments = coursePerformance.reduce((sum, c) => sum + (c.sampleSize || 0), 0);
-    const weightedScoreSum = coursePerformance.reduce((sum, c) => sum + (c.averageScore * (c.sampleSize || 0)), 0);
-    const avgScore = totalAssessments > 0 ? weightedScoreSum / totalAssessments : 0;
-    
     return {
-      teachersToday: teachersInTraining,
-      studentsToday: studentsInTraining,
-      activeSessions: totalSessions, // renamed meaning on FE card
-      activeSchools: activeSchools,
-      completedSessions: totalSessions, // Use totalSessions as completed sessions
-      totalTeachers: teachersInTraining,
-      totalStudents: studentsInTraining,
-      avgAttendanceRate: overallAttendanceRate, // Use overallAttendanceRate from backend
-      totalAssessments: totalAssessments,
-      avgScore: avgScore,
+      teachersToday: teachersTaught,
+      studentsToday: studentsTaught,
+      activeSessions: totalSessions,
+      activeSchools,
+      completedSessions: totalSessions,
+      teachersEnrolled,
+      studentsEnrolled,
+      avgAttendanceRate: overallAttendanceRate,
+      teacherTaught: teachersTaught,
+      studentTaught: studentsTaught,
     };
-  }, [teachersInTraining, studentsInTraining, totalSessions, activeSchools, overallAttendanceRate, coursePerformance]);
+  }, [
+    teachersTaught,
+    studentsTaught,
+    totalSessions,
+    activeSchools,
+    overallAttendanceRate,
+    teachersEnrolled,
+    studentsEnrolled,
+  ]);
 
   // Use backend-calculated attendance trends (no local calculations)
   const attendanceTrendsData = useMemo(() => {
@@ -189,33 +194,22 @@ const Dashboard = () => {
   }, [attendanceStatusToday]);
   
   // Use backend-calculated score distribution (no local calculations)
-  const performanceData = useMemo(() => {
+  const weekdayDistributionData = useMemo(() => {
     const fillColors = [
       'hsl(var(--chart-5))',
       'hsl(var(--chart-3))',
       'hsl(var(--chart-2))',
       'hsl(var(--chart-1))',
+      'hsl(var(--chart-4))',
+      'hsl(var(--chart-5))',
+      'hsl(var(--chart-3))',
     ];
-    return (scoreDistribution || []).map((item, index) => ({
-      range: item.range,
-      count: item.count,
-      fill: fillColors[index] || 'hsl(var(--chart-1))',
+    return (weekdaySessionsDistribution || []).map((item, index) => ({
+      day: item.day,
+      sessions: item.sessions,
+      fill: fillColors[index % fillColors.length],
     }));
-  }, [scoreDistribution]);
-  
-  const courseData = useMemo(() => {
-    const colorMap: Record<string, string> = {
-      'English Basics': 'hsl(var(--chart-1))',
-      'English Intermediate': 'hsl(var(--chart-2))',
-      'English Advanced': 'hsl(var(--chart-3))',
-    };
-    return (coursePerformance || []).map(c => ({
-      course: c.courseName.replace('English ', ''),
-      sessions: 0,
-      avgScore: Number((c.averageScore).toFixed(1)),
-      fill: colorMap[c.courseName] || 'hsl(var(--chart-1))',
-    }));
-  }, [coursePerformance]);
+  }, [weekdaySessionsDistribution]);
   
   // Use backend-calculated sessions progress (no local calculations)
   const sessionsProgressData = useMemo(() => {
@@ -296,23 +290,23 @@ const Dashboard = () => {
           <>
             <Card className="border-l-4 border-l-primary">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Teachers in Training</CardTitle>
+                <CardTitle className="text-sm font-medium">Teachers Enrolled</CardTitle>
                 <UserCheck className="h-5 w-5 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">{stats.teachersToday}</div>
-                <p className="text-xs text-muted-foreground mt-1">Active today • {stats.totalTeachers} total trained</p>
+                <div className="text-3xl font-bold text-primary">{stats.teachersEnrolled}</div>
+                <p className="text-xs text-muted-foreground mt-1">Active today • {stats.teacherTaught} taught</p>
               </CardContent>
             </Card>
 
             <Card className="border-l-4 border-l-secondary">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Students in Training</CardTitle>
+                <CardTitle className="text-sm font-medium">Students Enrolled</CardTitle>
                 <Users className="h-5 w-5 text-secondary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-secondary">{stats.studentsToday}</div>
-                <p className="text-xs text-muted-foreground mt-1">Present today • {stats.totalStudents} total reached</p>
+                <div className="text-3xl font-bold text-secondary">{stats.studentsEnrolled}</div>
+                <p className="text-xs text-muted-foreground mt-1">Present today • {stats.studentTaught} taught</p>
               </CardContent>
             </Card>
 
@@ -353,12 +347,12 @@ const Dashboard = () => {
 
             <Card className="border-l-4 border-l-secondary">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                <CardTitle className="text-sm font-medium">Teachers Enrolled</CardTitle>
                 <Award className="h-5 w-5 text-secondary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-secondary">{stats.avgScore.toFixed(1)}/10</div>
-                <p className="text-xs text-muted-foreground mt-1">From {stats.totalAssessments} assessments</p>
+                <div className="text-3xl font-bold text-secondary">{stats.teacherTaught}</div>
+                <p className="text-xs text-muted-foreground mt-1">Teachers taught in the last 30 days</p>
               </CardContent>
             </Card>
 
@@ -375,11 +369,11 @@ const Dashboard = () => {
 
             <Card className="border-l-4 border-l-chart-4">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Students Taught</CardTitle>
+                <CardTitle className="text-sm font-medium">Students Enrolled</CardTitle>
                 <GraduationCap className="h-5 w-5 text-chart-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-chart-4">{stats.totalStudents}</div>
+                <div className="text-3xl font-bold text-chart-4">{stats.studentsEnrolled}</div>
                 <p className="text-xs text-muted-foreground mt-1">Across all sessions</p>
               </CardContent>
             </Card>
@@ -495,7 +489,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />
-                {isTrainer ? 'Today\'s Attendance' : 'Score Distribution'}
+                {isTrainer ? 'Today\'s Attendance' : 'Weekday Sessions Distribution'}
             </CardTitle>
               {isTrainer && (
                 <Tabs value={attendanceTodayFilter} onValueChange={(v) => setAttendanceTodayFilter(v as 'both' | 'teachers' | 'students')}>
@@ -540,19 +534,19 @@ const Dashboard = () => {
             ) : (
               <ChartContainer
                 config={{
-                  count: { label: 'Students', color: 'hsl(var(--chart-1))' },
+                  sessions: { label: 'Sessions', color: 'hsl(var(--chart-1))' },
                 }}
               >
                 <div className="w-full" style={{ height: '250px' }}>
                   <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={performanceData}>
+                  <BarChart data={weekdayDistributionData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="range" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="count" radius={[8, 8, 0, 0]} name="Students">
-                      {performanceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                    <Bar dataKey="sessions" radius={[8, 8, 0, 0]} name="Sessions">
+                      {weekdayDistributionData.map((entry, index) => (
+                        <Cell key={`weekday-cell-${index}`} fill={entry.fill} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -565,43 +559,7 @@ const Dashboard = () => {
       </div>
 
       {/* Charts Row 2 */}
-      <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
-              Course Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={{
-                sessions: { label: 'Sessions', color: 'hsl(var(--chart-1))' },
-                avgScore: { label: 'Avg Score', color: 'hsl(var(--chart-2))' },
-              }}
-            >
-              <div className="w-full" style={{ height: '250px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={courseData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="course" tick={{ fontSize: 11 }} />
-                  <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar yAxisId="left" dataKey="sessions" radius={[8, 8, 0, 0]} name="Sessions">
-                    {courseData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                  <Bar yAxisId="right" dataKey="avgScore" fill="hsl(var(--chart-2))" radius={[8, 8, 0, 0]} name="Avg Score" />
-                </BarChart>
-              </ResponsiveContainer>
-              </div>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-3 md:gap-4 grid-cols-1">
         <Card>
           <CardHeader>
             <div className="flex items-center flex-wrap justify-between">
@@ -703,8 +661,8 @@ const Dashboard = () => {
                         <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">{teachersInTraining}</div>
-                        <div className="text-xs text-muted-foreground">Teachers in Training</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">{teachersEnrolled}</div>
+                        <div className="text-xs text-muted-foreground">Teachers Enrolled</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -746,7 +704,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                           <span className="text-muted-foreground">{ongoingSessions.length} sessions</span>
-                          <span className="font-medium text-primary">{teachersInTraining} teachers</span>
+                          <span className="font-medium text-primary">{teachersEnrolled} teachers</span>
                         </div>
                       </div>
                     </div>
@@ -813,7 +771,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                           <span className="text-muted-foreground">{Math.floor(ongoingSessions.length * 0.6)} sessions</span>
-                          <span className="font-medium text-primary">{Math.floor(teachersInTraining * 0.7)} teachers</span>
+                          <span className="font-medium text-primary">{Math.floor(teachersEnrolled * 0.7)} teachers</span>
                         </div>
                       </div>
                     </div>
@@ -880,7 +838,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                           <span className="text-muted-foreground">{Math.floor(ongoingSessions.length * 0.4)} sessions</span>
-                          <span className="font-medium text-primary">{Math.floor(teachersInTraining * 0.3)} teachers</span>
+                          <span className="font-medium text-primary">{Math.floor(teachersEnrolled * 0.3)} teachers</span>
                         </div>
                       </div>
                     </div>
