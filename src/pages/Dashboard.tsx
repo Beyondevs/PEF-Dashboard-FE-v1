@@ -5,10 +5,47 @@ import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBarChart, RadialBar } from 'recharts';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getDashboardAggregate } from '@/lib/api';
+
+type DashboardTodaySession = {
+  id: string;
+  title?: string | null;
+  courseName?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  status?: string | null;
+  school?: {
+    id?: string | null;
+    name?: string | null;
+    divisionId?: string | null;
+    divisionName?: string | null;
+    districtId?: string | null;
+    districtName?: string | null;
+    tehsilId?: string | null;
+    tehsilName?: string | null;
+  } | null;
+  attendance?: {
+    teachersPresent?: number;
+    teachersTotal?: number;
+    studentsPresent?: number;
+    studentsTotal?: number;
+  } | null;
+};
+
+type DashboardDistrictSnapshot = {
+  districtId?: string | null;
+  districtName: string;
+  sessions: number;
+  totalSessions: number;
+  teachersEnrolled: number;
+  teachersPresent: number;
+  studentsEnrolled: number;
+  studentsPresent: number;
+  schools: number;
+};
 
 const Dashboard = () => {
   const { filters, resetFilters } = useFilters();
@@ -49,7 +86,8 @@ const Dashboard = () => {
   const [sessionsProgressFilter, setSessionsProgressFilter] = useState<'both' | 'teachers' | 'students'>('both');
 
   // Today's sessions state (for "What's Happening Now" section)
-  const [todaySessions, setTodaySessions] = useState<any[]>([]);
+  const [todaySessions, setTodaySessions] = useState<DashboardTodaySession[]>([]);
+  const [districtSnapshots, setDistrictSnapshots] = useState<DashboardDistrictSnapshot[]>([]);
 
   // Calculate date ranges
   const last30DaysStart = useMemo(() => {
@@ -106,6 +144,16 @@ const Dashboard = () => {
         setWeekdaySessionsDistribution(
           Array.isArray(payload.weekdaySessionsDistribution)
             ? payload.weekdaySessionsDistribution
+            : []
+        );
+        setTodaySessions(
+          Array.isArray(payload.todaySessions)
+            ? payload.todaySessions
+            : []
+        );
+        setDistrictSnapshots(
+          Array.isArray(payload.todayDistrictSummaries)
+            ? payload.todayDistrictSummaries
             : []
         );
         
@@ -168,6 +216,96 @@ const Dashboard = () => {
     teachersEnrolled,
     studentsEnrolled,
   ]);
+
+  const formatTime = (time?: string | null) => {
+    if (!time) return '--';
+    if (/^\d{1,2}:\d{2}$/.test(time)) {
+      return time;
+    }
+    const parsed = new Date(time);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return time;
+  };
+
+  const topDistricts = useMemo(() => districtSnapshots.slice(0, 3), [districtSnapshots]);
+
+  const ongoingSessions = useMemo<DashboardTodaySession[]>(() => {
+    return (todaySessions ?? []).filter(
+      session => session?.status === 'in_progress' || session?.status === 'published'
+    );
+  }, [todaySessions]);
+
+  const activeSessionsCount = useMemo(() => {
+    if (ongoingSessions.length > 0) {
+      return ongoingSessions.length;
+    }
+    if (todaySessions?.length) {
+      return todaySessions.length;
+    }
+    return 0;
+  }, [ongoingSessions, todaySessions]);
+
+  const activeSessionsByDistrict = useMemo(() => {
+    const map: Record<string, DashboardTodaySession[]> = {};
+    ongoingSessions.forEach(session => {
+      const districtName = session.school?.districtName ?? 'Unknown District';
+      if (!map[districtName]) {
+        map[districtName] = [];
+      }
+      map[districtName].push(session);
+    });
+    return map;
+  }, [ongoingSessions]);
+
+  const allSessionsByDistrict = useMemo(() => {
+    const map: Record<string, DashboardTodaySession[]> = {};
+    todaySessions.forEach(session => {
+      const districtName = session.school?.districtName ?? 'Unknown District';
+      if (!map[districtName]) {
+        map[districtName] = [];
+      }
+      map[districtName].push(session);
+    });
+    return map;
+  }, [todaySessions]);
+
+  const getSessionAttendance = (session: DashboardTodaySession) => {
+    const teachersPresent = session.attendance?.teachersPresent ?? 0;
+    const teachersTotal = session.attendance?.teachersTotal ?? 0;
+    const studentsPresent = session.attendance?.studentsPresent ?? 0;
+    const studentsTotal = session.attendance?.studentsTotal ?? 0;
+    const total = teachersTotal + studentsTotal;
+    const attended = teachersPresent + studentsPresent;
+    const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 0;
+    return {
+      teachersPresent,
+      teachersTotal,
+      studentsPresent,
+      studentsTotal,
+      attendanceRate,
+    };
+  };
+
+  const totalTeachersEnrolledToday = useMemo(
+    () => districtSnapshots.reduce((sum, snapshot) => sum + (snapshot.teachersEnrolled ?? 0), 0),
+    [districtSnapshots]
+  );
+
+  const totalSchoolsActiveToday = useMemo(() => {
+    const schoolIds = new Set<string>();
+    todaySessions.forEach(session => {
+      const schoolId = session.school?.id;
+      if (schoolId) {
+        schoolIds.add(schoolId);
+      }
+    });
+    return schoolIds.size;
+  }, [todaySessions]);
+
+  const teachersEnrolledDisplay = totalTeachersEnrolledToday > 0 ? totalTeachersEnrolledToday : teachersEnrolled;
+  const schoolsActiveDisplay = totalSchoolsActiveToday > 0 ? totalSchoolsActiveToday : activeSchools;
 
   // Use backend-calculated attendance trends (no local calculations)
   const attendanceTrendsData = useMemo(() => {
@@ -233,13 +371,6 @@ const Dashboard = () => {
   const weeklyProgressSeries = useMemo(() => {
     return sessionsProgressData;
   }, [sessionsProgressData]);
-
-  // Filter ongoing/in_progress sessions for today (using backend data if available)
-  const ongoingSessions = useMemo(() => {
-    return (todaySessions || []).filter((session: any) => 
-      session.status === 'in_progress' || session.status === 'published'
-    );
-  }, [todaySessions]);
 
   if (isLoading) {
     return (
@@ -632,12 +763,11 @@ const Dashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {true ? (
-            <div className="space-y-6">
+          <div className="space-y-6">
               {isLoading && (
                 <div className="text-xs text-muted-foreground">Loading session data...</div>
               )}
-              {!isLoading && ongoingSessions.length === 0 && (
+              {!isLoading && activeSessionsCount === 0 && (
                 <div className="text-xs text-muted-foreground">No active sessions today</div>
               )}
               {(isTrainer || isAdmin || isClient) && (
@@ -661,7 +791,7 @@ const Dashboard = () => {
                         <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">{teachersEnrolled}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">{teachersEnrolledDisplay}</div>
                         <div className="text-xs text-muted-foreground">Teachers Enrolled</div>
                       </div>
                     </div>
@@ -670,7 +800,7 @@ const Dashboard = () => {
                         <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">{ongoingSessions.length}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">{activeSessionsCount}</div>
                         <div className="text-xs text-muted-foreground">Active Sessions</div>
                       </div>
                     </div>
@@ -679,7 +809,7 @@ const Dashboard = () => {
                         <School className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">{activeSchools}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">{schoolsActiveDisplay}</div>
                         <div className="text-xs text-muted-foreground">Schools Active</div>
                       </div>
                     </div>
@@ -693,207 +823,94 @@ const Dashboard = () => {
                     <BookOpen className="h-4 w-4" />
                     Training by District & School
                   </h4>
-                  
-                  {/* Lahore District */}
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-muted/50 px-3 sm:px-4 py-2 sm:py-3 border-b">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                        <div className="flex items-center gap-2">
-                          <School className="h-4 w-4 text-primary" />
-                          <h5 className="font-semibold text-sm sm:text-base text-foreground">Lahore District</h5>
-                        </div>
-                        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                          <span className="text-muted-foreground">{ongoingSessions.length} sessions</span>
-                          <span className="font-medium text-primary">{teachersEnrolled} teachers</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="divide-y">
-                      {ongoingSessions.slice(0, 2).map(session => {
-                        const sessionAttendance = apiAttendance.filter(a => a.sessionId === session.id);
-                        const teachersPresent = sessionAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
-                        const studentsPresent = sessionAttendance.filter(a => a.personType === 'Student' && a.present).length;
-                        const totalTeachers = sessionAttendance.filter(a => a.personType === 'Teacher').length;
-                        const totalStudents = sessionAttendance.filter(a => a.personType === 'Student').length;
-                        const attendanceRate = sessionAttendance.length > 0
-                          ? Math.round((sessionAttendance.filter(a => a.present).length / sessionAttendance.length) * 100)
-                          : 0;
 
-                        return (
-                          <div key={session.id} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-center gap-2 mb-1">
-                                  <h6 className="font-medium text-sm sm:text-base text-foreground truncate">{session.title}</h6>
-                                  <span className="px-2 py-0.5 text-xs font-medium bg-accent/20 text-accent-foreground rounded-full shrink-0">
-                                    {session.courseName.replace('English ', '')}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm text-muted-foreground truncate">{session.school?.name}</p>
-                                <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Clock className="h-3 w-3 shrink-0" />
-                                    {session.startTime} - {session.endTime}
-                                  </p>
-                                  <p className="text-xs font-medium text-secondary flex items-center gap-1">
-                                    <Target className="h-3 w-3 shrink-0" />
-                                    {attendanceRate}% Attendance
-                                  </p>
-                                </div>
+                  {topDistricts.length > 0 ? (
+                    topDistricts.map(summary => {
+                      const districtKey = summary.districtName;
+                      const activeList = activeSessionsByDistrict[districtKey] ?? [];
+                      const fallbackList = allSessionsByDistrict[districtKey] ?? [];
+                      const districtSessions = activeList.length > 0 ? activeList : fallbackList;
+                      const sessionsToRender = districtSessions.slice(0, 2);
+                      const sessionsCount = summary.sessions > 0 ? summary.sessions : summary.totalSessions;
+                      const sessionsLabel = `${sessionsCount} ${sessionsCount === 1 ? 'session' : 'sessions'}`;
+
+                      return (
+                        <div key={summary.districtId ?? summary.districtName} className="border rounded-lg overflow-hidden">
+                          <div className="bg-muted/50 px-3 sm:px-4 py-2 sm:py-3 border-b">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                              <div className="flex items-center gap-2">
+                                <School className="h-4 w-4 text-primary" />
+                                <h5 className="font-semibold text-sm sm:text-base text-foreground">{summary.districtName}</h5>
                               </div>
-                              <div className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
-                                <div className="text-center">
-                                  <div className="text-xs text-muted-foreground mb-1">Teachers</div>
-                                  <div className="font-bold text-primary">{teachersPresent}/{totalTeachers}</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="text-xs text-muted-foreground mb-1">Students</div>
-                                  <div className="font-bold text-secondary">{studentsPresent}/{totalStudents}</div>
-                                </div>
-                                <Link to={`/sessions/${session.id}`} className="shrink-0">
-                                  <Button size="sm" variant="outline" className="w-full sm:w-auto">Details</Button>
-                                </Link>
+                              <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                                <span className="text-muted-foreground">{sessionsLabel}</span>
+                                <span className="font-medium text-primary">{summary.teachersEnrolled} teachers</span>
                               </div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Faisalabad District */}
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-muted/50 px-3 sm:px-4 py-2 sm:py-3 border-b">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                        <div className="flex items-center gap-2">
-                          <School className="h-4 w-4 text-primary" />
-                          <h5 className="font-semibold text-sm sm:text-base text-foreground">Faisalabad District</h5>
-                        </div>
-                        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                          <span className="text-muted-foreground">{Math.floor(ongoingSessions.length * 0.6)} sessions</span>
-                          <span className="font-medium text-primary">{Math.floor(teachersEnrolled * 0.7)} teachers</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="divide-y">
-                      {ongoingSessions.slice(2, 4).map(session => {
-                        const sessionAttendance = apiAttendance.filter(a => a.sessionId === session.id);
-                        const teachersPresent = sessionAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
-                        const studentsPresent = sessionAttendance.filter(a => a.personType === 'Student' && a.present).length;
-                        const totalTeachers = sessionAttendance.filter(a => a.personType === 'Teacher').length;
-                        const totalStudents = sessionAttendance.filter(a => a.personType === 'Student').length;
-                        const attendanceRate = sessionAttendance.length > 0
-                          ? Math.round((sessionAttendance.filter(a => a.present).length / sessionAttendance.length) * 100)
-                          : 0;
-
-                        return (
-                          <div key={session.id} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-center gap-2 mb-1">
-                                  <h6 className="font-medium text-sm sm:text-base text-foreground truncate">{session.title}</h6>
-                                  <span className="px-2 py-0.5 text-xs font-medium bg-accent/20 text-accent-foreground rounded-full shrink-0">
-                                    {session.courseName.replace('English ', '')}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm text-muted-foreground truncate">{session.school?.name}</p>
-                                <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Clock className="h-3 w-3 shrink-0" />
-                                    {session.startTime} - {session.endTime}
-                                  </p>
-                                  <p className="text-xs font-medium text-secondary flex items-center gap-1">
-                                    <Target className="h-3 w-3 shrink-0" />
-                                    {attendanceRate}% Attendance
-                                  </p>
-                                </div>
+                          <div className="divide-y">
+                            {sessionsToRender.length > 0 ? (
+                              sessionsToRender.map(session => {
+                                const { teachersPresent, teachersTotal, studentsPresent, studentsTotal, attendanceRate } = getSessionAttendance(session);
+                                const totalTeachers = teachersTotal;
+                                const totalStudents = studentsTotal;
+                                return (
+                                  <div key={session.id ?? `${summary.districtName}-${session.title}`} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                          <h6 className="font-medium text-sm sm:text-base text-foreground truncate">{session.title ?? 'Untitled Session'}</h6>
+                                          {session.courseName && (
+                                            <span className="px-2 py-0.5 text-xs font-medium bg-accent/20 text-accent-foreground rounded-full shrink-0">
+                                              {session.courseName.replace('English ', '')}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{session.school?.name ?? 'Unknown School'}</p>
+                                        <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
+                                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Clock className="h-3 w-3 shrink-0" />
+                                            {formatTime(session.startTime)} - {formatTime(session.endTime)}
+                                          </p>
+                                          <p className="text-xs font-medium text-secondary flex items-center gap-1">
+                                            <Target className="h-3 w-3 shrink-0" />
+                                            {attendanceRate}% Attendance
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
+                                        <div className="text-center">
+                                          <div className="text-xs text-muted-foreground mb-1">Teachers</div>
+                                          <div className="font-bold text-primary">{teachersPresent}/{totalTeachers}</div>
+                                        </div>
+                                        <div className="text-center">
+                                          <div className="text-xs text-muted-foreground mb-1">Students</div>
+                                          <div className="font-bold text-secondary">{studentsPresent}/{totalStudents}</div>
+                                        </div>
+                                        {session.id && (
+                                          <Link to={`/sessions/${session.id}`} className="shrink-0">
+                                            <Button size="sm" variant="outline" className="w-full sm:w-auto">Details</Button>
+                                          </Link>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="p-3 sm:p-4 text-xs text-muted-foreground">
+                                No sessions to display for this district today.
                               </div>
-                              <div className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
-                                <div className="text-center">
-                                  <div className="text-xs text-muted-foreground mb-1">Teachers</div>
-                                  <div className="font-bold text-primary">{teachersPresent}/{totalTeachers}</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="text-xs text-muted-foreground mb-1">Students</div>
-                                  <div className="font-bold text-secondary">{studentsPresent}/{totalStudents}</div>
-                                </div>
-                                <Link to={`/sessions/${session.id}`} className="shrink-0">
-                                  <Button size="sm" variant="outline" className="w-full sm:w-auto">Details</Button>
-                                </Link>
-                              </div>
-                            </div>
+                            )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Multan District */}
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-muted/50 px-3 sm:px-4 py-2 sm:py-3 border-b">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-                        <div className="flex items-center gap-2">
-                          <School className="h-4 w-4 text-primary" />
-                          <h5 className="font-semibold text-sm sm:text-base text-foreground">Multan District</h5>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                          <span className="text-muted-foreground">{Math.floor(ongoingSessions.length * 0.4)} sessions</span>
-                          <span className="font-medium text-primary">{Math.floor(teachersEnrolled * 0.3)} teachers</span>
-                        </div>
-                      </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      No district-level activity recorded today.
                     </div>
-                    <div className="divide-y">
-                      {ongoingSessions.slice(4, 5).map(session => {
-                        const sessionAttendance = apiAttendance.filter(a => a.sessionId === session.id);
-                        const teachersPresent = sessionAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
-                        const studentsPresent = sessionAttendance.filter(a => a.personType === 'Student' && a.present).length;
-                        const totalTeachers = sessionAttendance.filter(a => a.personType === 'Teacher').length;
-                        const totalStudents = sessionAttendance.filter(a => a.personType === 'Student').length;
-                        const attendanceRate = sessionAttendance.length > 0
-                          ? Math.round((sessionAttendance.filter(a => a.present).length / sessionAttendance.length) * 100)
-                          : 0;
-
-                        return (
-                          <div key={session.id} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-center gap-2 mb-1">
-                                  <h6 className="font-medium text-sm sm:text-base text-foreground truncate">{session.title}</h6>
-                                  <span className="px-2 py-0.5 text-xs font-medium bg-accent/20 text-accent-foreground rounded-full shrink-0">
-                                    {session.courseName.replace('English ', '')}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm text-muted-foreground truncate">{session.school?.name}</p>
-                                <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Clock className="h-3 w-3 shrink-0" />
-                                    {session.startTime} - {session.endTime}
-                                  </p>
-                                  <p className="text-xs font-medium text-secondary flex items-center gap-1">
-                                    <Target className="h-3 w-3 shrink-0" />
-                                    {attendanceRate}% Attendance
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
-                                <div className="text-center">
-                                  <div className="text-xs text-muted-foreground mb-1">Teachers</div>
-                                  <div className="font-bold text-primary">{teachersPresent}/{totalTeachers}</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="text-xs text-muted-foreground mb-1">Students</div>
-                                  <div className="font-bold text-secondary">{studentsPresent}/{totalStudents}</div>
-                                </div>
-                                <Link to={`/sessions/${session.id}`} className="shrink-0">
-                                  <Button size="sm" variant="outline" className="w-full sm:w-auto">Details</Button>
-                                </Link>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  )}
 
                   <div className="text-center pt-2">
                     <Link to="/reports/drilldown">
@@ -905,30 +922,28 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {ongoingSessions.map(session => {
-                    const sessionAttendance = apiAttendance.filter(a => a.sessionId === session.id);
-                    const teachersPresent = sessionAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
-                    const studentsPresent = sessionAttendance.filter(a => a.personType === 'Student' && a.present).length;
-                    const totalTeachers = sessionAttendance.filter(a => a.personType === 'Teacher').length;
-                    const totalStudents = sessionAttendance.filter(a => a.personType === 'Student').length;
-                    const attendanceRate = sessionAttendance.length > 0
-                      ? Math.round((sessionAttendance.filter(a => a.present).length / sessionAttendance.length) * 100)
-                      : 0;
+                  {(ongoingSessions.length > 0 ? ongoingSessions : todaySessions).map(session => {
+                    const { teachersPresent, teachersTotal, studentsPresent, studentsTotal, attendanceRate } = getSessionAttendance(session);
+                    const totalTeachers = teachersTotal;
+                    const totalStudents = studentsTotal;
+                    const fallbackKey = `${session.title ?? 'session'}-${session.startTime ?? 'na'}-${session.endTime ?? 'na'}`;
 
                     return (
-                      <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-all hover:shadow-sm">
+                      <div key={session.id ?? fallbackKey} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-all hover:shadow-sm">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-foreground">{session.title}</h4>
-                            <span className="px-2 py-0.5 text-xs font-medium bg-accent/20 text-accent-foreground rounded-full">
-                              {session.courseName.replace('English ', '')}
-                            </span>
+                            <h4 className="font-semibold text-foreground">{session.title ?? 'Untitled Session'}</h4>
+                            {session.courseName && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-accent/20 text-accent-foreground rounded-full">
+                                {session.courseName.replace('English ', '')}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{session.school?.name}</p>
+                          <p className="text-sm text-muted-foreground">{session.school?.name ?? 'Unknown School'}</p>
                           <div className="flex items-center gap-4 mt-2">
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {session.startTime} - {session.endTime}
+                              {formatTime(session.startTime)} - {formatTime(session.endTime)}
                             </p>
                             <p className="text-xs font-medium text-secondary flex items-center gap-1">
                               <Target className="h-3 w-3" />
@@ -945,29 +960,20 @@ const Dashboard = () => {
                             <div className="text-xs text-muted-foreground mb-1">Students</div>
                             <div className="font-bold text-secondary">{studentsPresent}/{totalStudents}</div>
                           </div>
-                          <Link to={`/sessions/${session.id}`}>
-                            <Button size="sm" className="ml-4">
-                              View Details
-                            </Button>
-                          </Link>
+                          {session.id && (
+                            <Link to={`/sessions/${session.id}`}>
+                              <Button size="sm" className="ml-4">
+                                View Details
+                              </Button>
+                            </Link>
+                          )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground">No ongoing sessions at the moment</p>
-              <Link to="/sessions">
-                <Button variant="outline" size="sm" className="mt-4">
-                  View Scheduled Sessions
-                </Button>
-              </Link>
-            </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
