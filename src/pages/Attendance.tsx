@@ -156,10 +156,11 @@ const Attendance = () => {
   const buildExportParams = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
-    params.personType = activeTab === 'teachers' ? 'Teacher' : 'Student';
-    // TODO: Date range filter - Temporarily disabled for future work
-    // if (filters.startDate) params.startDate = filters.startDate;
-    // if (filters.endDate) params.endDate = filters.endDate;
+    if (filters.division) params.divisionId = filters.division;
+    if (filters.district) params.districtId = filters.district;
+    if (filters.tehsil) params.tehsilId = filters.tehsil;
+    if (filters.school) params.schoolId = filters.school;
+    params.personType = activeTab === 'teachers' ? 'teacher' : 'student';
     if (debouncedSearchTerm) params.search = debouncedSearchTerm;
     return params;
   };
