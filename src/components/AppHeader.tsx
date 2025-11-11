@@ -32,7 +32,7 @@ export const AppHeader = () => {
         <div className="h-6 sm:h-8 md:h-10 w-px bg-border shrink-0 hidden xs:block" />
         <div className="min-w-0">
           <h1 className="text-sm sm:text-base md:text-xl mr-3 font-bold text-foreground truncate">
-            Punjab English Training Portal
+          PEF Spoken English Training Portal
           </h1>
           <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
             Monitoring & Management System
