@@ -119,6 +119,14 @@ export const getDrilldownReport = (params: Record<string, string | number | bool
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<any>(`/reports/drilldown${qs ? `?${qs}` : ''}`);
 };
+export const getDistrictComparisonReport = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/reports/district-comparison${qs ? `?${qs}` : ''}`);
+};
+export const getTodayActivityReport = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/reports/today-activity${qs ? `?${qs}` : ''}`);
+};
 
 // Dashboard Aggregate
 export const getDashboardAggregate = (params: Record<string, string | number | boolean> = {}) => {

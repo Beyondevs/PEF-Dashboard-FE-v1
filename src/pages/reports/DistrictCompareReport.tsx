@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown } from 'lucide-react';
-import { districts, schools, sessions, attendance, assessments } from '@/lib/mockData';
+import { Download, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Table,
@@ -14,53 +13,65 @@ import {
 import { Badge } from '@/components/ui/badge';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
+import { useEffect, useState, useCallback } from 'react';
+import { getDistrictComparisonReport } from '@/lib/api';
+import { useFilters } from '@/contexts/FilterContext';
+
+interface DistrictData {
+  district: {
+    id: string;
+    name: string;
+    _count?: {
+      schools?: number;
+    };
+  };
+  sessionCount: number;
+  attendanceRate: number;
+  averageScore: number;
+  totalTeachers: number;
+  totalStudents: number;
+  compositeScore: number;
+}
 
 const DistrictCompareReport = () => {
+  const { filters } = useFilters();
+  const [districtData, setDistrictData] = useState<DistrictData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const handleExport = () => {
     toast.success('District comparison report exported successfully');
   };
 
-  const calculateDistrictMetrics = (districtId: string) => {
-    const districtSchools = schools.filter(s => s.districtId === districtId);
-    const districtSessions = sessions.filter(s => {
-      return districtSchools.some(school => school.id === s.schoolId);
-    });
+  const fetchDistrictComparison = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const params: Record<string, string> = {};
+      
+      // Apply division filter if set
+      if (filters.division) {
+        params.divisionId = filters.division;
+      }
 
-    const districtAttendance = attendance.filter(a => {
-      const session = sessions.find(s => s.id === a.sessionId);
-      return session && districtSchools.some(school => school.id === session.schoolId);
-    });
+      const response = await getDistrictComparisonReport(params);
+      setDistrictData(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch district comparison:', error);
+      toast.error('Failed to load district comparison report');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters.division]);
 
-    const districtAssessments = assessments.filter(a => {
-      const session = sessions.find(s => s.id === a.sessionId);
-      return session && districtSchools.some(school => school.id === session.schoolId);
-    });
+  useEffect(() => {
+    fetchDistrictComparison();
+  }, [fetchDistrictComparison]);
 
-    const attendanceRate = districtAttendance.length > 0
-      ? (districtAttendance.filter(a => a.present).length / districtAttendance.length) * 100
-      : 0;
-
-    const avgScore = districtAssessments.length > 0
-      ? districtAssessments.reduce((sum, a) => sum + (a.score / a.maxScore) * 100, 0) / districtAssessments.length
-      : 0;
-
-    return {
-      schools: districtSchools.length,
-      sessions: districtSessions.length,
-      attendanceRate,
-      avgScore,
-      totalAttendance: districtAttendance.length,
-      totalAssessments: districtAssessments.length,
-    };
-  };
-
-  const districtData = districts.map(district => ({
-    ...district,
-    metrics: calculateDistrictMetrics(district.id),
-  })).sort((a, b) => b.metrics.avgScore - a.metrics.avgScore);
-
-  const avgAttendanceRate = districtData.reduce((sum, d) => sum + d.metrics.attendanceRate, 0) / districtData.length;
-  const avgScoreAll = districtData.reduce((sum, d) => sum + d.metrics.avgScore, 0) / districtData.length;
+  const avgAttendanceRate = districtData.length > 0
+    ? districtData.reduce((sum, d) => sum + d.attendanceRate, 0) / districtData.length
+    : 0;
+  const avgScoreAll = districtData.length > 0
+    ? districtData.reduce((sum, d) => sum + d.averageScore, 0) / districtData.length
+    : 0;
 
   const {
     items: paginatedDistricts,
@@ -99,145 +110,169 @@ const DistrictCompareReport = () => {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Districts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{districts.length}</div>
-            <p className="text-xs text-muted-foreground">Across Punjab province</p>
-          </CardContent>
-        </Card>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Districts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{districtData.length}</div>
+                <p className="text-xs text-muted-foreground">Across Punjab province</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Attendance Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{avgAttendanceRate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">Province-wide average</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Attendance Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{avgAttendanceRate.toFixed(1)}%</div>
+                <p className="text-xs text-muted-foreground">Province-wide average</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Assessment Score</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{avgScoreAll.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">Province-wide average</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>District Rankings & Performance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Rank</TableHead>
-                  <TableHead>District</TableHead>
-                  <TableHead className="text-right">Schools</TableHead>
-                  <TableHead className="text-right">Sessions</TableHead>
-                  <TableHead className="text-right">Attendance Rate</TableHead>
-                  <TableHead className="text-right">Avg Score</TableHead>
-                  <TableHead className="text-right">Total Participants</TableHead>
-                  <TableHead className="text-right">Assessments</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedDistricts.map((district, index) => {
-                  const rank = startIndex > 0 ? startIndex + index : index + 1;
-
-                  return (
-                    <TableRow key={district.id}>
-                      <TableCell>{getRankBadge(rank)}</TableCell>
-                      <TableCell className="font-medium">{district.name}</TableCell>
-                      <TableCell className="text-right">{district.metrics.schools}</TableCell>
-                      <TableCell className="text-right">{district.metrics.sessions}</TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-semibold">{district.metrics.attendanceRate.toFixed(1)}%</span>
-                        {getPerformanceIndicator(district.metrics.attendanceRate, avgAttendanceRate)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-semibold text-primary">{district.metrics.avgScore.toFixed(1)}%</span>
-                        {getPerformanceIndicator(district.metrics.avgScore, avgScoreAll)}
-                      </TableCell>
-                      <TableCell className="text-right">{district.metrics.totalAttendance}</TableCell>
-                      <TableCell className="text-right">{district.metrics.totalAssessments}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Assessment Score</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{avgScoreAll.toFixed(1)}%</div>
+                <p className="text-xs text-muted-foreground">Province-wide average</p>
+              </CardContent>
+            </Card>
           </div>
-          <PaginationControls
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            pageInfo={
-              totalItems > 0
-                ? `Showing ${startIndex}-${endIndex} of ${totalItems} districts`
-                : undefined
-            }
-            className="mt-6"
-          />
-        </CardContent>
-      </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Top 5 Performers (by Score)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {districtData.slice(0, 5).map((district, index) => (
-                <div key={district.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {getRankBadge(index + 1)}
-                    <span className="font-medium">{district.name}</span>
-                  </div>
-                  <span className="text-lg font-bold text-primary">
-                    {district.metrics.avgScore.toFixed(1)}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>District Rankings & Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rank</TableHead>
+                      <TableHead>District</TableHead>
+                      <TableHead className="text-right">Schools</TableHead>
+                      <TableHead className="text-right">Sessions</TableHead>
+                      <TableHead className="text-right">Attendance Rate</TableHead>
+                      <TableHead className="text-right">Avg Score</TableHead>
+                      <TableHead className="text-right">Total Participants</TableHead>
+                      <TableHead className="text-right">Teachers</TableHead>
+                      <TableHead className="text-right">Students</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedDistricts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center text-muted-foreground">
+                          No data available
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedDistricts.map((district, index) => {
+                        const rank = startIndex > 0 ? startIndex + index : index + 1;
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Districts Needing Support</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {districtData.slice(-5).reverse().map((district) => (
-                <div key={district.id} className="flex items-center justify-between p-3 border rounded-lg border-destructive/20">
-                  <div>
-                    <div className="font-medium">{district.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {district.metrics.sessions} sessions conducted
+                        return (
+                          <TableRow key={district.district.id}>
+                            <TableCell>{getRankBadge(rank)}</TableCell>
+                            <TableCell className="font-medium">{district.district.name}</TableCell>
+                            <TableCell className="text-right">{district.district._count?.schools || 0}</TableCell>
+                            <TableCell className="text-right">{district.sessionCount}</TableCell>
+                            <TableCell className="text-right">
+                              <span className="font-semibold">{district.attendanceRate.toFixed(1)}%</span>
+                              {getPerformanceIndicator(district.attendanceRate, avgAttendanceRate)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span className="font-semibold text-primary">{district.averageScore.toFixed(1)}%</span>
+                              {getPerformanceIndicator(district.averageScore, avgScoreAll)}
+                            </TableCell>
+                            <TableCell className="text-right">{district.totalTeachers + district.totalStudents}</TableCell>
+                            <TableCell className="text-right">{district.totalTeachers}</TableCell>
+                            <TableCell className="text-right">{district.totalStudents}</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageInfo={
+                  totalItems > 0
+                    ? `Showing ${startIndex}-${endIndex} of ${totalItems} districts`
+                    : undefined
+                }
+                className="mt-6"
+              />
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top 5 Performers (by Score)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {districtData.slice(0, 5).map((district, index) => (
+                    <div key={district.district.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {getRankBadge(index + 1)}
+                        <span className="font-medium">{district.district.name}</span>
+                      </div>
+                      <span className="text-lg font-bold text-primary">
+                        {district.averageScore.toFixed(1)}%
+                      </span>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-destructive">
-                      {district.metrics.avgScore.toFixed(1)}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">avg score</div>
-                  </div>
+                  ))}
+                  {districtData.length === 0 && (
+                    <p className="text-center text-muted-foreground">No data available</p>
+                  )}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Districts Needing Support</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {districtData.slice(-5).reverse().map((district) => (
+                    <div key={district.district.id} className="flex items-center justify-between p-3 border rounded-lg border-destructive/20">
+                      <div>
+                        <div className="font-medium">{district.district.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {district.sessionCount} sessions conducted
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-destructive">
+                          {district.averageScore.toFixed(1)}%
+                        </div>
+                        <div className="text-xs text-muted-foreground">avg score</div>
+                      </div>
+                    </div>
+                  ))}
+                  {districtData.length === 0 && (
+                    <p className="text-center text-muted-foreground">No data available</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   );
 };

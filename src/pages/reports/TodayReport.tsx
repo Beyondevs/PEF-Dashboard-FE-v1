@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Download, MapPin, Users, TrendingUp } from 'lucide-react';
-import { sessions, schools, attendance, divisions, districts, tehsils } from '@/lib/mockData';
+import { Download, MapPin, Users, TrendingUp, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Table,
@@ -14,39 +13,94 @@ import {
 } from '@/components/ui/table';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
+import { useEffect, useState, useCallback } from 'react';
+import { getTodayActivityReport } from '@/lib/api';
+import { useFilters } from '@/contexts/FilterContext';
+
+interface SessionData {
+  id: string;
+  title: string | null;
+  courseName: string | null;
+  date: Date;
+  startTime: string | null;
+  endTime: string | null;
+  status: string | null;
+  school: {
+    id: string;
+    name: string;
+    emisCode: string | null;
+  };
+  division: {
+    id?: string;
+    name?: string;
+  };
+  district: {
+    id?: string;
+    name?: string;
+  };
+  tehsil: {
+    id?: string;
+    name?: string;
+  };
+  attendance: {
+    teachersPresent: number;
+    teachersTotal: number;
+    studentsPresent: number;
+    studentsTotal: number;
+  };
+}
+
+interface TodayActivityData {
+  date: string;
+  summary: {
+    totalSessions: number;
+    ongoingSessions: number;
+    completedSessions: number;
+    activeSchools: number;
+    teachersPresent: number;
+    teachersTotal: number;
+    studentsPresent: number;
+    studentsTotal: number;
+  };
+  sessions: SessionData[];
+}
 
 const TodayReport = () => {
+  const { filters } = useFilters();
+  const [todayData, setTodayData] = useState<TodayActivityData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const today = new Date().toISOString().split('T')[0];
-  const todaySessions = sessions.filter(s => s.date === today);
-  const ongoingSessions = todaySessions.filter(s => s.status === 'Ongoing');
-  const completedSessions = todaySessions.filter(s => s.status === 'Completed');
-  
-  const todayAttendance = attendance.filter(a => {
-    const session = sessions.find(s => s.id === a.sessionId);
-    return session?.date === today;
-  });
-
-  const teachersPresent = todayAttendance.filter(a => a.personType === 'Teacher' && a.present).length;
-  const studentsPresent = todayAttendance.filter(a => a.personType === 'Student' && a.present).length;
 
   const handleExport = () => {
     toast.success("Today's report exported successfully");
   };
 
-  const getLocationInfo = (schoolId: string) => {
-    const school = schools.find(s => s.id === schoolId);
-    if (!school) return { division: '-', district: '-', tehsil: '-' };
-    
-    const division = divisions.find(d => d.id === school.divisionId);
-    const district = districts.find(d => d.id === school.districtId);
-    const tehsil = tehsils.find(t => t.id === school.tehsilId);
-    
-    return {
-      division: division?.name || '-',
-      district: district?.name || '-',
-      tehsil: tehsil?.name || '-',
-    };
-  };
+  const fetchTodayActivity = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const params: Record<string, string> = {
+        date: today,
+      };
+
+      // Apply geography filters
+      if (filters.division) params.divisionId = filters.division;
+      if (filters.district) params.districtId = filters.district;
+      if (filters.tehsil) params.tehsilId = filters.tehsil;
+      if (filters.school) params.schoolId = filters.school;
+
+      const response = await getTodayActivityReport(params);
+      setTodayData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch today activity:', error);
+      toast.error("Failed to load today's activity report");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [today, filters.division, filters.district, filters.tehsil, filters.school]);
+
+  useEffect(() => {
+    fetchTodayActivity();
+  }, [fetchTodayActivity]);
 
   const {
     items: paginatedSessions,
@@ -56,7 +110,34 @@ const TodayReport = () => {
     startIndex,
     endIndex,
     totalItems,
-  } = usePagination(todaySessions, { initialPageSize: 10 });
+  } = usePagination(todayData?.sessions || [], { initialPageSize: 10 });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Today's Activity Report</h1>
+            <p className="text-muted-foreground">Real-time snapshot of ongoing sessions and attendance - {new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  const summary = todayData?.summary || {
+    totalSessions: 0,
+    ongoingSessions: 0,
+    completedSessions: 0,
+    activeSchools: 0,
+    teachersPresent: 0,
+    teachersTotal: 0,
+    studentsPresent: 0,
+    studentsTotal: 0,
+  };
 
   return (
     <div className="space-y-6">
@@ -78,9 +159,9 @@ const TodayReport = () => {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{todaySessions.length}</div>
+            <div className="text-2xl font-bold">{summary.totalSessions}</div>
             <p className="text-xs text-muted-foreground">
-              {ongoingSessions.length} ongoing, {completedSessions.length} completed
+              {summary.ongoingSessions} ongoing, {summary.completedSessions} completed
             </p>
           </CardContent>
         </Card>
@@ -91,9 +172,7 @@ const TodayReport = () => {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {new Set(todaySessions.map(s => s.schoolId)).size}
-            </div>
+            <div className="text-2xl font-bold">{summary.activeSchools}</div>
             <p className="text-xs text-muted-foreground">Schools with sessions</p>
           </CardContent>
         </Card>
@@ -104,8 +183,10 @@ const TodayReport = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{teachersPresent}</div>
-            <p className="text-xs text-muted-foreground">Across all sessions</p>
+            <div className="text-2xl font-bold">{summary.teachersPresent}</div>
+            <p className="text-xs text-muted-foreground">
+              Out of {summary.teachersTotal} total
+            </p>
           </CardContent>
         </Card>
 
@@ -115,8 +196,10 @@ const TodayReport = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{studentsPresent}</div>
-            <p className="text-xs text-muted-foreground">Total attendance today</p>
+            <div className="text-2xl font-bold">{summary.studentsPresent}</div>
+            <p className="text-xs text-muted-foreground">
+              Out of {summary.studentsTotal} total
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -137,40 +220,49 @@ const TodayReport = () => {
                   <TableHead>Tehsil</TableHead>
                   <TableHead>Time</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Attendance</TableHead>
+                  <TableHead className="text-right">Teacher Attendance</TableHead>
+                  <TableHead className="text-right">Student Attendance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedSessions.map(session => {
-                  const school = schools.find(s => s.id === session.schoolId);
-                  const location = getLocationInfo(session.schoolId);
-                  const sessionAttendance = todayAttendance.filter(a => a.sessionId === session.id);
-                  const present = sessionAttendance.filter(a => a.present).length;
-                  const total = sessionAttendance.length;
+                {paginatedSessions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">
+                      No sessions scheduled for today
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedSessions.map(session => {
+                    const teacherAttendance = `${session.attendance.teachersPresent}/${session.attendance.teachersTotal}`;
+                    const studentAttendance = `${session.attendance.studentsPresent}/${session.attendance.studentsTotal}`;
 
-                  return (
-                    <TableRow key={session.id}>
-                      <TableCell className="font-medium">{session.title}</TableCell>
-                      <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
-                    <TableCell>{location.division}</TableCell>
-                    <TableCell>{location.district}</TableCell>
-                    <TableCell>{location.tehsil}</TableCell>
-                    <TableCell className="text-sm">
-                      {session.startTime} - {session.endTime}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={session.status === 'Ongoing' ? 'default' : 'secondary'}>
-                        {session.status}
-                      </Badge>
-                    </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {present}/{total}
-                      </TableCell>
-                    </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    return (
+                      <TableRow key={session.id}>
+                        <TableCell className="font-medium">{session.title || session.courseName || 'Untitled Session'}</TableCell>
+                        <TableCell className="max-w-xs truncate">{session.school?.name}</TableCell>
+                        <TableCell>{session.division?.name || '-'}</TableCell>
+                        <TableCell>{session.district?.name || '-'}</TableCell>
+                        <TableCell>{session.tehsil?.name || '-'}</TableCell>
+                        <TableCell className="text-sm">
+                          {session.startTime} - {session.endTime}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={session.status === 'Ongoing' ? 'default' : 'secondary'}>
+                            {session.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {teacherAttendance}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {studentAttendance}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
           </div>
           <PaginationControls
             currentPage={page}
