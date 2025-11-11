@@ -33,6 +33,8 @@ interface ImportResultsDialogProps {
   result: ImportResult | null;
 }
 
+const MAX_ERRORS_TO_DISPLAY = 200;
+
 export function ImportResultsDialog({
   open,
   onOpenChange,
@@ -103,6 +105,9 @@ export function ImportResultsDialog({
     window.URL.revokeObjectURL(url);
   };
 
+  const displayedErrors = result.errors.slice(0, MAX_ERRORS_TO_DISPLAY);
+  const remainingErrors = result.errors.length - displayedErrors.length;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -114,6 +119,25 @@ export function ImportResultsDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Error Instructions */}
+          {result.errorCount > 0 && (
+            <div className="p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                    {result.errorCount} row{result.errorCount > 1 ? 's' : ''} failed to import
+                  </div>
+                  <div className="text-sm text-amber-700 dark:text-amber-300">
+                    Expand the "Errors" section below to see detailed information about each error,
+                    including what's wrong and the actual CSV data. Fix these issues in your CSV file
+                    and try importing again.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="p-3 border rounded-lg">
@@ -155,7 +179,12 @@ export function ImportResultsDialog({
             result.errors.length > 0 ||
             (result.created && result.created.length > 0) ||
             (result.updated && result.updated.length > 0)) && (
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion 
+              type="single" 
+              collapsible 
+              className="w-full"
+              defaultValue={result.errors.length > 0 ? "errors" : result.duplicates.length > 0 ? "duplicates" : result.updated && result.updated.length > 0 ? "updated" : result.created && result.created.length > 0 ? "created" : undefined}
+            >
               {result.updated && result.updated.length > 0 && (
                 <AccordionItem value="updated">
                   <AccordionTrigger>
@@ -249,22 +278,51 @@ export function ImportResultsDialog({
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {result.errors.map((err, idx) => (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {displayedErrors.map((err, idx) => (
                         <div
                           key={idx}
-                          className="p-2 bg-red-50 dark:bg-red-950 rounded text-sm border border-red-200 dark:border-red-800"
+                          className="p-3 bg-red-50 dark:bg-red-950 rounded border border-red-200 dark:border-red-800"
                         >
-                          <div className="font-medium">Row {err.row}</div>
-                          <ul className="list-disc list-inside mt-1 space-y-1">
-                            {err.errors.map((e, i) => (
-                              <li key={i} className="text-xs text-red-700 dark:text-red-300">
-                                {e}
-                              </li>
-                            ))}
-                          </ul>
+                          <div className="font-semibold text-red-900 dark:text-red-100 mb-2">
+                            Row {err.row}
+                          </div>
+                          <div className="mb-2">
+                            <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">
+                              Errors:
+                            </div>
+                            <ul className="list-disc list-inside space-y-1">
+                              {err.errors.map((e, i) => (
+                                <li key={i} className="text-xs text-red-700 dark:text-red-300">
+                                  {e}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          {err.data && (
+                            <div className="mt-2 p-2 bg-white dark:bg-gray-900 rounded border border-red-300 dark:border-red-700">
+                              <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">
+                                CSV Row Data:
+                              </div>
+                              <div className="text-xs font-mono text-gray-700 dark:text-gray-300 space-y-0.5">
+                                {Object.entries(err.data).map(([key, value]) => (
+                                  <div key={key} className="flex gap-2">
+                                    <span className="font-semibold text-red-700 dark:text-red-300">{key}:</span>
+                                    <span className="text-gray-600 dark:text-gray-400">
+                                      {value ? String(value) : '<empty>'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
+                       ))}
+                      {remainingErrors > 0 && (
+                        <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded border border-yellow-200 dark:border-yellow-800 text-xs text-yellow-800 dark:text-yellow-200">
+                          Showing the first {displayedErrors.length} errors. {remainingErrors} additional error{remainingErrors === 1 ? '' : 's'} are not displayed to keep the page responsive. Use the "Download Log" button to review the complete list.
+                        </div>
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

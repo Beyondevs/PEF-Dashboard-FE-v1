@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ImportResultsDialog } from './ImportResultsDialog';
 import { Progress } from '@/components/ui/progress';
+import { ToastAction } from '@/components/ui/toast';
 
 interface ImportResult {
   totalRows: number;
@@ -35,6 +36,12 @@ export function ImportButton({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (result) {
+      setShowResults(true);
+    }
+  }, [result]);
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -64,7 +71,6 @@ export function ImportButton({
       setLoading(true);
       const importResult = await importFn(file);
       setResult(importResult);
-      setShowResults(true);
 
       if (importResult.successCount > 0) {
         toast({
@@ -79,8 +85,14 @@ export function ImportButton({
       if (importResult.errorCount > 0 || importResult.duplicateCount > 0) {
         toast({
           title: 'Import completed with warnings',
-          description: `${importResult.duplicateCount} duplicates, ${importResult.errorCount} errors`,
+          description: `${importResult.duplicateCount} duplicates, ${importResult.errorCount} errors. Check the detailed results dialog to see what needs to be fixed in your CSV.`,
           variant: 'destructive',
+          duration: 6000,
+          action: (
+            <ToastAction altText="View import details" onClick={() => setShowResults(true)}>
+              View details
+            </ToastAction>
+          ),
         });
       }
     } catch (error) {
