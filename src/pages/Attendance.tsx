@@ -25,6 +25,7 @@ import { ImportButton } from '@/components/data-transfer/ImportButton';
 import {
   getAttendanceList,
   toggleAttendance,
+  bulkUpsertAttendance,
   exportAttendance,
   importAttendanceCSV,
   downloadAttendanceTemplate,
@@ -190,6 +191,46 @@ const Attendance = () => {
       const allAttendance = [...apiTeacherAttendance, ...apiStudentAttendance];
       const attendanceMap = new Map(allAttendance.map(att => [att.id, att]));
       
+      // If we have a sessionId filter, use bulk upsert to save all attendance at once
+      // The backend will automatically mark everyone else as Present
+      if (filters.sessionId) {
+        // Build bulk payload with only changed records
+        const attendanceData: {
+          teachers?: Array<{ teacherId: string; present: boolean }>;
+          students?: Array<{ studentId: string; present: boolean }>;
+        } = {};
+
+        // Process teachers - only include records with changes
+        const teachers = allAttendance.filter(att => att.personType === 'Teacher');
+        const changedTeachers = teachers.filter(att => attendanceChanges[att.id] !== undefined);
+        if (changedTeachers.length > 0) {
+          attendanceData.teachers = changedTeachers.map(att => ({
+            teacherId: att.personId,
+            present: attendanceChanges[att.id],
+          }));
+        }
+
+        // Process students - only include records with changes
+        const students = allAttendance.filter(att => att.personType === 'Student');
+        const changedStudents = students.filter(att => attendanceChanges[att.id] !== undefined);
+        if (changedStudents.length > 0) {
+          attendanceData.students = changedStudents.map(att => ({
+            studentId: att.personId,
+            present: attendanceChanges[att.id],
+          }));
+        }
+
+        // Use bulk upsert - backend will mark everyone else as Present automatically
+        await bulkUpsertAttendance(filters.sessionId, attendanceData);
+        
+        toast.success(`Successfully saved attendance for ${changes.length} record(s)`);
+        setAttendanceChanges({});
+        setEditMode(false);
+        await fetchAttendance();
+        return;
+      }
+      
+      // Fallback: If no sessionId, use individual toggles (for cross-session views)
       // Filter changes: only toggle records where desired value differs from original
       const changesToSave = changes.filter(recordId => {
         const originalRecord = attendanceMap.get(recordId);

@@ -340,7 +340,7 @@ const SessionDetail = () => {
   
   const teacherAttendance = sessionAttendance.filter(a => a.personType === 'Teacher');
   const studentAttendance = sessionAttendance.filter(a => a.personType === 'Student');
-
+  
   const teachersPresent = teacherAttendance.filter(isAttendancePresent).length;
   const studentsPresent = studentAttendance.filter(isAttendancePresent).length;
 
@@ -840,7 +840,7 @@ const SessionDetail = () => {
                         <TableCell className="font-mono text-sm">{teacher.cnic}</TableCell>
                         <TableCell>{teacher.phone}</TableCell>
                         <TableCell>{teacher.email}</TableCell>
-                      <TableCell>
+                        <TableCell>
                           {isAttendancePresent(att) ? (
                             <Badge className="bg-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
