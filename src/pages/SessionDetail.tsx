@@ -392,13 +392,13 @@ const SessionDetail = () => {
       sessionTeachers.forEach(teacher => {
         const att = getAttendanceForPerson(teacher.id, 'Teacher');
         const key = `Teacher-${teacher.id}`;
-        initialAttendance[key] = att?.present ?? false;
+        initialAttendance[key] = att?.present ?? true;
       });
     } else {
       sessionStudents.forEach(student => {
         const att = getAttendanceForPerson(student.id, 'Student');
         const key = `Student-${student.id}`;
-        initialAttendance[key] = att?.present ?? false;
+        initialAttendance[key] = att?.present ?? true;
       });
     }
     
@@ -413,7 +413,7 @@ const SessionDetail = () => {
       return modalAttendance[key];
     }
     const att = getAttendanceForPerson(personId, personType);
-    return att?.present ?? false;
+    return att?.present ?? true;
   };
 
   const handleSaveAttendance = async () => {
@@ -436,7 +436,7 @@ const SessionDetail = () => {
           const key = `Teacher-${teacher.id}`;
           return {
             teacherId: teacher.id,
-            present: modalAttendance[key] ?? false,
+            present: modalAttendance[key] ?? true,
           };
         });
       } else {
@@ -444,7 +444,7 @@ const SessionDetail = () => {
           const key = `Student-${student.id}`;
           return {
             studentId: student.id,
-            present: modalAttendance[key] ?? false,
+            present: modalAttendance[key] ?? true,
           };
         });
       }
@@ -827,18 +827,16 @@ const SessionDetail = () => {
                         <TableCell>{teacher.phone}</TableCell>
                         <TableCell>{teacher.email}</TableCell>
                         <TableCell>
-                          {att?.present ? (
+                          {(att?.present ?? true) ? (
                             <Badge className="bg-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Present
                             </Badge>
-                          ) : att?.present === false ? (
+                          ) : (
                             <Badge variant="destructive">
                               <XCircle className="h-3 w-3 mr-1" />
                               Absent
                             </Badge>
-                          ) : (
-                            <Badge variant="outline">Not Marked</Badge>
                           )}
                         </TableCell>
                         {canMarkAttendance() && session.status !== 'Completed' && (
@@ -939,18 +937,16 @@ const SessionDetail = () => {
                         <TableCell className="capitalize">{student.gender}</TableCell>
                         <TableCell>Grade {student.grade}</TableCell>
                         <TableCell>
-                          {att?.present ? (
+                          {(att?.present ?? true) ? (
                             <Badge className="bg-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Present
                             </Badge>
-                          ) : att?.present === false ? (
+                          ) : (
                             <Badge variant="destructive">
                               <XCircle className="h-3 w-3 mr-1" />
                               Absent
                             </Badge>
-                          ) : (
-                            <Badge variant="outline">Not Marked</Badge>
                           )}
                         </TableCell>
                         {canMarkAttendance() && session.status !== 'Completed' && (
@@ -1113,7 +1109,7 @@ const SessionDetail = () => {
                 <TableBody>
                   {paginatedSessionStudents.map(student => {
                     const studentAtt = getAttendanceForPerson(student.id, 'Student');
-                    const isPresent = studentAtt?.present;
+                    const isPresent = studentAtt?.present ?? true;
                     
                     return (
                       <TableRow key={student.id} className={!isPresent ? 'opacity-50' : ''}>
