@@ -167,9 +167,9 @@ export const FilterBar = () => {
         if (filters.tehsil) params.tehsilId = filters.tehsil;
         if (filters.school) params.schoolId = filters.school;
         } else {
-          // For trainers, show sessions from 1 Nov 2025 to current date
+          // For trainers, show sessions from 1 Oct 2025 to current date
           const current = new Date();
-          const fromDate = new Date('2025-11-01T00:00:00.000Z');
+          const fromDate = new Date('2025-10-01T00:00:00.000Z');
           const toDate = new Date(
             current.getFullYear(),
             current.getMonth(),
