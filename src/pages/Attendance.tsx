@@ -57,6 +57,17 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
+  const SYSTEM_NOT_MARKED = 'system:not-marked';
+
+  const isRecordPresent = (record?: { present?: boolean; markedBy?: string }) => {
+    if (!record) return true;
+    if (record.markedBy === SYSTEM_NOT_MARKED) return true;
+    if (typeof record.present === 'boolean') {
+      return record.present;
+    }
+    return true;
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm.trim());
@@ -187,7 +198,7 @@ const Attendance = () => {
           return false;
         }
         const desiredValue = attendanceChanges[recordId];
-        const originalValue = originalRecord.present;
+        const originalValue = isRecordPresent(originalRecord);
         // Only toggle if desired value is different from original
         return desiredValue !== originalValue;
       });
@@ -402,7 +413,8 @@ const Attendance = () => {
                     </div>
                   ) : (
                     apiTeacherAttendance.map(att => {
-                      const currentStatus = getAttendanceStatus(att.id, att.present);
+                      const originalStatus = isRecordPresent(att);
+                      const currentStatus = getAttendanceStatus(att.id, originalStatus);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
                       
                       return (
@@ -463,7 +475,8 @@ const Attendance = () => {
                     </TableRow>
                   ) : (
                     apiTeacherAttendance.map(att => {
-                      const currentStatus = getAttendanceStatus(att.id, att.present);
+                      const originalStatus = isRecordPresent(att);
+                      const currentStatus = getAttendanceStatus(att.id, originalStatus);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
                       
                       return (
@@ -525,7 +538,8 @@ const Attendance = () => {
                     </div>
                   ) : (
                     apiStudentAttendance.map(att => {
-                      const currentStatus = getAttendanceStatus(att.id, att.present);
+                      const originalStatus = isRecordPresent(att);
+                      const currentStatus = getAttendanceStatus(att.id, originalStatus);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
                       const rollNumber = att.personRollNumber ?? att.rollNumber ?? 'N/A';
                       
@@ -596,7 +610,8 @@ const Attendance = () => {
                     </TableRow>
                   ) : (
                     apiStudentAttendance.map(att => {
-                      const currentStatus = getAttendanceStatus(att.id, att.present);
+                      const originalStatus = isRecordPresent(att);
+                      const currentStatus = getAttendanceStatus(att.id, originalStatus);
                       const hasChanges = attendanceChanges[att.id] !== undefined;
                       const rollNumber = att.personRollNumber ?? att.rollNumber ?? '—';
                       

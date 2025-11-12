@@ -75,6 +75,17 @@ const SessionDetail = () => {
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
+  const SYSTEM_NOT_MARKED = 'system:not-marked';
+
+  const isSystemNotMarked = (att?: { markedBy?: string }) => att?.markedBy === SYSTEM_NOT_MARKED;
+
+  const isAttendancePresent = (att?: { present?: boolean; markedBy?: string }) => {
+    if (!att) return true;
+    if (isSystemNotMarked(att)) return true;
+    if (typeof att.present === 'boolean') return att.present;
+    return true;
+  };
+
   // Fetch session data from API
   useEffect(() => {
     const fetchSession = async () => {
@@ -329,9 +340,9 @@ const SessionDetail = () => {
   
   const teacherAttendance = sessionAttendance.filter(a => a.personType === 'Teacher');
   const studentAttendance = sessionAttendance.filter(a => a.personType === 'Student');
-  
-  const teachersPresent = teacherAttendance.filter(a => a.present).length;
-  const studentsPresent = studentAttendance.filter(a => a.present).length;
+
+  const teachersPresent = teacherAttendance.filter(isAttendancePresent).length;
+  const studentsPresent = studentAttendance.filter(isAttendancePresent).length;
 
   const avgAssessmentScore = sessionAssessments.length > 0
     ? (sessionAssessments.reduce((sum, a) => sum + a.score, 0) / sessionAssessments.length).toFixed(1)
@@ -357,10 +368,13 @@ const SessionDetail = () => {
     // Also update local state for table switches
     setLocalAttendance(prev => {
       const existing = prev.find(a => a.sessionId === session.id && a.personId === personId && a.personType === personType);
+      const marker = session?.trainerId ?? 'system';
       
       if (existing) {
+        const currentPresent = isAttendancePresent(existing);
+        const nextPresent = !currentPresent;
         return prev.map(a =>
-          a.id === existing.id ? { ...a, present: !a.present } : a
+          a.id === existing.id ? { ...a, present: nextPresent, markedBy: marker } : a
         );
       } else {
         const newAttendance = {
@@ -369,7 +383,7 @@ const SessionDetail = () => {
           personType,
           personId,
           present: true,
-          markedBy: session.trainerId,
+          markedBy: marker,
           timestamp: new Date().toISOString(),
         };
         return [...prev, newAttendance];
@@ -392,13 +406,13 @@ const SessionDetail = () => {
       sessionTeachers.forEach(teacher => {
         const att = getAttendanceForPerson(teacher.id, 'Teacher');
         const key = `Teacher-${teacher.id}`;
-        initialAttendance[key] = att?.present ?? true;
+        initialAttendance[key] = isAttendancePresent(att);
       });
     } else {
       sessionStudents.forEach(student => {
         const att = getAttendanceForPerson(student.id, 'Student');
         const key = `Student-${student.id}`;
-        initialAttendance[key] = att?.present ?? true;
+        initialAttendance[key] = isAttendancePresent(att);
       });
     }
     
@@ -413,7 +427,7 @@ const SessionDetail = () => {
       return modalAttendance[key];
     }
     const att = getAttendanceForPerson(personId, personType);
-    return att?.present ?? true;
+    return isAttendancePresent(att);
   };
 
   const handleSaveAttendance = async () => {
@@ -826,8 +840,8 @@ const SessionDetail = () => {
                         <TableCell className="font-mono text-sm">{teacher.cnic}</TableCell>
                         <TableCell>{teacher.phone}</TableCell>
                         <TableCell>{teacher.email}</TableCell>
-                        <TableCell>
-                          {(att?.present ?? true) ? (
+                      <TableCell>
+                          {isAttendancePresent(att) ? (
                             <Badge className="bg-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Present
@@ -846,7 +860,7 @@ const SessionDetail = () => {
                                 <TooltipTrigger asChild>
                                   <span>
                                     <Switch
-                                      checked={att?.present || false}
+                                      checked={isAttendancePresent(att)}
                                       onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
                                       disabled={!canTrainerMarkAttendance}
                                     />
@@ -937,7 +951,7 @@ const SessionDetail = () => {
                         <TableCell className="capitalize">{student.gender}</TableCell>
                         <TableCell>Grade {student.grade}</TableCell>
                         <TableCell>
-                          {(att?.present ?? true) ? (
+                          {isAttendancePresent(att) ? (
                             <Badge className="bg-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Present
@@ -956,7 +970,7 @@ const SessionDetail = () => {
                                 <TooltipTrigger asChild>
                                   <span>
                                     <Switch
-                                      checked={att?.present || false}
+                                      checked={isAttendancePresent(att)}
                                       onCheckedChange={() => toggleAttendance(student.id, 'Student')}
                                       disabled={!canTrainerMarkAttendance}
                                     />
@@ -1109,7 +1123,7 @@ const SessionDetail = () => {
                 <TableBody>
                   {paginatedSessionStudents.map(student => {
                     const studentAtt = getAttendanceForPerson(student.id, 'Student');
-                    const isPresent = studentAtt?.present ?? true;
+                    const isPresent = isAttendancePresent(studentAtt);
                     
                     return (
                       <TableRow key={student.id} className={!isPresent ? 'opacity-50' : ''}>
