@@ -20,11 +20,6 @@ export const PrivateRoute = ({ children, allowedRoles }: PrivateRouteProps) => {
     );
   }
 
-  // Client role can only access dashboard
-  if (role === 'client') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   // If allowedRoles is specified, check if user's role is allowed
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     return <Navigate to="/dashboard" replace />;

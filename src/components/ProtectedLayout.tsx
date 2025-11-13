@@ -22,11 +22,7 @@ export const ProtectedLayout = ({ children }: { children: React.ReactNode }) => 
       try { localStorage.setItem('pef.lastPath', lastPath); } catch {}
       navigate(`/login?returnTo=${encodeURIComponent(lastPath)}`);
     }
-
-    // Redirect client role away from any page that's not dashboard
-    if (role === 'client' && location.pathname !== '/dashboard' && location.pathname !== '/login') {
-      navigate('/dashboard', { replace: true });
-    }
+    // Removed client redirect restriction - clients can now view all pages
   }, [role, isLoading, navigate, location.pathname]);
 
   useEffect(() => {
@@ -54,23 +50,7 @@ export const ProtectedLayout = ({ children }: { children: React.ReactNode }) => 
     return null;
   }
 
-  // Client role: simplified layout without sidebar and header (only logout button)
-  if (role === 'client') {
-    return (
-      <div className="min-h-screen flex flex-col w-full bg-background">
-        <LoginPopup />
-        <ClientHeader />
-        <FilterBar />
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
-          <div className="max-w-[1600px] mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Other roles: full layout with sidebar and header
+  // All roles: full layout with sidebar and header (client has view-only access)
   return (
     <SidebarProvider>
       <LoginPopup />
