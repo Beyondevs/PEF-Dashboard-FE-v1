@@ -117,14 +117,14 @@ const Dashboard = () => {
         const params: Record<string, string> = {};
         
         // Apply geography and date filters (clients also have access to filters)
-        // TODO: Date range filter - Temporarily disabled for future work
-        // if (filters.startDate) params.from = filters.startDate;
-        // if (filters.endDate) params.to = filters.endDate;
-        
-        if (filters.division) params.divisionId = filters.division;
-        if (filters.district) params.districtId = filters.district;
-        if (filters.tehsil) params.tehsilId = filters.tehsil;
-        if (filters.school) params.schoolId = filters.school;
+          // TODO: Date range filter - Temporarily disabled for future work
+          // if (filters.startDate) params.from = filters.startDate;
+          // if (filters.endDate) params.to = filters.endDate;
+          
+          if (filters.division) params.divisionId = filters.division;
+          if (filters.district) params.districtId = filters.district;
+          if (filters.tehsil) params.tehsilId = filters.tehsil;
+          if (filters.school) params.schoolId = filters.school;
 
         // Fetch slim aggregated dashboard payload
         const agg = await getDashboardAggregate(params);
@@ -140,8 +140,8 @@ const Dashboard = () => {
         setActiveSchools(payload.activeSchools || 0);
         setActivityTrends(Array.isArray(payload.activityTrends) ? payload.activityTrends : []);
         setAttendanceStatusToday(payload.attendanceStatusToday || { present: 0, absent: 0, total: 0 });
-        if (Array.isArray(payload.weekdaySessionsDistribution)) {
-          const canonicalLabels = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+          if (Array.isArray(payload.weekdaySessionsDistribution)) {
+          const canonicalLabels = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
           const incoming = payload.weekdaySessionsDistribution;
           const map: Record<string, number> = {};
           for (const item of incoming) {
@@ -150,7 +150,7 @@ const Dashboard = () => {
             }
           }
           const normalized = canonicalLabels.map(day => ({ day, sessions: map[day] ?? 0 }));
-          // Use full-data counts as returned by backend (do not force any weekday to zero)
+          // Use full-data counts as returned by backend (Sunday removed)
           setWeekdaySessionsDistribution(normalized);
         } else {
           setWeekdaySessionsDistribution([
@@ -160,7 +160,6 @@ const Dashboard = () => {
             { day: 'Thursday', sessions: 0 },
             { day: 'Friday', sessions: 0 },
             { day: 'Saturday', sessions: 0 },
-            { day: 'Sunday', sessions: 0 },
           ]);
         }
         setTodaySessions(
