@@ -140,7 +140,7 @@ const Dashboard = () => {
         setActiveSchools(payload.activeSchools || 0);
         setActivityTrends(Array.isArray(payload.activityTrends) ? payload.activityTrends : []);
         setAttendanceStatusToday(payload.attendanceStatusToday || { present: 0, absent: 0, total: 0 });
-          if (Array.isArray(payload.weekdaySessionsDistribution)) {
+        if (Array.isArray(payload.weekdaySessionsDistribution)) {
           const canonicalLabels = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
           const incoming = payload.weekdaySessionsDistribution;
           const map: Record<string, number> = {};
@@ -807,7 +807,7 @@ const Dashboard = () => {
                         <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">{teachersEnrolledDisplay}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">2129</div>
                         <div className="text-xs text-muted-foreground">Active Teachers</div>
                       </div>
                     </div>
