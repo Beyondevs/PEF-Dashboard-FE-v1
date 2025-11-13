@@ -184,30 +184,36 @@ export const getSessionsProgressChart = (params: Record<string, string | number 
 // Dashboard - Today Section APIs
 export const getTodaySessions = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
-  return apiClient.get<{ data: Array<{
-    id: string;
-    title: string | null;
-    courseName: string | null;
-    startTime: string | null;
-    endTime: string | null;
-    status: string | null;
-    school: {
-      id: string | null;
-      name: string | null;
-      divisionId: string | null;
-      divisionName: string | null;
-      districtId: string | null;
-      districtName: string | null;
-      tehsilId: string | null;
-      tehsilName: string | null;
-    } | null;
-    attendance: {
-      teachersPresent: number;
-      teachersTotal: number;
-      studentsPresent: number;
-      studentsTotal: number;
-    } | null;
-  }> }>(`/dashboard/today/sessions${qs ? `?${qs}` : ''}`);
+  return apiClient.get<{ 
+    data: Array<{
+      id: string;
+      title: string | null;
+      courseName: string | null;
+      startTime: string | null;
+      endTime: string | null;
+      status: string | null;
+      school: {
+        id: string | null;
+        name: string | null;
+        divisionId: string | null;
+        divisionName: string | null;
+        districtId: string | null;
+        districtName: string | null;
+        tehsilId: string | null;
+        tehsilName: string | null;
+      } | null;
+      attendance: {
+        teachersPresent: number;
+        teachersTotal: number;
+        studentsPresent: number;
+        studentsTotal: number;
+      } | null;
+    }>;
+    summary?: {
+      uniqueTeachers: number;
+      uniqueStudents: number;
+    };
+  }>(`/dashboard/today/sessions${qs ? `?${qs}` : ''}`);
 };
 
 export const getTodayDistrictSummaries = (params: Record<string, string | number | boolean> = {}) => {

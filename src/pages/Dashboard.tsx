@@ -100,6 +100,7 @@ const Dashboard = () => {
   // Today's sessions state (for "What's Happening Now" section)
   const [todaySessions, setTodaySessions] = useState<DashboardTodaySession[]>([]);
   const [districtSnapshots, setDistrictSnapshots] = useState<DashboardDistrictSnapshot[]>([]);
+  const [uniqueTeachersToday, setUniqueTeachersToday] = useState<number>(0);
 
   // Calculate date ranges
   const last30DaysStart = useMemo(() => {
@@ -209,8 +210,21 @@ const Dashboard = () => {
         setSessionsProgressDetailed(sessionsProgressData.data.data || []);
         
         // Set today's sessions and district summaries
-        setTodaySessions(todaySessionsData.data.data || []);
+        const todaySessionsResponse = todaySessionsData.data;
+        const todaySessionsList = (todaySessionsResponse?.data || []) as typeof todaySessions;
+        setTodaySessions(todaySessionsList);
         setDistrictSnapshots(districtSummariesData.data.data || []);
+        
+        // Debug: Log today's sessions data
+        console.log('Today Sessions Data:', {
+          totalSessions: todaySessionsList.length,
+          sessionsWithAttendance: todaySessionsList.filter(s => s.attendance).length,
+          sampleSession: todaySessionsList[0],
+          rawResponse: todaySessionsData,
+        });
+        
+        // Store unique teachers count from today's sessions summary
+        setUniqueTeachersToday(todaySessionsResponse?.summary?.uniqueTeachers ?? 0);
         
         // Activity trends is derived from attendance trends (for backward compatibility)
         const activityTrendsFromAttendance = (attendanceTrendsData.data.data || []).map(item => ({
@@ -332,10 +346,15 @@ const Dashboard = () => {
     };
   };
 
-  const totalTeachersEnrolledToday = useMemo(
-    () => districtSnapshots.reduce((sum, snapshot) => sum + (snapshot.teachersEnrolled ?? 0), 0),
-    [districtSnapshots]
-  );
+  // Use unique teachers count from backend (accurate count of distinct teachers)
+  const totalTeachersEnrolledToday = useMemo(() => {
+    // Use the unique teachers count from the API if available, otherwise fallback to 0
+    if (uniqueTeachersToday > 0) {
+      return uniqueTeachersToday;
+    }
+    // Fallback: If no unique count available, return 0 (don't show incorrect data)
+    return 0;
+  }, [uniqueTeachersToday]);
 
   const totalSchoolsActiveToday = useMemo(() => {
     const schoolIds = new Set<string>();
@@ -347,6 +366,52 @@ const Dashboard = () => {
     });
     return schoolIds.size;
   }, [todaySessions]);
+
+  // Calculate today's attendance metrics
+  const teachersPresentToday = useMemo(() => {
+    if (!todaySessions || todaySessions.length === 0) return 0;
+    const total = todaySessions.reduce((sum, session) => {
+      const present = session?.attendance?.teachersPresent ?? 0;
+      return sum + (Number(present) || 0);
+    }, 0);
+    console.log('Teachers Present Today:', {
+      totalSessions: todaySessions.length,
+      teachersPresent: total,
+      sessions: todaySessions.map(s => ({ 
+        id: s.id, 
+        teachersPresent: s.attendance?.teachersPresent ?? 0,
+        hasAttendance: !!s.attendance 
+      })),
+    });
+    return total;
+  }, [todaySessions]);
+
+  const studentsPresentToday = useMemo(() => {
+    if (!todaySessions || todaySessions.length === 0) return 0;
+    return todaySessions.reduce((sum, session) => {
+      const present = session?.attendance?.studentsPresent ?? 0;
+      return sum + (Number(present) || 0);
+    }, 0);
+  }, [todaySessions]);
+
+  const totalAttendanceToday = useMemo(() => {
+    if (!todaySessions || todaySessions.length === 0) return 0;
+    const total = todaySessions.reduce((sum, session) => {
+      const teachersTotal = session?.attendance?.teachersTotal ?? 0;
+      const studentsTotal = session?.attendance?.studentsTotal ?? 0;
+      return sum + (Number(teachersTotal) || 0) + (Number(studentsTotal) || 0);
+    }, 0);
+    const present = teachersPresentToday + studentsPresentToday;
+    const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+    console.log('Attendance Rate Today:', {
+      total,
+      present,
+      rate,
+      teachersPresent: teachersPresentToday,
+      studentsPresent: studentsPresentToday,
+    });
+    return rate;
+  }, [todaySessions, teachersPresentToday, studentsPresentToday]);
 
   const teachersEnrolledDisplay = totalTeachersEnrolledToday > 0 ? totalTeachersEnrolledToday : teachersEnrolled;
   const schoolsActiveDisplay = totalSchoolsActiveToday > 0 ? totalSchoolsActiveToday : activeSchools;
@@ -822,7 +887,7 @@ const Dashboard = () => {
                         {isAdmin ? 'System-wide Training Activity' : 'Ongoing Training in Punjab'}
                       </h3>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        {isAdmin ? 'Complete overview across all regions' : 'Real-time training activity across the region'}
+                        {isAdmin ? "Today's training activity across all regions" : "Today's real-time training activity across the region"}
                       </p>
                     </div>
                     <Link to="/reports/today">
@@ -832,20 +897,26 @@ const Dashboard = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 sm:p-3 rounded-lg bg-primary/20 shrink-0">
-                        <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.teachersEnrolled}</div>
-                        <div className="text-xs text-muted-foreground">Active Teachers</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">
+                          {todaySessions.length > 0 ? todaySessions.length : (ongoingSessions.length > 0 ? ongoingSessions.length : 0)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {ongoingSessions.length > 0 ? 'Ongoing Sessions' : 'Sessions Today'}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="p-2 sm:p-3 rounded-lg bg-secondary/20 shrink-0">
-                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
+                        <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">{activeSessionsCount}</div>
-                        <div className="text-xs text-muted-foreground">Active Sessions</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">
+                          {teachersPresentToday > 0 ? teachersPresentToday : 0}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Teachers Present</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -853,8 +924,10 @@ const Dashboard = () => {
                         <School className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">{schoolsActiveDisplay}</div>
-                        <div className="text-xs text-muted-foreground">Schools Active</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">
+                          {totalAttendanceToday > 0 ? `${totalAttendanceToday}%` : '0%'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Attendance Rate</div>
                       </div>
                     </div>
                   </div>
