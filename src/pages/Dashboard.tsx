@@ -116,17 +116,15 @@ const Dashboard = () => {
         // Build API params with filters. DO NOT send `date` on initial load so backend will aggregate entire DB.
         const params: Record<string, string> = {};
         
-        // Apply geography and date filters for non-client roles only
-        if (!isClient) {
-          // TODO: Date range filter - Temporarily disabled for future work
-          // if (filters.startDate) params.from = filters.startDate;
-          // if (filters.endDate) params.to = filters.endDate;
-          
-          if (filters.division) params.divisionId = filters.division;
-          if (filters.district) params.districtId = filters.district;
-          if (filters.tehsil) params.tehsilId = filters.tehsil;
-          if (filters.school) params.schoolId = filters.school;
-        }
+        // Apply geography and date filters (clients also have access to filters)
+        // TODO: Date range filter - Temporarily disabled for future work
+        // if (filters.startDate) params.from = filters.startDate;
+        // if (filters.endDate) params.to = filters.endDate;
+        
+        if (filters.division) params.divisionId = filters.division;
+        if (filters.district) params.districtId = filters.district;
+        if (filters.tehsil) params.tehsilId = filters.tehsil;
+        if (filters.school) params.schoolId = filters.school;
 
         // Fetch slim aggregated dashboard payload
         const agg = await getDashboardAggregate(params);

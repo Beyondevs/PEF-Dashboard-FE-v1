@@ -196,15 +196,7 @@ export const FilterBar = () => {
     fetchSessions();
   }, [isTrainer, filters.division, filters.district, filters.tehsil, filters.school]);
 
-  if (isClient) {
-    return (
-      <div className="bg-card border-b p-2 sm:p-3 md:p-4 opacity-60 pointer-events-none">
-        <div className="text-xs sm:text-sm text-muted-foreground">
-          Filters are disabled for client users.
-        </div>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="bg-card border-b p-2 sm:p-3 md:p-4">
