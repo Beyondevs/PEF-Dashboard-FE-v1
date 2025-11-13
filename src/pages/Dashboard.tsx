@@ -113,8 +113,8 @@ const Dashboard = () => {
       try {
         setIsLoading(true);
         
-        // Build API params with filters
-        const params: Record<string, string> = { date: today };
+        // Build API params with filters. DO NOT send `date` on initial load so backend will aggregate entire DB.
+        const params: Record<string, string> = {};
         
         // Apply geography and date filters for non-client roles only
         if (!isClient) {
@@ -135,17 +135,36 @@ const Dashboard = () => {
         // Store all backend-calculated data directly (no local calculations)
         setTeachersTaught(payload.teachersTaught ?? payload.teachersInTraining ?? 0);
         setStudentsTaught(payload.studentsTaught ?? payload.studentsInTraining ?? 0);
-        setTeachersEnrolled(payload.teachersEnrolled ?? payload.teachersInTraining ?? 0);
-        setStudentsEnrolled(payload.studentsEnrolled ?? payload.studentsInTraining ?? 0);
+        // Backend now returns authoritative active counts (not 'enrolled')
+        setTeachersEnrolled(payload.teachersActive ?? payload.teachersInTraining ?? 0);
+        setStudentsEnrolled(payload.studentsActive ?? payload.studentsInTraining ?? 0);
         setTotalSessions(payload.totalSessions || 0);
         setActiveSchools(payload.activeSchools || 0);
         setActivityTrends(Array.isArray(payload.activityTrends) ? payload.activityTrends : []);
         setAttendanceStatusToday(payload.attendanceStatusToday || { present: 0, absent: 0, total: 0 });
-        setWeekdaySessionsDistribution(
-          Array.isArray(payload.weekdaySessionsDistribution)
-            ? payload.weekdaySessionsDistribution
-            : []
-        );
+        if (Array.isArray(payload.weekdaySessionsDistribution)) {
+          const canonicalLabels = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+          const incoming = payload.weekdaySessionsDistribution;
+          const map: Record<string, number> = {};
+          for (const item of incoming) {
+            if (item && typeof item.day === 'string') {
+              map[item.day] = Number(item.sessions) || 0;
+            }
+          }
+          const normalized = canonicalLabels.map(day => ({ day, sessions: map[day] ?? 0 }));
+          // Use full-data counts as returned by backend (do not force any weekday to zero)
+          setWeekdaySessionsDistribution(normalized);
+        } else {
+          setWeekdaySessionsDistribution([
+            { day: 'Monday', sessions: 0 },
+            { day: 'Tuesday', sessions: 0 },
+            { day: 'Wednesday', sessions: 0 },
+            { day: 'Thursday', sessions: 0 },
+            { day: 'Friday', sessions: 0 },
+            { day: 'Saturday', sessions: 0 },
+            { day: 'Sunday', sessions: 0 },
+          ]);
+        }
         setTodaySessions(
           Array.isArray(payload.todaySessions)
             ? payload.todaySessions
@@ -421,7 +440,7 @@ const Dashboard = () => {
           <>
             <Card className="border-l-4 border-l-primary">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Teachers Enrolled</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Teachers</CardTitle>
                 <UserCheck className="h-5 w-5 text-primary" />
               </CardHeader>
               <CardContent>
@@ -432,7 +451,7 @@ const Dashboard = () => {
 
             <Card className="border-l-4 border-l-secondary">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Students Enrolled</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Students</CardTitle>
                 <Users className="h-5 w-5 text-secondary" />
               </CardHeader>
               <CardContent>
@@ -478,12 +497,12 @@ const Dashboard = () => {
 
             <Card className="border-l-4 border-l-secondary">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Teachers Enrolled</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Teachers</CardTitle>
                 <Award className="h-5 w-5 text-secondary" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-secondary">{stats.teacherTaught}</div>
-                <p className="text-xs text-muted-foreground mt-1">Teachers taught in the last 30 days</p>
+                
               </CardContent>
             </Card>
 
@@ -500,7 +519,7 @@ const Dashboard = () => {
 
             <Card className="border-l-4 border-l-chart-4">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Students Enrolled</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Students</CardTitle>
                 <GraduationCap className="h-5 w-5 text-chart-4" />
               </CardHeader>
               <CardContent>
@@ -792,7 +811,7 @@ const Dashboard = () => {
                       </div>
                       <div>
                         <div className="text-xl sm:text-2xl font-bold text-foreground">{teachersEnrolledDisplay}</div>
-                        <div className="text-xs text-muted-foreground">Teachers Enrolled</div>
+                        <div className="text-xs text-muted-foreground">Active Teachers</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
