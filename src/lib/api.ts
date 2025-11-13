@@ -128,10 +128,101 @@ export const getTodayActivityReport = (params: Record<string, string | number | 
   return apiClient.get<any>(`/reports/today-activity${qs ? `?${qs}` : ''}`);
 };
 
-// Dashboard Aggregate
+// Dashboard Aggregate (deprecated - use individual APIs)
 export const getDashboardAggregate = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<any>(`/dashboard${qs ? `?${qs}` : ''}`);
+};
+
+// Dashboard - Stat Cards APIs
+export const getActiveTeachersStats = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ active: number; taught: number }>(`/dashboard/stats/active-teachers${qs ? `?${qs}` : ''}`);
+};
+
+export const getActiveStudentsStats = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ active: number; taught: number }>(`/dashboard/stats/active-students${qs ? `?${qs}` : ''}`);
+};
+
+export const getSessionsStats = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ total: number }>(`/dashboard/stats/sessions${qs ? `?${qs}` : ''}`);
+};
+
+export const getActiveSchoolsStats = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ active: number }>(`/dashboard/stats/active-schools${qs ? `?${qs}` : ''}`);
+};
+
+export const getAttendanceRateStats = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ rate: number }>(`/dashboard/stats/attendance-rate${qs ? `?${qs}` : ''}`);
+};
+
+// Dashboard - Chart Data APIs
+export const getAttendanceTrendsChart = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: Array<{ date: string; teachers: number; students: number; both: number }> }>(`/dashboard/charts/attendance-trends${qs ? `?${qs}` : ''}`);
+};
+
+export const getTodayAttendanceChart = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ present: number; absent: number; total: number }>(`/dashboard/charts/today-attendance${qs ? `?${qs}` : ''}`);
+};
+
+export const getWeekdayDistributionChart = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: Array<{ day: string; sessions: number }> }>(`/dashboard/charts/weekday-distribution${qs ? `?${qs}` : ''}`);
+};
+
+export const getSessionsProgressChart = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: Array<{ date: string; sessions: number; attendanceRate: number; teachersRate: number; studentsRate: number }> }>(`/dashboard/charts/sessions-progress${qs ? `?${qs}` : ''}`);
+};
+
+// Dashboard - Today Section APIs
+export const getTodaySessions = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: Array<{
+    id: string;
+    title: string | null;
+    courseName: string | null;
+    startTime: string | null;
+    endTime: string | null;
+    status: string | null;
+    school: {
+      id: string | null;
+      name: string | null;
+      divisionId: string | null;
+      divisionName: string | null;
+      districtId: string | null;
+      districtName: string | null;
+      tehsilId: string | null;
+      tehsilName: string | null;
+    } | null;
+    attendance: {
+      teachersPresent: number;
+      teachersTotal: number;
+      studentsPresent: number;
+      studentsTotal: number;
+    } | null;
+  }> }>(`/dashboard/today/sessions${qs ? `?${qs}` : ''}`);
+};
+
+export const getTodayDistrictSummaries = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: Array<{
+    districtId: string | null;
+    districtName: string;
+    sessions: number;
+    totalSessions: number;
+    teachersEnrolled: number;
+    teachersPresent: number;
+    studentsEnrolled: number;
+    studentsPresent: number;
+    schools: number;
+  }> }>(`/dashboard/today/district-summaries${qs ? `?${qs}` : ''}`);
 };
 
 // Paper Registers

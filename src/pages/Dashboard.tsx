@@ -8,7 +8,19 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getDashboardAggregate } from '@/lib/api';
+import {
+  getActiveTeachersStats,
+  getActiveStudentsStats,
+  getSessionsStats,
+  getActiveSchoolsStats,
+  getAttendanceRateStats,
+  getAttendanceTrendsChart,
+  getTodayAttendanceChart,
+  getWeekdayDistributionChart,
+  getSessionsProgressChart,
+  getTodaySessions,
+  getTodayDistrictSummaries,
+} from '@/lib/api';
 
 type DashboardTodaySession = {
   id: string;
@@ -107,42 +119,73 @@ const Dashboard = () => {
     }
   }, [isClient, resetFilters]);
 
-  // Fetch data from API
+  // Fetch data from API - using parallel calls to individual endpoints
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
         
-        // Build API params with filters. DO NOT send `date` on initial load so backend will aggregate entire DB.
+        // Build API params with geography filters
         const params: Record<string, string> = {};
         
-        // Apply geography and date filters (clients also have access to filters)
-          // TODO: Date range filter - Temporarily disabled for future work
-          // if (filters.startDate) params.from = filters.startDate;
-          // if (filters.endDate) params.to = filters.endDate;
-          
-          if (filters.division) params.divisionId = filters.division;
-          if (filters.district) params.districtId = filters.district;
-          if (filters.tehsil) params.tehsilId = filters.tehsil;
-          if (filters.school) params.schoolId = filters.school;
+        if (filters.division) params.divisionId = filters.division;
+        if (filters.district) params.districtId = filters.district;
+        if (filters.tehsil) params.tehsilId = filters.tehsil;
+        if (filters.school) params.schoolId = filters.school;
 
-        // Fetch slim aggregated dashboard payload
-        const agg = await getDashboardAggregate(params);
-        const payload = agg.data as any;
+        // Fetch all data in parallel using individual endpoints
+        const [
+          teachersData,
+          studentsData,
+          sessionsData,
+          schoolsData,
+          attendanceRateData,
+          attendanceTrendsData,
+          todayAttendanceData,
+          weekdayDistributionData,
+          sessionsProgressData,
+          todaySessionsData,
+          districtSummariesData,
+        ] = await Promise.all([
+          getActiveTeachersStats(params),
+          getActiveStudentsStats(params),
+          getSessionsStats(params),
+          getActiveSchoolsStats(params),
+          getAttendanceRateStats(params),
+          getAttendanceTrendsChart(params),
+          isTrainer ? getTodayAttendanceChart(params) : Promise.resolve(null),
+          !isTrainer ? getWeekdayDistributionChart(params) : Promise.resolve(null),
+          getSessionsProgressChart(params),
+          getTodaySessions(params),
+          getTodayDistrictSummaries(params),
+        ]);
 
-        // Store all backend-calculated data directly (no local calculations)
-        setTeachersTaught(payload.teachersTaught ?? payload.teachersInTraining ?? 0);
-        setStudentsTaught(payload.studentsTaught ?? payload.studentsInTraining ?? 0);
-        // Backend now returns authoritative active counts (not 'enrolled')
-        setTeachersEnrolled(payload.teachersActive ?? payload.teachersInTraining ?? 0);
-        setStudentsEnrolled(payload.studentsActive ?? payload.studentsInTraining ?? 0);
-        setTotalSessions(payload.totalSessions || 0);
-        setActiveSchools(payload.activeSchools || 0);
-        setActivityTrends(Array.isArray(payload.activityTrends) ? payload.activityTrends : []);
-        setAttendanceStatusToday(payload.attendanceStatusToday || { present: 0, absent: 0, total: 0 });
-        if (Array.isArray(payload.weekdaySessionsDistribution)) {
+        // Update state with individual responses
+        setTeachersTaught(teachersData.data.taught);
+        setTeachersEnrolled(teachersData.data.active);
+        setStudentsTaught(studentsData.data.taught);
+        setStudentsEnrolled(studentsData.data.active);
+        setTotalSessions(sessionsData.data.total);
+        setActiveSchools(schoolsData.data.active);
+        setOverallAttendanceRate(attendanceRateData.data.rate);
+        
+        // Set attendance trends
+        setAttendanceTrendsDetailed(attendanceTrendsData.data.data || []);
+        
+        // Set today's attendance (for trainers) or weekday distribution (for non-trainers)
+        if (isTrainer && todayAttendanceData) {
+          setAttendanceStatusToday({
+            present: todayAttendanceData.data.present,
+            absent: todayAttendanceData.data.absent,
+            total: todayAttendanceData.data.total,
+          });
+        } else {
+          setAttendanceStatusToday({ present: 0, absent: 0, total: 0 });
+        }
+        
+        if (!isTrainer && weekdayDistributionData) {
           const canonicalLabels = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-          const incoming = payload.weekdaySessionsDistribution;
+          const incoming = weekdayDistributionData.data.data || [];
           const map: Record<string, number> = {};
           for (const item of incoming) {
             if (item && typeof item.day === 'string') {
@@ -150,9 +193,8 @@ const Dashboard = () => {
             }
           }
           const normalized = canonicalLabels.map(day => ({ day, sessions: map[day] ?? 0 }));
-          // Use full-data counts as returned by backend (Sunday removed)
           setWeekdaySessionsDistribution(normalized);
-        } else {
+        } else if (isTrainer) {
           setWeekdaySessionsDistribution([
             { day: 'Monday', sessions: 0 },
             { day: 'Tuesday', sessions: 0 },
@@ -162,32 +204,20 @@ const Dashboard = () => {
             { day: 'Saturday', sessions: 0 },
           ]);
         }
-        setTodaySessions(
-          Array.isArray(payload.todaySessions)
-            ? payload.todaySessions
-            : []
-        );
-        setDistrictSnapshots(
-          Array.isArray(payload.todayDistrictSummaries)
-            ? payload.todayDistrictSummaries
-            : []
-        );
         
-        // Store overall attendance rate from backend
-        if (payload.overallAttendanceRate !== undefined) {
-          setOverallAttendanceRate(payload.overallAttendanceRate);
-        }
-
-        // Store detailed graph data from backend (all calculations done on backend)
-        if (payload.attendanceTrendsDetailed) {
-          setAttendanceTrendsDetailed(payload.attendanceTrendsDetailed);
-        }
-        if (payload.sessionsProgressDetailed) {
-          setSessionsProgressDetailed(payload.sessionsProgressDetailed);
-        }
+        // Set sessions progress data
+        setSessionsProgressDetailed(sessionsProgressData.data.data || []);
         
-        // Note: No longer fetching paginated attendance/sessions data
-        // All calculations are done on backend with complete dataset
+        // Set today's sessions and district summaries
+        setTodaySessions(todaySessionsData.data.data || []);
+        setDistrictSnapshots(districtSummariesData.data.data || []);
+        
+        // Activity trends is derived from attendance trends (for backward compatibility)
+        const activityTrendsFromAttendance = (attendanceTrendsData.data.data || []).map(item => ({
+          date: item.date,
+          attendanceRate: item.both,
+        }));
+        setActivityTrends(activityTrendsFromAttendance);
         
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -204,10 +234,8 @@ const Dashboard = () => {
     filters.district,
     filters.tehsil,
     filters.school,
-    // TODO: Date range filter - Temporarily disabled for future work
-    // filters.startDate,
-    // filters.endDate,
     isClient,
+    isTrainer,
   ]);
 
   const stats = useMemo(() => {
@@ -807,7 +835,7 @@ const Dashboard = () => {
                         <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       </div>
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-foreground">2129</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.teachersEnrolled}</div>
                         <div className="text-xs text-muted-foreground">Active Teachers</div>
                       </div>
                     </div>
