@@ -86,6 +86,14 @@ const SessionDetail = () => {
     return true;
   };
 
+  // Function for counting present attendance (treats "not marked" as not present)
+  const isAttendanceCountedAsPresent = (att?: { present?: boolean; markedBy?: string }) => {
+    if (!att) return false;
+    if (isSystemNotMarked(att)) return false; // Not marked = not present for counting
+    if (typeof att.present === 'boolean') return att.present;
+    return false;
+  };
+
   // Fetch session data from API
   useEffect(() => {
     const fetchSession = async () => {
@@ -341,8 +349,9 @@ const SessionDetail = () => {
   const teacherAttendance = sessionAttendance.filter(a => a.personType === 'Teacher');
   const studentAttendance = sessionAttendance.filter(a => a.personType === 'Student');
   
-  const teachersPresent = teacherAttendance.filter(isAttendancePresent).length;
-  const studentsPresent = studentAttendance.filter(isAttendancePresent).length;
+  // Use isAttendanceCountedAsPresent for counting (treats "not marked" as 0)
+  const teachersPresent = teacherAttendance.filter(isAttendanceCountedAsPresent).length;
+  const studentsPresent = studentAttendance.filter(isAttendanceCountedAsPresent).length;
 
   const avgAssessmentScore = sessionAssessments.length > 0
     ? (sessionAssessments.reduce((sum, a) => sum + a.score, 0) / sessionAssessments.length).toFixed(1)
