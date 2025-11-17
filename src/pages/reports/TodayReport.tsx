@@ -160,9 +160,9 @@ const TodayReport = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.totalSessions}</div>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               {summary.ongoingSessions} ongoing, {summary.completedSessions} completed
-            </p>
+            </p> */}
           </CardContent>
         </Card>
 
@@ -173,7 +173,7 @@ const TodayReport = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.activeSchools}</div>
-            <p className="text-xs text-muted-foreground">Schools with sessions</p>
+            {/* <p className="text-xs text-muted-foreground">Schools with sessions</p> */}
           </CardContent>
         </Card>
 
@@ -184,9 +184,9 @@ const TodayReport = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.teachersPresent}</div>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Out of {summary.teachersTotal} total
-            </p>
+            </p> */}
           </CardContent>
         </Card>
 
@@ -197,9 +197,9 @@ const TodayReport = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.studentsPresent}</div>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Out of {summary.studentsTotal} total
-            </p>
+            </p> */}
           </CardContent>
         </Card>
       </div>

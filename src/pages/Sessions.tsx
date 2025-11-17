@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, Edit, Trash2, FileText, Search, Calendar as CalendarIcon, School as SchoolIcon, Clock } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, FileText, Search, Calendar as CalendarIcon, School as SchoolIcon, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCard } from '@/components/MobileCard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,6 +41,7 @@ import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -732,34 +733,64 @@ const Sessions = () => {
                       }
                     ]}
                     actions={
-                      <div className="flex gap-2 w-full">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => navigate(`/sessions/${session.id}`)}
-                          className="flex-1"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
-                        </Button>
-                        {isAdmin() && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditDialog(session)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteSession(session.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
+                      <div className="flex flex-col gap-2 w-full">
+                        {/* Attendance indicator for mobile - icon only with tooltip */}
+                        <div className="flex items-center gap-2">
+                          <TooltipProvider>
+                            {session.attendanceCount === 0 || session.attendanceCount === undefined ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertCircle 
+                                    className="h-4 w-4 text-amber-600 cursor-help" 
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Attendance records not generated</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <CheckCircle2 
+                                    className="h-4 w-4 text-green-600 cursor-help" 
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Attendance records exist</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </TooltipProvider>
+                        </div>
+                        <div className="flex gap-2 w-full">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/sessions/${session.id}`)}
+                            className="flex-1"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                          {isAdmin() && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openEditDialog(session)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteSession(session.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     }
                   />
@@ -792,33 +823,61 @@ const Sessions = () => {
                     <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
                     <TableCell>{getStatusBadge(session.status)}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => navigate(`/sessions/${session.id}`)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                        {isAdmin() && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditDialog(session)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteSession(session.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
+                      <div className="flex items-center gap-2">
+                        {/* Attendance indicator - icon only with tooltip */}
+                        <TooltipProvider>
+                          {session.attendanceCount === 0 || session.attendanceCount === undefined ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertCircle 
+                                  className="h-4 w-4 text-amber-600 cursor-help" 
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Attendance records not generated</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <CheckCircle2 
+                                  className="h-4 w-4 text-green-600 cursor-help" 
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Attendance records exist</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </TooltipProvider>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/sessions/${session.id}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          {isAdmin() && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openEditDialog(session)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteSession(session.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>

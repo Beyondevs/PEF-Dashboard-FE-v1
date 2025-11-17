@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, BarChart3, TrendingUp, ArrowRight } from 'lucide-react';
+import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Reports = () => {
@@ -28,6 +28,14 @@ const Reports = () => {
       icon: FileText,
       color: 'text-accent',
       path: '/reports/today',
+    },
+    {
+      id: 4,
+      title: 'Attendance Marking Status Report',
+      description: 'View which sessions have attendance marked and which are still pending',
+      icon: AlertCircle,
+      color: 'text-amber-600',
+      path: '/reports/attendance-marking',
     },
   ];
 

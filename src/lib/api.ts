@@ -127,6 +127,10 @@ export const getTodayActivityReport = (params: Record<string, string | number | 
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<any>(`/reports/today-activity${qs ? `?${qs}` : ''}`);
 };
+export const getAttendanceMarkingStatus = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/reports/attendance-marking-status${qs ? `?${qs}` : ''}`);
+};
 
 // Dashboard Aggregate (deprecated - use individual APIs)
 export const getDashboardAggregate = (params: Record<string, string | number | boolean> = {}) => {
