@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getDrilldownReport } from '@/lib/api';
+import { getDrilldownReport, exportDrilldownCSV } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
 
 type DrillLevel = 'province' | 'division' | 'district' | 'tehsil' | 'school';
@@ -130,8 +130,29 @@ const DrilldownReport = () => {
     setSchoolPage(1);
   }, [drillState.tehsilId, setSchoolPage]);
 
-  const handleExport = () => {
-    toast.success('Drill-down report exported successfully');
+  const handleExport = async () => {
+    try {
+      const params: Record<string, string> = {
+        level: drillState.level,
+      };
+      if (drillState.divisionId) params.parentId = drillState.divisionId;
+      else if (drillState.districtId) params.parentId = drillState.districtId;
+      else if (drillState.tehsilId) params.parentId = drillState.tehsilId;
+
+      const blob = await exportDrilldownCSV(params);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `drilldown-report-${drillState.level}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Drill-down report exported successfully');
+    } catch (error) {
+      console.error('Failed to export drilldown report:', error);
+      toast.error('Failed to export drilldown report');
+    }
   };
 
   const calculateProvinceMetrics = () => {

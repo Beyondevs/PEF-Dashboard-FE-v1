@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useEffect, useState, useCallback } from 'react';
-import { getDistrictComparisonReport } from '@/lib/api';
+import { getDistrictComparisonReport, exportDistrictComparisonCSV } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
 
 interface DistrictData {
@@ -38,8 +38,25 @@ const DistrictCompareReport = () => {
   const [districtData, setDistrictData] = useState<DistrictData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const handleExport = () => {
-    toast.success('District comparison report exported successfully');
+  const handleExport = async () => {
+    try {
+      const params: Record<string, string> = {};
+      if (filters.division) params.divisionId = filters.division;
+
+      const blob = await exportDistrictComparisonCSV(params);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'district-comparison.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('District comparison report exported successfully');
+    } catch (error) {
+      console.error('Failed to export district comparison:', error);
+      toast.error('Failed to export district comparison report');
+    }
   };
 
   const fetchDistrictComparison = useCallback(async () => {

@@ -16,7 +16,7 @@ import {
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useEffect, useState, useCallback } from 'react';
-import { getAttendanceMarkingStatus } from '@/lib/api';
+import { getAttendanceMarkingStatus, exportAttendanceMarkingCSV } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -71,8 +71,35 @@ const AttendanceMarkingReport = () => {
   const [dateFrom, setDateFrom] = useState(filters.startDate || '');
   const [dateTo, setDateTo] = useState(filters.endDate || '');
 
-  const handleExport = () => {
-    toast.success('Attendance marking report exported successfully');
+  const handleExport = async () => {
+    try {
+      const params: Record<string, string> = {};
+      
+      // Apply geography filters
+      if (filters.division) params.divisionId = filters.division;
+      if (filters.district) params.districtId = filters.district;
+      if (filters.tehsil) params.tehsilId = filters.tehsil;
+      if (filters.school) params.schoolId = filters.school;
+      
+      // Apply date filters
+      if (dateFrom) params.from = dateFrom;
+      if (dateTo) params.to = dateTo;
+
+      const blob = await exportAttendanceMarkingCSV(params);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateRange = dateFrom && dateTo ? `-${dateFrom}-to-${dateTo}` : dateFrom ? `-from-${dateFrom}` : '';
+      link.download = `attendance-marking-status${dateRange}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Attendance marking report exported successfully');
+    } catch (error) {
+      console.error('Failed to export attendance marking report:', error);
+      toast.error('Failed to export attendance marking report');
+    }
   };
 
   const fetchReportData = useCallback(async (applyDateFilters = false, customDateFrom?: string, customDateTo?: string) => {
