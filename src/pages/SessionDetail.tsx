@@ -142,6 +142,47 @@ const SessionDetail = () => {
   const school = useMemo(() => session?.school || schools.find(s => s.id === session?.schoolId), [session]);
   const trainer = useMemo(() => session?.trainer || trainers.find(t => t.id === session?.trainerId), [session]);
 
+  // Calculate duration from startTime and endTime
+  const calculateDuration = useMemo(() => {
+    if (!session?.startTime || !session?.endTime) return '0h';
+    
+    try {
+      // Parse time strings (format: "HH:mm" or "HH:mm:ss")
+      const parseTime = (timeStr: string): number => {
+        const parts = timeStr.split(':');
+        const hours = parseInt(parts[0] || '0', 10);
+        const minutes = parseInt(parts[1] || '0', 10);
+        return hours * 60 + minutes; // Convert to total minutes
+      };
+
+      const startMinutes = parseTime(session.startTime);
+      const endMinutes = parseTime(session.endTime);
+      
+      // Handle case where endTime might be next day (e.g., 23:00 to 01:00)
+      let durationMinutes = endMinutes - startMinutes;
+      if (durationMinutes < 0) {
+        durationMinutes += 24 * 60; // Add 24 hours
+      }
+
+      const hours = Math.floor(durationMinutes / 60);
+      const minutes = durationMinutes % 60;
+
+      // Format duration
+      if (hours > 0 && minutes > 0) {
+        return `${hours}h ${minutes}m`;
+      } else if (hours > 0) {
+        return `${hours}h`;
+      } else if (minutes > 0) {
+        return `${minutes}m`;
+      } else {
+        return '0h';
+      }
+    } catch (error) {
+      console.error('Error calculating duration:', error);
+      return '0h';
+    }
+  }, [session?.startTime, session?.endTime]);
+
   // Check if session date is today (for trainer restrictions)
   // Uses date-only comparison (ignoring time) to ensure it works for entire current day
   const isSessionToday = useMemo(() => {
@@ -637,9 +678,9 @@ const SessionDetail = () => {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-chart-4">2h</div>
+                <div className="text-2xl font-bold text-chart-4">{calculateDuration}</div>
                 <p className="text-xs text-muted-foreground">
-                  {session.startTime} - {session.endTime}
+                  {session?.startTime} - {session?.endTime}
                 </p>
               </CardContent>
             </Card>
