@@ -381,7 +381,15 @@ const Sessions = () => {
               />
               <ExportButton
                 label="Export"
-                exportFn={exportSessionsCSV}
+                exportFn={async () => {
+                  const params: Record<string, string | number> = {};
+                  if (filters.division) params.divisionId = filters.division;
+                  if (filters.district) params.districtId = filters.district;
+                  if (filters.tehsil) params.tehsilId = filters.tehsil;
+                  if (filters.school) params.schoolId = filters.school;
+                  if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+                  return exportSessionsCSV(params);
+                }}
                 filename="sessions.csv"
               />
             </>
@@ -762,34 +770,34 @@ const Sessions = () => {
                             )}
                           </TooltipProvider>
                         </div>
-                        <div className="flex gap-2 w-full">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => navigate(`/sessions/${session.id}`)}
-                            className="flex-1"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                          {isAdmin() && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openEditDialog(session)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteSession(session.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
+                      <div className="flex gap-2 w-full">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/sessions/${session.id}`)}
+                          className="flex-1"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                        {isAdmin() && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(session)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteSession(session.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                         </div>
                       </div>
                     }
@@ -850,33 +858,33 @@ const Sessions = () => {
                             </Tooltip>
                           )}
                         </TooltipProvider>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => navigate(`/sessions/${session.id}`)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                          {isAdmin() && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openEditDialog(session)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteSession(session.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/sessions/${session.id}`)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        {isAdmin() && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(session)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteSession(session.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                         </div>
                       </div>
                     </TableCell>

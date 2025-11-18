@@ -456,8 +456,9 @@ export const downloadAssessmentsTemplate = async (): Promise<Blob> => {
 };
 
 // Sessions
-export const exportSessionsCSV = async (): Promise<Blob> => {
-  const response = await apiClient.getBlob('/data-transfer/sessions/export');
+export const exportSessionsCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/data-transfer/sessions/export${qs ? `?${qs}` : ''}`);
   return response.data;
 };
 
