@@ -41,6 +41,7 @@ const Schools = () => {
         };
 
         // Add filter params from FilterContext
+        if (filters.school) params.schoolId = filters.school;
         if (filters.division) params.divisionId = filters.division;
         if (filters.district) params.districtId = filters.district;
         if (filters.tehsil) params.tehsilId = filters.tehsil;
@@ -61,12 +62,12 @@ const Schools = () => {
     };
 
     fetchSchools();
-  }, [currentPage, filters.division, filters.district, filters.tehsil, searchQuery]);
+  }, [currentPage, filters.school, filters.division, filters.district, filters.tehsil, searchQuery]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.division, filters.district, filters.tehsil, searchQuery]);
+  }, [filters.school, filters.division, filters.district, filters.tehsil, searchQuery]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
