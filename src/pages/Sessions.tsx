@@ -90,6 +90,7 @@ const Sessions = () => {
         pageSize,
       };
 
+      if (filters.sessionId) params.sessionId = filters.sessionId;
       if (filters.division) params.divisionId = filters.division;
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
@@ -112,7 +113,7 @@ const Sessions = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, debouncedSearchTerm, filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [currentPage, debouncedSearchTerm, filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school]);
 
   // Fetch sessions from API
   useEffect(() => {
