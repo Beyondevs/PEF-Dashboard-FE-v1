@@ -382,8 +382,9 @@ export const downloadTrainersTemplate = async (): Promise<Blob> => {
 };
 
 // Teachers
-export const exportTeachers = async (): Promise<Blob> => {
-  const response = await apiClient.getBlob('/data-transfer/teachers/export');
+export const exportTeachers = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/data-transfer/teachers/export${qs ? `?${qs}` : ''}`);
   return response.data;
 };
 
@@ -400,8 +401,9 @@ export const downloadTeachersTemplate = async (): Promise<Blob> => {
 };
 
 // Students
-export const exportStudents = async (): Promise<Blob> => {
-  const response = await apiClient.getBlob('/data-transfer/students/export');
+export const exportStudents = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/data-transfer/students/export${qs ? `?${qs}` : ''}`);
   return response.data;
 };
 

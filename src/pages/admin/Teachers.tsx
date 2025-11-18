@@ -275,7 +275,15 @@ export default function Teachers() {
               />
               <ExportButton
                 label="Export"
-                exportFn={api.exportTeachers}
+                exportFn={async () => {
+                  const params: Record<string, string | number> = {};
+                  if (filters.division) params.divisionId = filters.division;
+                  if (filters.district) params.districtId = filters.district;
+                  if (filters.tehsil) params.tehsilId = filters.tehsil;
+                  if (filters.school) params.schoolId = filters.school;
+                  if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+                  return api.exportTeachers(params);
+                }}
                 filename="teachers.csv"
               />
             </>
