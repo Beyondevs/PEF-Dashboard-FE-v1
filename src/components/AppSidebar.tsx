@@ -35,7 +35,7 @@ const trainerItems = [
   { title: 'Leaderboard', url: '/leaderboard', icon: Trophy },
   { title: 'Reports', url: '/reports', icon: FileText },
   { title: 'Schools', url: '/schools', icon: School },
-  { title: 'Repository', url: '/repository', icon: FolderOpen },
+  // { title: 'Repository', url: '/repository', icon: FolderOpen }, // Hidden for now
 ];
 
 const teacherItems = [
@@ -53,7 +53,7 @@ const adminClientItems = [
   { title: 'Assessments', url: '/assessments', icon: ClipboardCheck },
   { title: 'Leaderboard', url: '/leaderboard', icon: Trophy },
   { title: 'Reports', url: '/reports', icon: FileText },
-  { title: 'Repository', url: '/repository', icon: FolderOpen },
+  // { title: 'Repository', url: '/repository', icon: FolderOpen }, // Hidden for now
 ];
 
 const userManagementItems = [
@@ -81,7 +81,7 @@ export function AppSidebar() {
   
   const showUserManagement = role === 'admin' || role === 'client';
   const showSystemManagement = role === 'admin' || role === 'client';
-  const showHybridMonitoring = role === 'trainer' || role === 'admin' || role === 'client';
+  const showHybridMonitoring = false; // Hidden for now
 
   return (
     <Sidebar className="border-r border-sidebar-border/20 backdrop-blur-sm">
