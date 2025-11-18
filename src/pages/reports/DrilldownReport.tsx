@@ -132,12 +132,22 @@ const DrilldownReport = () => {
 
   const handleExport = async () => {
     try {
+      // Map 'province' level to 'division' since backend doesn't support 'province'
+      const exportLevel = drillState.level === 'province' ? 'division' : drillState.level;
+      
       const params: Record<string, string> = {
-        level: drillState.level,
+        level: exportLevel,
       };
-      if (drillState.divisionId) params.parentId = drillState.divisionId;
-      else if (drillState.districtId) params.parentId = drillState.districtId;
-      else if (drillState.tehsilId) params.parentId = drillState.tehsilId;
+      
+      // Set parentId based on current drill state
+      if (drillState.tehsilId) {
+        params.parentId = drillState.tehsilId;
+      } else if (drillState.districtId) {
+        params.parentId = drillState.districtId;
+      } else if (drillState.divisionId) {
+        params.parentId = drillState.divisionId;
+      }
+      // If level is 'province', no parentId is needed (shows all divisions)
 
       const blob = await exportDrilldownCSV(params);
       const url = window.URL.createObjectURL(blob);
