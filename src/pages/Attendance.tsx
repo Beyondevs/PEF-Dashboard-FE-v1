@@ -52,7 +52,7 @@ const Attendance = () => {
   const [studentTotalPages, setStudentTotalPages] = useState(1);
   const [teacherTotalItems, setTeacherTotalItems] = useState(0);
   const [studentTotalItems, setStudentTotalItems] = useState(0);
-  const pageSize = 20;
+  const pageSize = 100;
   const hasManagePermissions = canMarkAttendance();
   const showDataTransferButtons = isAdmin();
   const [searchTerm, setSearchTerm] = useState('');
