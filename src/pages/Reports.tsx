@@ -2,9 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Reports = () => {
-  const reports = [
+  const { role } = useAuth();
+  
+  const allReports = [
     {
       id: 1,
       title: 'Hierarchical Drill-Down Report',
@@ -36,8 +39,17 @@ const Reports = () => {
       icon: AlertCircle,
       color: 'text-amber-600',
       path: '/reports/attendance-marking',
+      restrictedRoles: ['client'], // Hide this report for client role
     },
   ];
+
+  // Filter out reports that are restricted for the current user's role
+  const reports = allReports.filter(report => {
+    if (report.restrictedRoles && role) {
+      return !report.restrictedRoles.includes(role);
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">
