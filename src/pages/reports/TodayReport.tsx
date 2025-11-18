@@ -14,7 +14,7 @@ import {
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useEffect, useState, useCallback } from 'react';
-import { getTodayActivityReport } from '@/lib/api';
+import { getTodayActivityReport, exportTodayActivityCSV } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
 
 interface SessionData {
@@ -71,8 +71,35 @@ const TodayReport = () => {
   const [isLoading, setIsLoading] = useState(true);
   const today = new Date().toISOString().split('T')[0];
 
-  const handleExport = () => {
-    toast.success("Today's report exported successfully");
+  const handleExport = async () => {
+    try {
+      const params: Record<string, string> = {
+        date: today,
+      };
+
+      // Apply geography filters
+      if (filters.division) params.divisionId = filters.division;
+      if (filters.district) params.districtId = filters.district;
+      if (filters.tehsil) params.tehsilId = filters.tehsil;
+      if (filters.school) params.schoolId = filters.school;
+
+      const blob = await exportTodayActivityCSV(params);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `today-activity-${today}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Today's report exported successfully");
+    } catch (error) {
+      console.error('Failed to export today activity:', error);
+      toast.error("Failed to export today's activity report");
+    }
   };
 
   const fetchTodayActivity = useCallback(async () => {

@@ -455,6 +455,13 @@ export const downloadAssessmentsTemplate = async (): Promise<Blob> => {
   return response.data;
 };
 
+// Today Activity
+export const exportTodayActivityCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/data-transfer/today-activity/export${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
 // Sessions
 export const exportSessionsCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
   const qs = new URLSearchParams(params as any).toString();
