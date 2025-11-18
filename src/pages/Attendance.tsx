@@ -358,7 +358,7 @@ const Attendance = () => {
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search by name or roll number..."
+              placeholder="Search by name, CNIC, or roll number..."
               className="pl-10"
             />
           </div>
@@ -468,6 +468,10 @@ const Attendance = () => {
                           ]}
                           metadata={[
                             {
+                              label: "CNIC",
+                              value: att.personCNIC || '-',
+                            },
+                            {
                               label: "Date",
                               value: new Date(att.session?.date).toLocaleDateString(),
                               icon: <CalendarIcon className="h-3 w-3" />
@@ -500,6 +504,7 @@ const Attendance = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Teacher</TableHead>
+                    <TableHead>CNIC</TableHead>
                     <TableHead>Session</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
@@ -510,7 +515,7 @@ const Attendance = () => {
                 <TableBody>
                   {apiTeacherAttendance.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={editMode ? 6 : 5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={editMode ? 7 : 6} className="text-center text-muted-foreground py-8">
                         {isLoading ? 'Loading teacher attendance...' : 'No teacher attendance records found for the selected filters.'}
                       </TableCell>
                     </TableRow>
@@ -523,6 +528,7 @@ const Attendance = () => {
                       return (
                         <TableRow key={att.id} className={hasChanges ? 'bg-muted/50' : ''}>
                           <TableCell className="font-medium">{att.personName}</TableCell>
+                          <TableCell className="text-muted-foreground">{att.personCNIC || '-'}</TableCell>
                           <TableCell>{att.session?.title}</TableCell>
                           <TableCell>{new Date(att.session?.date).toLocaleDateString()}</TableCell>
                           <TableCell>
