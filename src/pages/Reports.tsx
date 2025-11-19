@@ -15,6 +15,7 @@ const Reports = () => {
       icon: BarChart3,
       color: 'text-primary',
       path: '/reports/drilldown',
+      restrictedRoles: ['trainer'], // Hide from trainers - admin only
     },
     {
       id: 2,
@@ -23,6 +24,7 @@ const Reports = () => {
       icon: TrendingUp,
       color: 'text-secondary',
       path: '/reports/district-compare',
+      restrictedRoles: ['trainer'], // Hide from trainers - admin only
     },
     {
       id: 3,
@@ -39,7 +41,7 @@ const Reports = () => {
       icon: AlertCircle,
       color: 'text-amber-600',
       path: '/reports/attendance-marking',
-      restrictedRoles: ['client'], // Hide this report for client role
+      restrictedRoles: ['client', 'trainer'], // Hide from client and trainer roles
     },
   ];
 
@@ -55,7 +57,11 @@ const Reports = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Reports</h1>
-        <p className="text-muted-foreground">Access comprehensive training program reports and analytics</p>
+        <p className="text-muted-foreground">
+          {role === 'trainer' 
+            ? 'View reports and analytics for your assigned sessions and schools'
+            : 'Access comprehensive training program reports and analytics'}
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
