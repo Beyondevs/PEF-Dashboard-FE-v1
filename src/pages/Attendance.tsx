@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Save, Calendar as CalendarIcon, Clock, FileText, Search } from 'lucide-react';
+import { Save, Calendar as CalendarIcon, FileText, Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCard } from '@/components/MobileCard';
 import { toast } from 'sonner';
@@ -475,11 +475,6 @@ const Attendance = () => {
                               label: "Date",
                               value: new Date(att.session?.date).toLocaleDateString(),
                               icon: <CalendarIcon className="h-3 w-3" />
-                            },
-                            {
-                              label: "Marked At",
-                              value: new Date(att.markedAt).toLocaleString(),
-                              icon: <Clock className="h-3 w-3" />
                             }
                           ]}
                           actions={editMode && (
@@ -509,13 +504,12 @@ const Attendance = () => {
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
                     {editMode && <TableHead>Toggle</TableHead>}
-                    <TableHead>Marked At</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {apiTeacherAttendance.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={editMode ? 7 : 6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={editMode ? 6 : 5} className="text-center text-muted-foreground py-8">
                         {isLoading ? 'Loading teacher attendance...' : 'No teacher attendance records found for the selected filters.'}
                       </TableCell>
                     </TableRow>
@@ -544,9 +538,6 @@ const Attendance = () => {
                               />
                             </TableCell>
                           )}
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(att.markedAt).toLocaleString()}
-                          </TableCell>
                         </TableRow>
                       );
                     })
@@ -610,11 +601,6 @@ const Attendance = () => {
                               label: 'Roll Number',
                               value: rollNumber,
                               icon: <FileText className="h-3 w-3" />
-                            },
-                            {
-                              label: "Marked At",
-                              value: new Date(att.markedAt).toLocaleString(),
-                              icon: <Clock className="h-3 w-3" />
                             }
                           ]}
                           actions={editMode && (
@@ -645,13 +631,12 @@ const Attendance = () => {
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
                     {editMode && <TableHead>Toggle</TableHead>}
-                    <TableHead>Marked At</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {apiStudentAttendance.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={editMode ? 7 : 6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={editMode ? 6 : 5} className="text-center text-muted-foreground py-8">
                         {isLoading ? 'Loading student attendance...' : 'No student attendance records found for the selected filters.'}
                       </TableCell>
                     </TableRow>
@@ -682,9 +667,6 @@ const Attendance = () => {
                               />
                             </TableCell>
                           )}
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(att.markedAt).toLocaleString()}
-                          </TableCell>
                         </TableRow>
                       );
                     })
