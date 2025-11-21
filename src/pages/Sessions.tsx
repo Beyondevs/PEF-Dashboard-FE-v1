@@ -468,14 +468,14 @@ const Sessions = () => {
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Search schools..." />
+                          <CommandInput placeholder="Search schools by name or EMIS code..." />
                           <CommandList>
                             <CommandEmpty>No school found.</CommandEmpty>
                             <CommandGroup>
                               {apiSchools.map((school) => (
                                 <CommandItem
                                   key={school.id}
-                                  value={school.name}
+                                  value={`${school.name} ${school.emisCode || ''}`}
                                   onSelect={() => {
                                     setFormData({...formData, schoolId: school.id});
                                     setSchoolSearchOpen(false);
@@ -487,7 +487,12 @@ const Sessions = () => {
                                       formData.schoolId === school.id ? "opacity-100" : "opacity-0"
                                     )}
                                   />
-                                  {school.name}
+                                  <div className="flex flex-col">
+                                    <span>{school.name}</span>
+                                    {school.emisCode && (
+                                      <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
+                                    )}
+                                  </div>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -615,14 +620,14 @@ const Sessions = () => {
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Search schools..." />
+                          <CommandInput placeholder="Search schools by name or EMIS code..." />
                           <CommandList>
                             <CommandEmpty>No school found.</CommandEmpty>
                             <CommandGroup>
                               {apiSchools.map((school) => (
                                 <CommandItem
                                   key={school.id}
-                                  value={school.name}
+                                  value={`${school.name} ${school.emisCode || ''}`}
                                   onSelect={() => {
                                     setFormData({...formData, schoolId: school.id});
                                     setSchoolSearchOpen(false);
@@ -634,7 +639,12 @@ const Sessions = () => {
                                       formData.schoolId === school.id ? "opacity-100" : "opacity-0"
                                     )}
                                   />
-                                  {school.name}
+                                  <div className="flex flex-col">
+                                    <span>{school.name}</span>
+                                    {school.emisCode && (
+                                      <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
+                                    )}
+                                  </div>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
