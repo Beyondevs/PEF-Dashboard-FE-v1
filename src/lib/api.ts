@@ -28,6 +28,10 @@ export async function refresh(refreshToken: string) {
   return apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh', { refreshToken });
 }
 
+export async function forgotPassword(body: { mobileNumber: string; oldPassword: string; newPassword: string; confirmPassword: string }) {
+  return apiClient.post<{ message: string }>('/auth/forgot-password', body);
+}
+
 // Geography
 export const getDivisions = () => apiClient.get<Division[]>('/divisions');
 export const createDivision = (data: Partial<Division>) => apiClient.post<Division>('/divisions', data);

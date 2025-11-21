@@ -4,9 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { forgotPassword } from '@/lib/api';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -23,6 +25,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [error, setError] = useState('');
   const isSubmittingRef = useRef(false);
   const isLoginPageRef = useRef(true);
+  
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [forgotPasswordError, setForgotPasswordError] = useState('');
 
   // Prevent any navigation while on login page
   useEffect(() => {
@@ -185,6 +199,74 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     handleLogin();
   }, [handleLogin]);
 
+  const handleForgotPassword = useCallback(async () => {
+    // Validate inputs
+    if (!mobileNumber.trim()) {
+      setForgotPasswordError('Please enter your mobile number');
+      return;
+    }
+
+    if (!oldPassword.trim()) {
+      setForgotPasswordError('Please enter your old password');
+      return;
+    }
+
+    if (!newPassword.trim()) {
+      setForgotPasswordError('Please enter a new password');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setForgotPasswordError('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (oldPassword === newPassword) {
+      setForgotPasswordError('New password must be different from old password');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setForgotPasswordError('New password and confirm password do not match');
+      return;
+    }
+
+    setIsResettingPassword(true);
+    setForgotPasswordError('');
+
+    try {
+      await forgotPassword({
+        mobileNumber: mobileNumber.trim(),
+        oldPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      toast({
+        variant: "default",
+        title: "Success",
+        description: "Password updated successfully. You can now login with your new password.",
+      });
+
+      // Reset form and close dialog
+      setMobileNumber('');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowForgotPassword(false);
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to reset password. Please try again.';
+      setForgotPasswordError(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage,
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  }, [mobileNumber, oldPassword, newPassword, confirmPassword, toast]);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -274,6 +356,183 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           )}
         </Button>
       </div>
+
+      <div className="text-center pt-2">
+        <Button
+          type="button"
+          variant="link"
+          className="text-sm text-muted-foreground hover:text-primary"
+          onClick={() => setShowForgotPassword(true)}
+          disabled={isLoading}
+        >
+          Forgot Password? (Trainers Only)
+        </Button>
+      </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Enter your mobile number and new password. This feature is only available for trainers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="mobile">Mobile Number</Label>
+              <Input
+                id="mobile"
+                type="text"
+                placeholder="+923001234567"
+                value={mobileNumber}
+                onChange={(e) => {
+                  setMobileNumber(e.target.value);
+                  setForgotPasswordError('');
+                }}
+                disabled={isResettingPassword}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="oldPassword">Old Password</Label>
+              <div className="relative">
+                <Input
+                  id="oldPassword"
+                  type={showOldPassword ? 'text' : 'password'}
+                  placeholder="Enter your current password"
+                  value={oldPassword}
+                  onChange={(e) => {
+                    setOldPassword(e.target.value);
+                    setForgotPasswordError('');
+                  }}
+                  disabled={isResettingPassword}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                  disabled={isResettingPassword}
+                  tabIndex={-1}
+                >
+                  {showOldPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showNewPassword ? 'text' : 'password'}
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setForgotPasswordError('');
+                  }}
+                  disabled={isResettingPassword}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  disabled={isResettingPassword}
+                  tabIndex={-1}
+                >
+                  {showNewPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setForgotPasswordError('');
+                  }}
+                  disabled={isResettingPassword}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={isResettingPassword}
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {forgotPasswordError && (
+              <Alert variant="destructive" className="animate-in fade-in-50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{forgotPasswordError}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setMobileNumber('');
+                  setOldPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setForgotPasswordError('');
+                }}
+                disabled={isResettingPassword}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={handleForgotPassword}
+                disabled={isResettingPassword || !mobileNumber.trim() || !oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()}
+              >
+                {isResettingPassword ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Resetting...
+                  </>
+                ) : (
+                  'Reset Password'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
