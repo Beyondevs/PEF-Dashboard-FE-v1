@@ -32,7 +32,7 @@ export default function Students() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -50,20 +50,21 @@ export default function Students() {
   const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
-  // Debounce search term (300ms delay)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
-    }, 300);
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm.trim());
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
+  };
 
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   // Fetch students when filters, search, or page changes
   useEffect(() => {
     fetchStudents();
-  }, [filters.division, filters.district, filters.tehsil, filters.school, debouncedSearchTerm, pagination.page]);
+  }, [filters.division, filters.district, filters.tehsil, filters.school, activeSearchTerm, pagination.page]);
 
   useEffect(() => {
     fetchSchools();
@@ -84,8 +85,8 @@ export default function Students() {
       if (filters.school) params.schoolId = filters.school;
       
       // Add search parameter if provided
-      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
-        params.search = debouncedSearchTerm.trim();
+      if (activeSearchTerm && activeSearchTerm.trim()) {
+        params.search = activeSearchTerm.trim();
       }
       
       // Include disabled students for management page
@@ -251,14 +252,20 @@ export default function Students() {
 
       <div className="flex justify-between items-center mb-6">
         <div className="flex gap-2">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search students..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="relative flex gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search students..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
+                className="pl-10"
+              />
+            </div>
+            <Button onClick={handleSearch} size="default" className="shrink-0">
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
@@ -298,7 +305,7 @@ export default function Students() {
                   if (filters.district) params.districtId = filters.district;
                   if (filters.tehsil) params.tehsilId = filters.tehsil;
                   if (filters.school) params.schoolId = filters.school;
-                  if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+                  if (activeSearchTerm) params.search = activeSearchTerm;
                   return api.exportStudents(params);
                 }}
                 filename="students.csv"
@@ -495,7 +502,7 @@ export default function Students() {
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} students
-            {searchTerm && ` (filtered)`}
+            {activeSearchTerm && ` (filtered)`}
           </div>
           <div className="flex items-center gap-2">
             <Button

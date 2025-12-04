@@ -53,14 +53,19 @@ const Assessments = () => {
   const [isLoading, setIsLoading] = useState(true);
   const pageSize = 20;
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm.trim());
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm.trim());
+    setStudentPage(1);
+    setTeacherPage(1);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   const buildFilters = (pageNumber: number, subjectType: 'student' | 'teacher') => {
     const apiFilters: Record<string, string | number> = {
@@ -77,7 +82,7 @@ const Assessments = () => {
     // TODO: Date range filter - Temporarily disabled for future work
     // if (filters.startDate) apiFilters.from = filters.startDate;
     // if (filters.endDate) apiFilters.to = filters.endDate;
-    if (debouncedSearchTerm) apiFilters.search = debouncedSearchTerm;
+    if (activeSearchTerm) apiFilters.search = activeSearchTerm;
 
     return apiFilters;
   };
@@ -89,7 +94,7 @@ const Assessments = () => {
     // TODO: Date range filter - Temporarily disabled for future work
     // if (filters.startDate) params.startDate = filters.startDate;
     // if (filters.endDate) params.endDate = filters.endDate;
-    if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+    if (activeSearchTerm) params.search = activeSearchTerm;
     return params;
   };
 
@@ -114,7 +119,7 @@ const Assessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [studentPage, filters, pageSize, debouncedSearchTerm]);
+  }, [studentPage, filters, pageSize, activeSearchTerm]);
 
   const fetchTeacherAssessments = useCallback(async () => {
     try {
@@ -137,7 +142,7 @@ const Assessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [teacherPage, filters, pageSize, debouncedSearchTerm]);
+  }, [teacherPage, filters, pageSize, activeSearchTerm]);
 
   useEffect(() => {
     setStudentPage(1);
@@ -148,7 +153,7 @@ const Assessments = () => {
     filters.district,
     filters.tehsil,
     filters.school,
-    debouncedSearchTerm,
+    activeSearchTerm,
   ]);
 
   useEffect(() => {
@@ -297,14 +302,20 @@ const Assessments = () => {
           <p className="text-muted-foreground">View and manage student and teacher assessments</p>
         </div>
         <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+          <div className="relative flex gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                onKeyPress={handleSearchKeyPress}
               placeholder={`Search ${activeTab === 'students' ? 'students' : 'teachers'}...`}
               className="pl-10"
             />
+            </div>
+            <Button onClick={handleSearch} size="default" className="shrink-0">
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
           {(showDataTransferButtons || canManageAssessments) && (
             <>

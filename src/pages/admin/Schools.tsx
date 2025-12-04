@@ -32,7 +32,7 @@ export default function Schools() {
   const [tehsils, setTehsils] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -53,15 +53,16 @@ export default function Schools() {
   const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
-  // Debounce search term (300ms delay)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
-    }, 300);
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm.trim());
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
+  };
 
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   const fetchSchools = async (page = pagination.page) => {
     try {
@@ -72,8 +73,8 @@ export default function Schools() {
       };
       
       // Add search parameter if provided
-      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
-        params.search = debouncedSearchTerm.trim();
+      if (activeSearchTerm && activeSearchTerm.trim()) {
+        params.search = activeSearchTerm.trim();
       }
 
       // Apply global filters
@@ -117,7 +118,7 @@ export default function Schools() {
   useEffect(() => {
     fetchSchools();
   }, [
-    debouncedSearchTerm,
+    activeSearchTerm,
     pagination.page,
     filters.division,
     filters.district,
@@ -229,14 +230,20 @@ export default function Schools() {
       </div>
 
       <div className="flex justify-between items-center mb-6">
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search schools..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        <div className="relative flex gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search schools..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleSearchKeyPress}
+              className="pl-10"
+            />
+          </div>
+          <Button onClick={handleSearch} size="default" className="shrink-0">
+            <Search className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="flex gap-2">
@@ -275,7 +282,7 @@ export default function Schools() {
                   if (filters.division) params.divisionId = filters.division;
                   if (filters.district) params.districtId = filters.district;
                   if (filters.tehsil) params.tehsilId = filters.tehsil;
-                  if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+                  if (activeSearchTerm) params.search = activeSearchTerm;
                   return api.exportSchools(params);
                 }}
                 filename="schools.csv"
@@ -444,7 +451,7 @@ export default function Schools() {
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} schools
-            {debouncedSearchTerm && ' (filtered)'}
+            {activeSearchTerm && ' (filtered)'}
           </div>
           <div className="flex items-center gap-2">
             <Button

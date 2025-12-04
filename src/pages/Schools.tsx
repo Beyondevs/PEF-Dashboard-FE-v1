@@ -8,10 +8,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { School, MapPin, Building2 } from 'lucide-react';
+import { School, MapPin, Building2, Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCard } from '@/components/MobileCard';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFilters } from '@/contexts/FilterContext';
 import { getSchools } from '@/lib/api';
@@ -23,6 +24,7 @@ const Schools = () => {
   const isMobile = useIsMobile();
   const { filters } = useFilters();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [schools, setSchools] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +47,7 @@ const Schools = () => {
         if (filters.division) params.divisionId = filters.division;
         if (filters.district) params.districtId = filters.district;
         if (filters.tehsil) params.tehsilId = filters.tehsil;
-        if (searchQuery) params.search = searchQuery;
+        if (activeSearchQuery) params.search = activeSearchQuery;
 
         const response = await getSchools(params);
         setSchools(response.data.data || []);
@@ -62,12 +64,18 @@ const Schools = () => {
     };
 
     fetchSchools();
-  }, [currentPage, filters.school, filters.division, filters.district, filters.tehsil, searchQuery]);
+  }, [currentPage, filters.school, filters.division, filters.district, filters.tehsil, activeSearchQuery]);
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
+  const handleSearch = () => {
+    setActiveSearchQuery(searchQuery.trim());
     setCurrentPage(1);
-  }, [filters.school, filters.division, filters.district, filters.tehsil, searchQuery]);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -85,12 +93,20 @@ const Schools = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="w-full sm:w-96">
-              <Input
-                placeholder="Search schools by name, EMIS code, or address..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
+            <div className="flex gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-96">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search schools by name, EMIS code, or address..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyPress={handleSearchKeyPress}
+                  className="pl-10"
+                />
+              </div>
+              <Button onClick={handleSearch} size="default" className="shrink-0">
+                <Search className="h-4 w-4" />
+              </Button>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

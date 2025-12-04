@@ -65,7 +65,7 @@ const Sessions = () => {
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 10;
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -98,7 +98,7 @@ const Sessions = () => {
       // TODO: Date range filter - Temporarily disabled for future work
       // if (filters.startDate) params.from = filters.startDate;
       // if (filters.endDate) params.to = filters.endDate;
-      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+      if (activeSearchTerm) params.search = activeSearchTerm;
 
       const response = await getSessions(params);
 
@@ -113,21 +113,23 @@ const Sessions = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, debouncedSearchTerm, filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [currentPage, activeSearchTerm, filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school]);
 
   // Fetch sessions from API
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm.trim());
-      setCurrentPage(1);
-    }, 300);
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm.trim());
+    setCurrentPage(1);
+  };
 
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   // Fetch schools and trainers for create form
   useEffect(() => {
@@ -388,7 +390,7 @@ const Sessions = () => {
                   if (filters.district) params.districtId = filters.district;
                   if (filters.tehsil) params.tehsilId = filters.tehsil;
                   if (filters.school) params.schoolId = filters.school;
-                  if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+                  if (activeSearchTerm) params.search = activeSearchTerm;
                   return exportSessionsCSV(params);
                 }}
                 filename="sessions.csv"
@@ -709,15 +711,21 @@ const Sessions = () => {
         </div>
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <div className="relative flex-1 sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search sessions by title..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-            aria-label="Search sessions by title"
-          />
+        <div className="relative flex-1 sm:max-w-sm flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search sessions by title..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleSearchKeyPress}
+              className="pl-10"
+              aria-label="Search sessions by title"
+            />
+          </div>
+          <Button onClick={handleSearch} size="default" className="shrink-0">
+            <Search className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

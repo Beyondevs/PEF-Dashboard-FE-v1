@@ -56,7 +56,7 @@ const Attendance = () => {
   const hasManagePermissions = canMarkAttendance();
   const showDataTransferButtons = isAdmin();
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
   const SYSTEM_NOT_MARKED = 'system:not-marked';
 
@@ -69,12 +69,17 @@ const Attendance = () => {
     return true;
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm.trim());
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm.trim());
+    setTeacherPage(1);
+    setStudentPage(1);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   const fetchAttendance = useCallback(async () => {
     try {
@@ -125,9 +130,9 @@ const Attendance = () => {
       //   studentFilters.to = filters.endDate;
       // }
 
-      if (debouncedSearchTerm) {
-        teacherFilters.search = debouncedSearchTerm;
-        studentFilters.search = debouncedSearchTerm;
+      if (activeSearchTerm) {
+        teacherFilters.search = activeSearchTerm;
+        studentFilters.search = activeSearchTerm;
       }
 
       const [teacherResponse, studentResponse] = await Promise.all([
@@ -159,7 +164,7 @@ const Attendance = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filters, teacherPage, studentPage, pageSize, debouncedSearchTerm]);
+  }, [filters, teacherPage, studentPage, pageSize, activeSearchTerm]);
 
   useEffect(() => {
     fetchAttendance();
@@ -173,7 +178,7 @@ const Attendance = () => {
     if (filters.tehsil) params.tehsilId = filters.tehsil;
     if (filters.school) params.schoolId = filters.school;
     params.personType = activeTab === 'teachers' ? 'teacher' : 'student';
-    if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+    if (activeSearchTerm) params.search = activeSearchTerm;
     return params;
   };
 
@@ -316,7 +321,7 @@ const Attendance = () => {
   useEffect(() => {
     setTeacherPage(1);
     setStudentPage(1);
-  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, debouncedSearchTerm]);
+  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, activeSearchTerm]);
 
   if (isLoading) {
     return (
@@ -353,14 +358,20 @@ const Attendance = () => {
           
         </div>
         <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search by name, CNIC, or roll number..."
-              className="pl-10"
-            />
+          <div className="relative w-full sm:w-64 flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                onKeyPress={handleSearchKeyPress}
+                placeholder="Search by name, CNIC, or roll number..."
+                className="pl-10"
+              />
+            </div>
+            <Button onClick={handleSearch} size="default" className="shrink-0">
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
           {showDataTransferButtons && (
             <>
