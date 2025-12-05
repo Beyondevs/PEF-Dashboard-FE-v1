@@ -8,12 +8,15 @@ interface AuthContextType {
   userName: string;
   userId: string | null;
   email: string | null;
+  divisionId: string | null;
+  divisionName: string | null;
   isLoading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
   ensureFreshToken: () => Promise<void>;
   isAdmin: () => boolean;
+  isDivisionRole: () => boolean;
   canEdit: () => boolean;
   canDelete: () => boolean;
   canMarkAttendance: () => boolean;
@@ -26,6 +29,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [userName, setUserName] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [divisionId, setDivisionId] = useState<string | null>(null);
+  const [divisionName, setDivisionName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const refreshTimeoutRef = useRef<number | null>(null);
 
@@ -85,6 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           trainer: 'Trainer',
           teacher: 'Teacher',
           student: 'Student',
+          division_role: profile?.division?.name || 'Division User',
       };
       setUserName(nameMap[userRole] || 'User');
       }
@@ -103,12 +109,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem(STORAGE_KEYS.accessToken);
     localStorage.removeItem(STORAGE_KEYS.refreshToken);
     localStorage.removeItem(STORAGE_KEYS.userRole);
+    localStorage.removeItem(STORAGE_KEYS.divisionId);
+    localStorage.removeItem(STORAGE_KEYS.divisionName);
     
     // Reset state
     setRole(null);
     setUserId(null);
     setEmail(null);
     setUserName('');
+    setDivisionId(null);
+    setDivisionName(null);
 
     clearRefreshTimer();
     // Store current path for redirect after login
@@ -129,6 +139,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserId(null);
         setEmail(null);
         setUserName('');
+        setDivisionId(null);
+        setDivisionName(null);
         return;
       }
 
@@ -140,19 +152,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserId(id);
       setEmail(userEmail);
       
+      // Set division info for division_role users
+      if (userRole === 'division_role' && profile?.division) {
+        setDivisionId(profile.division.id || profile.divisionId);
+        setDivisionName(profile.division.name);
+        // Store in localStorage for persistence
+        localStorage.setItem(STORAGE_KEYS.divisionId, profile.division.id || profile.divisionId);
+        localStorage.setItem(STORAGE_KEYS.divisionName, profile.division.name);
+      } else {
+        setDivisionId(null);
+        setDivisionName(null);
+        localStorage.removeItem(STORAGE_KEYS.divisionId);
+        localStorage.removeItem(STORAGE_KEYS.divisionName);
+      }
+      
       // Set user name from profile (preferred) or fallback to role-based default
       if (profile?.name) {
         setUserName(profile.name);
       } else {
         // Fallback to role-based defaults if name not provided
-      const nameMap: Record<UserRole, string> = {
-        admin: 'Administrator',
-        client: 'Client User',
+        const nameMap: Record<UserRole, string> = {
+          admin: 'Administrator',
+          client: 'Client User',
           trainer: 'Trainer',
           teacher: 'Teacher',
           student: 'Student',
-      };
-      setUserName(nameMap[userRole] || 'User');
+          division_role: profile?.division?.name || 'Division User',
+        };
+        setUserName(nameMap[userRole] || 'User');
       }
 
       scheduleProactiveRefresh(storedToken);
@@ -246,10 +273,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   // Permission helper functions
-  const isAdmin = () => role === 'admin';
-  const canEdit = () => role === 'admin';
-  const canDelete = () => role === 'admin';
-  const canMarkAttendance = () => role === 'admin' || role === 'trainer';
+  const isAdmin = () => role === 'admin' || role === 'division_role';
+  const isDivisionRole = () => role === 'division_role';
+  const canEdit = () => role === 'admin' || role === 'division_role';
+  const canDelete = () => role === 'admin' || role === 'division_role';
+  const canMarkAttendance = () => role === 'admin' || role === 'trainer' || role === 'division_role';
 
   return (
     <AuthContext.Provider value={{ 
@@ -257,12 +285,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       userName, 
       userId, 
       email, 
+      divisionId,
+      divisionName,
       isLoading, 
       login, 
       logout, 
       checkAuth, 
       ensureFreshToken,
       isAdmin,
+      isDivisionRole,
       canEdit,
       canDelete,
       canMarkAttendance

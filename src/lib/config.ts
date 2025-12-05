@@ -5,6 +5,8 @@ export const STORAGE_KEYS = {
   accessToken: 'pef.accessToken',
   refreshToken: 'pef.refreshToken',
   userRole: 'pef.userRole',
+  divisionId: 'pef.divisionId',
+  divisionName: 'pef.divisionName',
 };
 
 

@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { FilterState } from '@/types';
+import { useAuth } from './AuthContext';
 
 interface FilterContextType {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
+  isDivisionLocked: boolean;
 }
 
 const FILTER_STORAGE_KEY = 'pef_dashboard_filters';
@@ -41,6 +43,10 @@ const saveFiltersToStorage = (filters: FilterState) => {
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
 export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { role, divisionId, isLoading: authLoading } = useAuth();
+  const isDivisionRole = role === 'division_role';
+  const isDivisionLocked = isDivisionRole && !!divisionId;
+  
   const [filters, setFiltersState] = useState<FilterState>(() => {
     const stored = loadFiltersFromStorage();
     // Ensure dates are always set (either from storage or default to today)
@@ -52,10 +58,40 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
   });
 
+  // Auto-apply division filter for division_role users
+  useEffect(() => {
+    if (!authLoading && isDivisionRole && divisionId) {
+      setFiltersState(prev => {
+        // Only update if division is different or not set
+        if (prev.division !== divisionId) {
+          const newFilters = {
+            ...prev,
+            division: divisionId,
+            // Reset child filters when division changes
+            district: undefined,
+            tehsil: undefined,
+            school: undefined,
+            sessionId: undefined,
+          };
+          saveFiltersToStorage(newFilters);
+          return newFilters;
+        }
+        return prev;
+      });
+    }
+  }, [authLoading, isDivisionRole, divisionId]);
+
   // Wrapper to save to localStorage whenever filters change
+  // For division_role users, prevent changing the division filter
   const setFilters: React.Dispatch<React.SetStateAction<FilterState>> = (value) => {
     setFiltersState((prev) => {
       const newFilters = typeof value === 'function' ? value(prev) : value;
+      
+      // For division_role users, always keep their division locked
+      if (isDivisionRole && divisionId) {
+        newFilters.division = divisionId;
+      }
+      
       saveFiltersToStorage(newFilters);
       return newFilters;
     });
@@ -65,13 +101,15 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const resetToDefaults: FilterState = {
       startDate: getTodayISO(),
       endDate: getTodayISO(),
+      // For division_role users, keep division locked even on reset
+      ...(isDivisionRole && divisionId ? { division: divisionId } : {}),
     };
     setFiltersState(resetToDefaults);
     saveFiltersToStorage(resetToDefaults);
   };
 
   return (
-    <FilterContext.Provider value={{ filters, setFilters, resetFilters }}>
+    <FilterContext.Provider value={{ filters, setFilters, resetFilters, isDivisionLocked }}>
       {children}
     </FilterContext.Provider>
   );

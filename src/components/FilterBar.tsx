@@ -17,10 +17,11 @@ import { useState, useEffect } from 'react';
 import type { Session, Division, District, Tehsil, School } from '@/types';
 
 export const FilterBar = () => {
-  const { filters, setFilters, resetFilters } = useFilters();
-  const { role } = useAuth();
+  const { filters, setFilters, resetFilters, isDivisionLocked } = useFilters();
+  const { role, divisionName } = useAuth();
   const isTrainer = role === 'trainer';
   const isClient = role === 'client';
+  const isDivisionRole = role === 'division_role';
 
   // TODO: Date range filter - Helper functions temporarily disabled for future work
   // const parseISODate = (value?: string) => {
@@ -211,6 +212,15 @@ export const FilterBar = () => {
         )}
 
         {!isTrainer && (
+          isDivisionLocked ? (
+            // For division_role users, show locked division as a badge
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs md:text-sm text-muted-foreground">Division:</span>
+              <div className="px-2 md:px-3 py-1 md:py-1.5 bg-primary/10 border border-primary/20 rounded-md text-xs md:text-sm font-medium text-primary">
+                {divisionName || 'Your Division'}
+              </div>
+            </div>
+          ) : (
         <Select
           value={filters.division ?? ''}
           onValueChange={(value) => {
@@ -254,6 +264,7 @@ export const FilterBar = () => {
             )}
           </SelectContent>
         </Select>
+          )
         )}
 
         {!isTrainer && (

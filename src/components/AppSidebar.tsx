@@ -75,12 +75,12 @@ export function AppSidebar() {
   const { role } = useAuth();
   
   const menuItems = 
-    role === 'admin' || role === 'client' ? adminClientItems :
+    role === 'admin' || role === 'client' || role === 'division_role' ? adminClientItems :
     role === 'trainer' ? trainerItems : 
     teacherItems;
   
-  const showUserManagement = role === 'admin' || role === 'client';
-  const showSystemManagement = role === 'admin' || role === 'client';
+  const showUserManagement = role === 'admin' || role === 'client' || role === 'division_role';
+  const showSystemManagement = role === 'admin' || role === 'client' || role === 'division_role';
   const showHybridMonitoring = false; // Hidden for now
 
   return (
