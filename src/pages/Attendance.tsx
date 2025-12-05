@@ -33,7 +33,7 @@ import {
 
 const Attendance = () => {
   const { filters } = useFilters();
-  const { canMarkAttendance, isAdmin } = useAuth();
+  const { canMarkAttendance, isAdmin, role } = useAuth();
   const isMobile = useIsMobile();
   const [editMode, setEditMode] = useState(false);
   const [attendanceChanges, setAttendanceChanges] = useState<Record<string, boolean>>({});
@@ -399,14 +399,16 @@ const Attendance = () => {
                 <span className="hidden sm:inline">Template</span>
                 <span className="sm:hidden">Template</span>
               </Button>
-              <ImportButton
-                label="Import"
-                importFn={async (file) => {
-                  const response = await importAttendanceCSV(file);
-                  return response.data as any;
-                }}
-                onSuccess={() => fetchAttendance()}
-              />
+              {role === 'admin' && (
+                <ImportButton
+                  label="Import"
+                  importFn={async (file) => {
+                    const response = await importAttendanceCSV(file);
+                    return response.data as any;
+                  }}
+                  onSuccess={() => fetchAttendance()}
+                />
+              )}
               <ExportButton
                 label="Export"
                 exportFn={async () => {

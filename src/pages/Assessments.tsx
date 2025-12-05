@@ -344,17 +344,19 @@ const Assessments = () => {
                     <FileText className="h-4 w-4 mr-2" />
                     Template
                   </Button>
-                  <ImportButton
-                    label="Import"
-                    importFn={async (file) => {
-                      const response = await importAssessmentsCSV(file);
-                      return response.data as any;
-                    }}
-                    onSuccess={() => {
-                      fetchStudentAssessments();
-                      fetchTeacherAssessments();
-                    }}
-                  />
+                  {role === 'admin' && (
+                    <ImportButton
+                      label="Import"
+                      importFn={async (file) => {
+                        const response = await importAssessmentsCSV(file);
+                        return response.data as any;
+                      }}
+                      onSuccess={() => {
+                        fetchStudentAssessments();
+                        fetchTeacherAssessments();
+                      }}
+                    />
+                  )}
                   <ExportButton
                     label="Export"
                     exportFn={async () => {

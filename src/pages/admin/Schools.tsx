@@ -50,7 +50,7 @@ export default function Schools() {
     total: 0,
   });
   const { filters } = useFilters();
-  const { canEdit, canDelete, isAdmin } = useAuth();
+  const { canEdit, canDelete, isAdmin, role } = useAuth();
   const { toast } = useToast();
 
   const handleSearch = () => {
@@ -267,14 +267,16 @@ export default function Schools() {
                 <FileText className="h-4 w-4 mr-2" />
                 Template
               </Button>
-              <ImportButton
-                label="Import"
-                importFn={async (file) => {
-                  const result = await api.importSchools(file);
-                  return result.data as any;
-                }}
-                onSuccess={() => fetchSchools()}
-              />
+              {role === 'admin' && (
+                <ImportButton
+                  label="Import"
+                  importFn={async (file) => {
+                    const result = await api.importSchools(file);
+                    return result.data as any;
+                  }}
+                  onSuccess={() => fetchSchools()}
+                />
+              )}
               <ExportButton
                 label="Export"
                 exportFn={async () => {

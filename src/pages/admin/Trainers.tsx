@@ -49,7 +49,7 @@ export default function Trainers() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete, isAdmin } = useAuth();
+  const { canEdit, canDelete, isAdmin, role } = useAuth();
   const { toast } = useToast();
   const { filters } = useFilters();
 
@@ -285,14 +285,16 @@ export default function Trainers() {
                 <FileText className="h-4 w-4 mr-2" />
                 Template
               </Button>
-              <ImportButton
-                label="Import"
-                importFn={async (file) => {
-                  const result = await api.importTrainersCSV(file);
-                  return result.data as any;
-                }}
-                onSuccess={() => fetchTrainers()}
-              />
+              {role === 'admin' && (
+                <ImportButton
+                  label="Import"
+                  importFn={async (file) => {
+                    const result = await api.importTrainersCSV(file);
+                    return result.data as any;
+                  }}
+                  onSuccess={() => fetchTrainers()}
+                />
+              )}
               <ExportButton
                 label="Export"
                 exportFn={async () => {

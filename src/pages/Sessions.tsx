@@ -47,6 +47,7 @@ import { cn } from '@/lib/utils';
 
 const Sessions = () => {
   const { role, isAdmin } = useAuth();
+  const canManageSessions = () => role === 'admin';
   const { filters } = useFilters();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -374,14 +375,16 @@ const Sessions = () => {
                 <span className="hidden sm:inline">Template</span>
                 <span className="sm:hidden">Template</span>
               </Button>
-              <ImportButton
-                label="Import"
-                importFn={async (file) => {
-                  const response = await importSessionsCSV(file);
-                  return response.data as any;
-                }}
-                onSuccess={fetchSessions}
-              />
+              {role === 'admin' && (
+                <ImportButton
+                  label="Import"
+                  importFn={async (file) => {
+                    const response = await importSessionsCSV(file);
+                    return response.data as any;
+                  }}
+                  onSuccess={fetchSessions}
+                />
+              )}
               <ExportButton
                 label="Export"
                 exportFn={async () => {
@@ -397,7 +400,7 @@ const Sessions = () => {
               />
             </>
           )}
-          {isAdmin() && (
+          {canManageSessions() && (
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="flex-1 sm:flex-initial">
@@ -556,7 +559,7 @@ const Sessions = () => {
               </DialogContent>
             </Dialog>
           )}
-          {isAdmin() && (
+          {canManageSessions() && (
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
               <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
@@ -799,7 +802,7 @@ const Sessions = () => {
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </Button>
-                        {isAdmin() && (
+                        {canManageSessions() && (
                           <>
                             <Button
                               size="sm"
@@ -886,7 +889,7 @@ const Sessions = () => {
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
-                        {isAdmin() && (
+                        {canManageSessions() && (
                           <>
                             <Button
                               size="sm"

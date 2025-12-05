@@ -291,8 +291,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Permission helper functions
   const isAdmin = () => role === 'admin' || role === 'division_role';
   const isDivisionRole = () => role === 'division_role';
-  const canEdit = () => role === 'admin' || role === 'division_role';
-  const canDelete = () => role === 'admin' || role === 'division_role';
+  const canEdit = () => role === 'admin';
+  const canDelete = () => role === 'admin';
   const canMarkAttendance = () => role === 'admin' || role === 'trainer' || role === 'division_role';
 
   return (

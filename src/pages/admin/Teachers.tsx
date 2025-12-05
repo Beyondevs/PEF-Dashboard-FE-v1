@@ -53,7 +53,7 @@ export default function Teachers() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete, isAdmin } = useAuth();
+  const { canEdit, canDelete, isAdmin, role } = useAuth();
   const { toast } = useToast();
 
   const handleSearch = () => {
@@ -281,14 +281,16 @@ export default function Teachers() {
                 <span className="hidden sm:inline">Template</span>
                 <span className="sm:hidden">Template</span>
               </Button>
-              <ImportButton
-                label="Import"
-                importFn={async (file) => {
-                  const response = await api.importTeachersCSV(file);
-                  return response.data as any;
-                }}
-                onSuccess={fetchTeachers}
-              />
+              {role === 'admin' && (
+                <ImportButton
+                  label="Import"
+                  importFn={async (file) => {
+                    const response = await api.importTeachersCSV(file);
+                    return response.data as any;
+                  }}
+                  onSuccess={fetchTeachers}
+                />
+              )}
               <ExportButton
                 label="Export"
                 exportFn={async () => {
