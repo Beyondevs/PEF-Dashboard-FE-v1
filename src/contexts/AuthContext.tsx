@@ -79,20 +79,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserId(user.id);
       setEmail(user.email);
       
+      // Fetch profile to get division info for division_role users
+      if (userRole === 'division_role') {
+        try {
+          const profileResponse = await getProfile();
+          const { profile } = profileResponse.data;
+          if (profile?.division) {
+            setDivisionId(profile.division.id || profile.divisionId);
+            setDivisionName(profile.division.name);
+            localStorage.setItem(STORAGE_KEYS.divisionId, profile.division.id || profile.divisionId);
+            localStorage.setItem(STORAGE_KEYS.divisionName, profile.division.name);
+          }
+        } catch (error) {
+          console.error('Failed to fetch profile after login:', error);
+        }
+      }
+      
       // Set user name from API response (preferred) or fallback to role-based default
       if (user.name) {
         setUserName(user.name);
       } else {
         // Fallback to role-based defaults if name not provided
-      const nameMap: Record<UserRole, string> = {
-        admin: 'Administrator',
-        client: 'Client User',
+        const nameMap: Record<UserRole, string> = {
+          admin: 'Administrator',
+          client: 'Client User',
           trainer: 'Trainer',
           teacher: 'Teacher',
           student: 'Student',
-          division_role: profile?.division?.name || 'Division User',
-      };
-      setUserName(nameMap[userRole] || 'User');
+          division_role: 'Division User',
+        };
+        setUserName(nameMap[userRole] || 'User');
       }
 
       scheduleProactiveRefresh(accessToken);

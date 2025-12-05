@@ -14,14 +14,14 @@ import type {
 
 // Auth
 export async function login(body: { identifier: string; password: string }) {
-  return apiClient.post<{ accessToken: string; refreshToken: string; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'student'; user: { id: string; email: string | null; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'student'; name?: string | null } }>(
+  return apiClient.post<{ accessToken: string; refreshToken: string; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'student' | 'division_role'; user: { id: string; email: string | null; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'student' | 'division_role'; name?: string | null } }>(
     '/auth/login',
     body,
   );
 }
 
 export async function getProfile() {
-  return apiClient.get<{ id: string; email: string; role: 'admin' | 'client' | 'trainer' | 'teacher'; profile?: { name?: string; cnic?: string; [key: string]: any } }>('/auth/me');
+  return apiClient.get<{ id: string; email: string; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'division_role'; profile?: { name?: string; cnic?: string; division?: { id: string; name: string }; divisionId?: string; [key: string]: any } }>('/auth/me');
 }
 
 export async function refresh(refreshToken: string) {

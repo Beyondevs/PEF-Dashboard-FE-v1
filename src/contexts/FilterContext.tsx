@@ -49,13 +49,27 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   
   const [filters, setFiltersState] = useState<FilterState>(() => {
     const stored = loadFiltersFromStorage();
-    // Ensure dates are always set (either from storage or default to today)
-    return {
+    // For division_role users, ensure division is set from auth context or localStorage if available
+    const initialFilters = {
       ...defaultFilters,
       ...stored,
       startDate: stored.startDate || getTodayISO(),
       endDate: stored.endDate || getTodayISO(),
     };
+    
+    // Check localStorage for divisionId (for division_role users)
+    // This ensures division is set even before auth context fully loads
+    try {
+      const storedDivisionId = localStorage.getItem('pef.divisionId');
+      const storedRole = localStorage.getItem('pef.userRole');
+      if (storedRole === 'division_role' && storedDivisionId && !initialFilters.division) {
+        initialFilters.division = storedDivisionId;
+      }
+    } catch (error) {
+      // Ignore localStorage errors
+    }
+    
+    return initialFilters;
   });
 
   // Auto-apply division filter for division_role users
