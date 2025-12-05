@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useFilters } from '@/contexts/FilterContext';
@@ -36,6 +37,7 @@ export default function Teachers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -65,10 +67,10 @@ export default function Teachers() {
     }
   };
 
-  // Fetch teachers when filters, search, or page changes
+  // Fetch teachers when filters, search, status, or page changes
   useEffect(() => {
     fetchTeachers();
-  }, [filters.division, filters.district, filters.tehsil, filters.school, activeSearchTerm, pagination.page]);
+  }, [filters.division, filters.district, filters.tehsil, filters.school, activeSearchTerm, statusFilter, pagination.page]);
 
   useEffect(() => {
     fetchSchools();
@@ -95,6 +97,13 @@ export default function Teachers() {
       
       // Include disabled teachers for management page
       params.includeDisabled = 'true';
+      
+      // Add status filter
+      if (statusFilter === 'active') {
+        params.isActive = 'true';
+      } else if (statusFilter === 'inactive') {
+        params.isActive = 'false';
+      }
       
       const response = await api.getTeachers(params);
       setTeachers(response.data.data);
@@ -289,6 +298,12 @@ export default function Teachers() {
                   if (filters.tehsil) params.tehsilId = filters.tehsil;
                   if (filters.school) params.schoolId = filters.school;
                   if (activeSearchTerm) params.search = activeSearchTerm;
+                  // Add status filter
+                  if (statusFilter === 'active') {
+                    params.isActive = 'true';
+                  } else if (statusFilter === 'inactive') {
+                    params.isActive = 'false';
+                  }
                   return api.exportTeachers(params);
                 }}
                 filename="teachers.csv"
@@ -377,6 +392,20 @@ export default function Teachers() {
           </Dialog>
         )}
         </div>
+      </div>
+
+      {/* Status Tabs */}
+      <div className="mb-4">
+        <Tabs value={statusFilter} onValueChange={(value) => {
+          setStatusFilter(value as 'all' | 'active' | 'inactive');
+          setPagination(prev => ({ ...prev, page: 1 }));
+        }}>
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="inactive">Inactive</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {isMobile ? (
