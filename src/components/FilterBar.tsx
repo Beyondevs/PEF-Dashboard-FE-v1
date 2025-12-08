@@ -392,7 +392,9 @@ export const FilterBar = () => {
               </SelectItem>
             ) : (
               schools.slice(0, 100).map(school => (
-                <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>
+                <SelectItem key={school.id} value={school.id}>
+                  {school.name} ({school.emisCode})
+                </SelectItem>
               ))
             )}
           </SelectContent>
