@@ -43,6 +43,8 @@ interface SessionData {
   attendanceStatus: {
     hasAttendance: boolean;
     markedCount: number;
+    presentCount: number;
+    absentCount: number;
     totalExpected: number;
     teacherCount: number;
     studentCount: number;
@@ -421,11 +423,24 @@ const AttendanceMarkingReport = () => {
                         <TableCell>{getStatusBadge(session.status)}</TableCell>
                         <TableCell>
                           {session.attendanceStatus.hasAttendance ? (
-                            <div className="flex items-center gap-2 text-green-600">
-                              <CheckCircle2 className="h-4 w-4" />
-                              <span className="text-sm">
-                                {session.attendanceStatus.markedCount}/{session.attendanceStatus.totalExpected}
-                              </span>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                <span className="text-sm font-medium">
+                                  {session.attendanceStatus.presentCount} Present
+                                </span>
+                              </div>
+                              {session.attendanceStatus.absentCount > 0 && (
+                                <div className="flex items-center gap-2 text-red-600">
+                                  <AlertCircle className="h-4 w-4" />
+                                  <span className="text-sm">
+                                    {session.attendanceStatus.absentCount} Absent
+                                  </span>
+                                </div>
+                              )}
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {session.attendanceStatus.markedCount}/{session.attendanceStatus.totalExpected} Marked
+                              </div>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 text-amber-600">
