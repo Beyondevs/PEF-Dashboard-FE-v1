@@ -26,6 +26,7 @@ import {
   getAttendanceList,
   toggleAttendance,
   bulkUpsertAttendance,
+  getSessionAttendance,
   exportAttendance,
   importAttendanceCSV,
   downloadAttendanceTemplate,
@@ -196,37 +197,49 @@ const Attendance = () => {
       const allAttendance = [...apiTeacherAttendance, ...apiStudentAttendance];
       const attendanceMap = new Map(allAttendance.map(att => [att.id, att]));
       
-      // If we have a sessionId filter, use bulk upsert to save all attendance at once
-      // The backend will automatically mark everyone else as Present
+      // If we have a sessionId filter, fetch full session attendance so we send all records (not just current page)
       if (filters.sessionId) {
-        // Build bulk payload with only changed records
-        const attendanceData: {
+        // Load complete session attendance (all pages)
+        const sessionAttendance = await getSessionAttendance(filters.sessionId);
+        const { teachers = [], students = [] } = sessionAttendance.data || {};
+
+        const fullAttendancePayload: {
           teachers?: Array<{ teacherId: string; present: boolean }>;
           students?: Array<{ studentId: string; present: boolean }>;
         } = {};
 
-        // Process teachers - only include records with changes
-        const teachers = allAttendance.filter(att => att.personType === 'Teacher');
-        const changedTeachers = teachers.filter(att => attendanceChanges[att.id] !== undefined);
-        if (changedTeachers.length > 0) {
-          attendanceData.teachers = changedTeachers.map(att => ({
-            teacherId: att.personId,
-            present: attendanceChanges[att.id],
-          }));
+        // Build teacher payload with applied changes
+        const teacherRecords = teachers.map((t: any) => {
+          const att = t.attendance;
+          const attId = att?.id;
+          const originalPresent = isRecordPresent(att);
+          const present =
+            attId && attendanceChanges[attId] !== undefined
+              ? attendanceChanges[attId]
+              : originalPresent;
+          return { teacherId: t.id, present };
+        });
+        if (teacherRecords.length > 0) {
+          fullAttendancePayload.teachers = teacherRecords;
         }
 
-        // Process students - only include records with changes
-        const students = allAttendance.filter(att => att.personType === 'Student');
-        const changedStudents = students.filter(att => attendanceChanges[att.id] !== undefined);
-        if (changedStudents.length > 0) {
-          attendanceData.students = changedStudents.map(att => ({
-            studentId: att.personId,
-            present: attendanceChanges[att.id],
-          }));
+        // Build student payload with applied changes
+        const studentRecords = students.map((s: any) => {
+          const att = s.attendance;
+          const attId = att?.id;
+          const originalPresent = isRecordPresent(att);
+          const present =
+            attId && attendanceChanges[attId] !== undefined
+              ? attendanceChanges[attId]
+              : originalPresent;
+          return { studentId: s.id, present };
+        });
+        if (studentRecords.length > 0) {
+          fullAttendancePayload.students = studentRecords;
         }
 
-        // Use bulk upsert - backend will mark everyone else as Present automatically
-        await bulkUpsertAttendance(filters.sessionId, attendanceData);
+        // Use bulk upsert with full payload so pagination doesn't drop changes
+        await bulkUpsertAttendance(filters.sessionId, fullAttendancePayload);
         
         toast.success(`Successfully saved attendance for ${changes.length} record(s)`);
         setAttendanceChanges({});
