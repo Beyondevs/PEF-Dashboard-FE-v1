@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -55,6 +55,18 @@ const Assessments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
+  // Track previous filter values to detect changes and reset pagination
+  const prevFiltersRef = useRef({
+    sessionId: filters.sessionId,
+    division: filters.division,
+    district: filters.district,
+    tehsil: filters.tehsil,
+    school: filters.school,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    activeSearchTerm: activeSearchTerm,
+  });
+
   const handleSearch = () => {
     setActiveSearchTerm(searchTerm.trim());
     setStudentPage(1);
@@ -96,11 +108,50 @@ const Assessments = () => {
     return params;
   };
 
+  // Helper to check if filters changed and get effective page
+  const getEffectivePage = useCallback((currentPageValue: number) => {
+    const prevFilters = prevFiltersRef.current;
+    const filtersChanged = 
+      prevFilters.sessionId !== filters.sessionId ||
+      prevFilters.division !== filters.division ||
+      prevFilters.district !== filters.district ||
+      prevFilters.tehsil !== filters.tehsil ||
+      prevFilters.school !== filters.school ||
+      prevFilters.startDate !== filters.startDate ||
+      prevFilters.endDate !== filters.endDate ||
+      prevFilters.activeSearchTerm !== activeSearchTerm;
+
+    return { filtersChanged, effectivePage: filtersChanged ? 1 : currentPageValue };
+  }, [filters, activeSearchTerm]);
+
+  // Update ref after fetches complete
+  const updateFiltersRef = useCallback(() => {
+    prevFiltersRef.current = {
+      sessionId: filters.sessionId,
+      division: filters.division,
+      district: filters.district,
+      tehsil: filters.tehsil,
+      school: filters.school,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      activeSearchTerm: activeSearchTerm,
+    };
+  }, [filters, activeSearchTerm]);
+
   const fetchStudentAssessments = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const response = await getAssessments(buildFilters(studentPage, 'student'));
+      // Check if filters changed and get effective page
+      const { filtersChanged, effectivePage } = getEffectivePage(studentPage);
+      
+      if (filtersChanged) {
+        updateFiltersRef();
+        if (studentPage !== 1) setStudentPage(1);
+        if (teacherPage !== 1) setTeacherPage(1);
+      }
+
+      const response = await getAssessments(buildFilters(effectivePage, 'student'));
       const { data, totalItems, totalPages } = response.data;
 
       const computedTotalItems = totalItems ?? data?.length ?? 0;
@@ -117,13 +168,22 @@ const Assessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [studentPage, filters, pageSize, activeSearchTerm]);
+  }, [studentPage, teacherPage, filters, pageSize, activeSearchTerm, getEffectivePage, updateFiltersRef]);
 
   const fetchTeacherAssessments = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const response = await getAssessments(buildFilters(teacherPage, 'teacher'));
+      // Check if filters changed and get effective page
+      const { filtersChanged, effectivePage } = getEffectivePage(teacherPage);
+      
+      if (filtersChanged) {
+        updateFiltersRef();
+        if (studentPage !== 1) setStudentPage(1);
+        if (teacherPage !== 1) setTeacherPage(1);
+      }
+
+      const response = await getAssessments(buildFilters(effectivePage, 'teacher'));
       const { data, totalItems, totalPages } = response.data;
 
       const computedTotalItems = totalItems ?? data?.length ?? 0;
@@ -140,21 +200,7 @@ const Assessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [teacherPage, filters, pageSize, activeSearchTerm]);
-
-  useEffect(() => {
-    setStudentPage(1);
-    setTeacherPage(1);
-  }, [
-    filters.sessionId,
-    filters.division,
-    filters.district,
-    filters.tehsil,
-    filters.school,
-    filters.startDate,
-    filters.endDate,
-    activeSearchTerm,
-  ]);
+  }, [teacherPage, studentPage, filters, pageSize, activeSearchTerm, getEffectivePage, updateFiltersRef]);
 
   useEffect(() => {
     if (activeTab === 'students') {

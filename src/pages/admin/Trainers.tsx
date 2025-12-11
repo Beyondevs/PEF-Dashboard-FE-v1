@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,15 @@ export default function Trainers() {
   const { toast } = useToast();
   const { filters } = useFilters();
 
+  // Track previous filter values to detect changes and reset pagination
+  const prevFiltersRef = useRef({
+    division: filters.division,
+    district: filters.district,
+    tehsil: filters.tehsil,
+    school: filters.school,
+    activeSearchTerm: activeSearchTerm,
+  });
+
   // Fetch schools on component mount (with pagination to get all)
   useEffect(() => {
     const fetchSchools = async () => {
@@ -93,8 +102,36 @@ export default function Trainers() {
   const fetchTrainers = useCallback(async (page = pagination.page) => {
     try {
       setLoading(true);
+
+      // Check if filters have changed - if so, reset to page 1
+      const prevFilters = prevFiltersRef.current;
+      const filtersChanged = 
+        prevFilters.division !== filters.division ||
+        prevFilters.district !== filters.district ||
+        prevFilters.tehsil !== filters.tehsil ||
+        prevFilters.school !== filters.school ||
+        prevFilters.activeSearchTerm !== activeSearchTerm;
+
+      // Determine effective page: use page 1 if filters changed
+      const effectivePage = filtersChanged ? 1 : page;
+
+      // Update the ref to track current filter values
+      if (filtersChanged) {
+        prevFiltersRef.current = {
+          division: filters.division,
+          district: filters.district,
+          tehsil: filters.tehsil,
+          school: filters.school,
+          activeSearchTerm: activeSearchTerm,
+        };
+        // Also update state to keep UI in sync
+        if (pagination.page !== 1) {
+          setPagination(prev => ({ ...prev, page: 1 }));
+        }
+      }
+
       const params: Record<string, string | number> = { 
-        page, 
+        page: effectivePage, 
         pageSize: pagination.pageSize
       };
       
@@ -135,22 +172,19 @@ export default function Trainers() {
     }
   }, [
     activeSearchTerm,
+    pagination.page,
     pagination.pageSize,
     filters.division,
     filters.district,
     filters.tehsil,
     filters.school,
+    toast,
   ]);
 
   // Fetch trainers when component mounts, search changes, filters, or page changes
   useEffect(() => {
     fetchTrainers(pagination.page);
   }, [fetchTrainers, pagination.page]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setPagination(prev => ({ ...prev, page: 1 }));
-  }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
   const handleSave = async () => {
     try {

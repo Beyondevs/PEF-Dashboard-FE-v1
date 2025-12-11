@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -68,6 +68,17 @@ const Sessions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
+  // Track previous filter values to detect changes and reset pagination
+  const prevFiltersRef = useRef({
+    sessionId: filters.sessionId,
+    division: filters.division,
+    district: filters.district,
+    tehsil: filters.tehsil,
+    school: filters.school,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+  });
+
   // Form state
   const [formData, setFormData] = useState({
     title: '',
@@ -86,8 +97,39 @@ const Sessions = () => {
       setIsLoading(true);
       setApiError(false);
 
+      // Check if filters have changed - if so, reset to page 1
+      const prevFilters = prevFiltersRef.current;
+      const filtersChanged = 
+        prevFilters.sessionId !== filters.sessionId ||
+        prevFilters.division !== filters.division ||
+        prevFilters.district !== filters.district ||
+        prevFilters.tehsil !== filters.tehsil ||
+        prevFilters.school !== filters.school ||
+        prevFilters.startDate !== filters.startDate ||
+        prevFilters.endDate !== filters.endDate;
+
+      // Determine effective page: use page 1 if filters changed
+      const effectivePage = filtersChanged ? 1 : currentPage;
+
+      // Update the ref to track current filter values
+      if (filtersChanged) {
+        prevFiltersRef.current = {
+          sessionId: filters.sessionId,
+          division: filters.division,
+          district: filters.district,
+          tehsil: filters.tehsil,
+          school: filters.school,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+        };
+        // Also update state to keep UI in sync
+        if (currentPage !== 1) {
+          setCurrentPage(1);
+        }
+      }
+
       const params: Record<string, string | number> = {
-        page: currentPage,
+        page: effectivePage,
         pageSize,
       };
 
@@ -107,10 +149,6 @@ const Sessions = () => {
       const computedTotalPages = Math.max(1, Math.ceil(total / pageSize));
       setTotalItems(total);
       setTotalPages(computedTotalPages);
-      // If the current page is now out of range after applying filters, snap back to page 1
-      if (currentPage > computedTotalPages) {
-        setCurrentPage(1);
-      }
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
       setApiError(true);
@@ -120,26 +158,17 @@ const Sessions = () => {
     }
   }, [currentPage, activeSearchTerm, filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
 
-  // Reset to page 1 when filters change (except search which is handled separately)
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
-
-  // Ensure currentPage doesn't exceed totalPages when totalPages changes
-  useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
-
   // Fetch sessions from API
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
 
   const handleSearch = () => {
-    setActiveSearchTerm(searchTerm.trim());
-    setCurrentPage(1);
+    const newSearchTerm = searchTerm.trim();
+    if (newSearchTerm !== activeSearchTerm) {
+      setActiveSearchTerm(newSearchTerm);
+      setCurrentPage(1);
+    }
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {

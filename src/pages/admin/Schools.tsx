@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,15 @@ export default function Schools() {
   const { canEdit, canDelete, isAdmin, role } = useAuth();
   const { toast } = useToast();
 
+  // Track previous filter values to detect changes and reset pagination
+  const prevFiltersRef = useRef({
+    division: filters.division,
+    district: filters.district,
+    tehsil: filters.tehsil,
+    school: filters.school,
+    activeSearchTerm: activeSearchTerm,
+  });
+
   const handleSearch = () => {
     setActiveSearchTerm(searchTerm.trim());
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
@@ -64,11 +73,39 @@ export default function Schools() {
     }
   };
 
-  const fetchSchools = async (page = pagination.page) => {
+  const fetchSchools = useCallback(async (page = pagination.page) => {
     try {
       setLoading(true);
+
+      // Check if filters have changed - if so, reset to page 1
+      const prevFilters = prevFiltersRef.current;
+      const filtersChanged = 
+        prevFilters.division !== filters.division ||
+        prevFilters.district !== filters.district ||
+        prevFilters.tehsil !== filters.tehsil ||
+        prevFilters.school !== filters.school ||
+        prevFilters.activeSearchTerm !== activeSearchTerm;
+
+      // Determine effective page: use page 1 if filters changed
+      const effectivePage = filtersChanged ? 1 : page;
+
+      // Update the ref to track current filter values
+      if (filtersChanged) {
+        prevFiltersRef.current = {
+          division: filters.division,
+          district: filters.district,
+          tehsil: filters.tehsil,
+          school: filters.school,
+          activeSearchTerm: activeSearchTerm,
+        };
+        // Also update state to keep UI in sync
+        if (pagination.page !== 1) {
+          setPagination(prev => ({ ...prev, page: 1 }));
+        }
+      }
+
       const params: Record<string, string | number> = { 
-        page, 
+        page: effectivePage, 
         pageSize: pagination.pageSize
       };
       
@@ -108,7 +145,7 @@ export default function Schools() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.pageSize, activeSearchTerm, filters.division, filters.district, filters.tehsil, filters.school, toast]);
 
   useEffect(() => {
     fetchGeography();
@@ -117,19 +154,7 @@ export default function Schools() {
   // Fetch schools when search, filters, or page changes
   useEffect(() => {
     fetchSchools();
-  }, [
-    activeSearchTerm,
-    pagination.page,
-    filters.division,
-    filters.district,
-    filters.tehsil,
-    filters.school,
-  ]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setPagination(prev => ({ ...prev, page: 1 }));
-  }, [filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [fetchSchools]);
 
   const fetchGeography = async () => {
     try {

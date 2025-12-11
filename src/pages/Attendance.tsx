@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -59,6 +59,18 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
+  // Track previous filter values to detect changes and reset pagination
+  const prevFiltersRef = useRef({
+    sessionId: filters.sessionId,
+    division: filters.division,
+    district: filters.district,
+    tehsil: filters.tehsil,
+    school: filters.school,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    activeSearchTerm: activeSearchTerm,
+  });
+
   const SYSTEM_NOT_MARKED = 'system:not-marked';
 
   const isRecordPresent = (record?: { present?: boolean; markedBy?: string }) => {
@@ -87,14 +99,47 @@ const Attendance = () => {
       setIsLoading(true);
       setApiError(false);
 
+      // Check if filters have changed - if so, reset to page 1
+      const prevFilters = prevFiltersRef.current;
+      const filtersChanged = 
+        prevFilters.sessionId !== filters.sessionId ||
+        prevFilters.division !== filters.division ||
+        prevFilters.district !== filters.district ||
+        prevFilters.tehsil !== filters.tehsil ||
+        prevFilters.school !== filters.school ||
+        prevFilters.startDate !== filters.startDate ||
+        prevFilters.endDate !== filters.endDate ||
+        prevFilters.activeSearchTerm !== activeSearchTerm;
+
+      // Determine effective pages: use page 1 if filters changed
+      const effectiveTeacherPage = filtersChanged ? 1 : teacherPage;
+      const effectiveStudentPage = filtersChanged ? 1 : studentPage;
+
+      // Update the ref to track current filter values
+      if (filtersChanged) {
+        prevFiltersRef.current = {
+          sessionId: filters.sessionId,
+          division: filters.division,
+          district: filters.district,
+          tehsil: filters.tehsil,
+          school: filters.school,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          activeSearchTerm: activeSearchTerm,
+        };
+        // Also update state to keep UI in sync
+        if (teacherPage !== 1) setTeacherPage(1);
+        if (studentPage !== 1) setStudentPage(1);
+      }
+
       const teacherFilters: any = {
-        page: teacherPage,
+        page: effectiveTeacherPage,
         pageSize,
         personType: 'teacher',
       };
 
       const studentFilters: any = {
-        page: studentPage,
+        page: effectiveStudentPage,
         pageSize,
         personType: 'student',
       };
@@ -330,12 +375,6 @@ const Attendance = () => {
   
   const studentStart = studentTotalItems > 0 ? (studentPage - 1) * pageSize + 1 : 0;
   const studentEnd = Math.min(studentPage * pageSize, studentTotalItems);
-  
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setTeacherPage(1);
-    setStudentPage(1);
-  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate, activeSearchTerm]);
 
   if (isLoading) {
     return (
