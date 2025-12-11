@@ -1,9 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Download, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Calendar } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Table,
@@ -63,15 +61,11 @@ interface AttendanceMarkingData {
 }
 
 const AttendanceMarkingReport = () => {
-  const { filters, setFilters } = useFilters();
+  const { filters } = useFilters();
   const navigate = useNavigate();
   const [reportData, setReportData] = useState<AttendanceMarkingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'marked' | 'unmarked'>('unmarked');
-  
-  // Local date filter state (separate from global filters for this page)
-  const [dateFrom, setDateFrom] = useState(filters.startDate || '');
-  const [dateTo, setDateTo] = useState(filters.endDate || '');
 
   const handleExport = async () => {
     try {
@@ -83,15 +77,19 @@ const AttendanceMarkingReport = () => {
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
       
-      // Apply date filters
-      if (dateFrom) params.from = dateFrom;
-      if (dateTo) params.to = dateTo;
+      // Apply date filters from FilterBar
+      if (filters.startDate) params.from = filters.startDate;
+      if (filters.endDate) params.to = filters.endDate;
 
       const blob = await exportAttendanceMarkingCSV(params);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const dateRange = dateFrom && dateTo ? `-${dateFrom}-to-${dateTo}` : dateFrom ? `-from-${dateFrom}` : '';
+      const dateRange = filters.startDate && filters.endDate 
+        ? `-${filters.startDate}-to-${filters.endDate}` 
+        : filters.startDate 
+          ? `-from-${filters.startDate}` 
+          : '';
       link.download = `attendance-marking-status${dateRange}.csv`;
       document.body.appendChild(link);
       link.click();
@@ -104,7 +102,7 @@ const AttendanceMarkingReport = () => {
     }
   };
 
-  const fetchReportData = useCallback(async (applyDateFilters = false, customDateFrom?: string, customDateTo?: string) => {
+  const fetchReportData = useCallback(async () => {
     try {
       setIsLoading(true);
       const params: Record<string, string> = {};
@@ -115,13 +113,9 @@ const AttendanceMarkingReport = () => {
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
       
-      // Apply date filters only when explicitly requested (via Apply button)
-      if (applyDateFilters) {
-        const fromDate = customDateFrom !== undefined ? customDateFrom : dateFrom;
-        const toDate = customDateTo !== undefined ? customDateTo : dateTo;
-        if (fromDate) params.from = fromDate;
-        if (toDate) params.to = toDate;
-      }
+      // Apply date filters from FilterBar
+      if (filters.startDate) params.from = filters.startDate;
+      if (filters.endDate) params.to = filters.endDate;
 
       const response = await getAttendanceMarkingStatus(params);
       setReportData(response.data);
@@ -131,12 +125,12 @@ const AttendanceMarkingReport = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filters.division, filters.district, filters.tehsil, filters.school, dateFrom, dateTo]);
+  }, [filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
 
-  // Initial load without date filters
+  // Fetch data when filters change
   useEffect(() => {
-    fetchReportData(false);
-  }, [filters.division, filters.district, filters.tehsil, filters.school]);
+    fetchReportData();
+  }, [fetchReportData]);
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -179,30 +173,6 @@ const AttendanceMarkingReport = () => {
     );
   }
 
-  const handleDateFilterChange = async () => {
-    // Update global filters with date range
-    setFilters(prev => ({
-      ...prev,
-      startDate: dateFrom || prev.startDate,
-      endDate: dateTo || prev.endDate,
-    }));
-    // Trigger refetch with date filters applied
-    await fetchReportData(true);
-  };
-
-  const handleResetDateFilter = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    setDateFrom('');
-    setDateTo('');
-    setFilters(prev => ({
-      ...prev,
-      startDate: today,
-      endDate: today,
-    }));
-    // Trigger refetch without date filters (pass empty strings to clear)
-    await fetchReportData(false, '', '');
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -223,62 +193,6 @@ const AttendanceMarkingReport = () => {
           Export
         </Button>
       </div>
-
-      {/* Date Filter */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Date Filter
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="date-from">From Date</Label>
-              <Input
-                id="date-from"
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="date-to">To Date</Label>
-              <Input
-                id="date-to"
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleDateFilterChange} className="flex-1 sm:flex-initial">
-                Apply Filter
-              </Button>
-              {(dateFrom || dateTo) && (
-                <Button onClick={handleResetDateFilter} variant="outline">
-                  Reset
-                </Button>
-              )}
-            </div>
-          </div>
-          {(dateFrom || dateTo) && (
-            <div className="mt-3 text-sm text-muted-foreground">
-              Showing sessions from{' '}
-              <span className="font-medium">
-                {dateFrom ? new Date(dateFrom).toLocaleDateString() : 'beginning'}
-              </span>{' '}
-              to{' '}
-              <span className="font-medium">
-                {dateTo ? new Date(dateTo).toLocaleDateString() : 'end'}
-              </span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">

@@ -79,9 +79,8 @@ const Assessments = () => {
     if (filters.district) apiFilters.districtId = filters.district;
     if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
     if (filters.school) apiFilters.schoolId = filters.school;
-    // TODO: Date range filter - Temporarily disabled for future work
-    // if (filters.startDate) apiFilters.from = filters.startDate;
-    // if (filters.endDate) apiFilters.to = filters.endDate;
+    if (filters.startDate) apiFilters.from = filters.startDate;
+    if (filters.endDate) apiFilters.to = filters.endDate;
     if (activeSearchTerm) apiFilters.search = activeSearchTerm;
 
     return apiFilters;
@@ -91,9 +90,8 @@ const Assessments = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
     params.subjectType = activeTab === 'students' ? 'student' : 'teacher';
-    // TODO: Date range filter - Temporarily disabled for future work
-    // if (filters.startDate) params.startDate = filters.startDate;
-    // if (filters.endDate) params.endDate = filters.endDate;
+    if (filters.startDate) params.from = filters.startDate;
+    if (filters.endDate) params.to = filters.endDate;
     if (activeSearchTerm) params.search = activeSearchTerm;
     return params;
   };
@@ -153,6 +151,8 @@ const Assessments = () => {
     filters.district,
     filters.tehsil,
     filters.school,
+    filters.startDate,
+    filters.endDate,
     activeSearchTerm,
   ]);
 

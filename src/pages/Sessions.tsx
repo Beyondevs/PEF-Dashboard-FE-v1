@@ -96,9 +96,8 @@ const Sessions = () => {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
-      // TODO: Date range filter - Temporarily disabled for future work
-      // if (filters.startDate) params.from = filters.startDate;
-      // if (filters.endDate) params.to = filters.endDate;
+      if (filters.startDate) params.from = filters.startDate;
+      if (filters.endDate) params.to = filters.endDate;
       if (activeSearchTerm) params.search = activeSearchTerm;
 
       const response = await getSessions(params);
@@ -114,7 +113,19 @@ const Sessions = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, activeSearchTerm, filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [currentPage, activeSearchTerm, filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
+
+  // Reset to page 1 when filters change (except search which is handled separately)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
+
+  // Ensure currentPage doesn't exceed totalPages when totalPages changes
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   // Fetch sessions from API
   useEffect(() => {
@@ -156,8 +167,9 @@ const Sessions = () => {
 
   // Use API pagination directly
   const paginatedSessions = apiSessions;
-  const startIndex = totalItems > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
-  const endIndex = Math.min(currentPage * pageSize, totalItems);
+  // Calculate pagination indices - ensure they're always valid
+  const startIndex = totalItems > 0 && currentPage > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
+  const endIndex = totalItems > 0 && currentPage > 0 ? Math.min(currentPage * pageSize, totalItems) : 0;
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
@@ -393,6 +405,8 @@ const Sessions = () => {
                   if (filters.district) params.districtId = filters.district;
                   if (filters.tehsil) params.tehsilId = filters.tehsil;
                   if (filters.school) params.schoolId = filters.school;
+                  if (filters.startDate) params.from = filters.startDate;
+                  if (filters.endDate) params.to = filters.endDate;
                   if (activeSearchTerm) params.search = activeSearchTerm;
                   return exportSessionsCSV(params);
                 }}

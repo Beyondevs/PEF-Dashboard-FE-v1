@@ -121,15 +121,14 @@ const Attendance = () => {
         studentFilters.schoolId = filters.school;
       }
 
-      // TODO: Date range filter - Temporarily disabled for future work
-      // if (filters.startDate) {
-      //   teacherFilters.from = filters.startDate;
-      //   studentFilters.from = filters.startDate;
-      // }
-      // if (filters.endDate) {
-      //   teacherFilters.to = filters.endDate;
-      //   studentFilters.to = filters.endDate;
-      // }
+      if (filters.startDate) {
+        teacherFilters.from = filters.startDate;
+        studentFilters.from = filters.startDate;
+      }
+      if (filters.endDate) {
+        teacherFilters.to = filters.endDate;
+        studentFilters.to = filters.endDate;
+      }
 
       if (activeSearchTerm) {
         teacherFilters.search = activeSearchTerm;
@@ -178,6 +177,8 @@ const Attendance = () => {
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
     if (filters.school) params.schoolId = filters.school;
+    if (filters.startDate) params.from = filters.startDate;
+    if (filters.endDate) params.to = filters.endDate;
     params.personType = activeTab === 'teachers' ? 'teacher' : 'student';
     if (activeSearchTerm) params.search = activeSearchTerm;
     return params;
@@ -334,7 +335,7 @@ const Attendance = () => {
   useEffect(() => {
     setTeacherPage(1);
     setStudentPage(1);
-  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, activeSearchTerm]);
+  }, [filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate, activeSearchTerm]);
 
   if (isLoading) {
     return (

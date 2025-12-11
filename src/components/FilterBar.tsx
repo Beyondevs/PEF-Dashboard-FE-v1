@@ -6,9 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-// TODO: Date range filter - Temporarily disabled imports for future work
-// import { DatePicker } from '@/components/ui/date-picker';
-// import { format } from 'date-fns';
+import { DatePicker } from '@/components/ui/date-picker';
+import { format } from 'date-fns';
 import { RotateCcw } from 'lucide-react';
 import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,17 +22,17 @@ export const FilterBar = () => {
   const isClient = role === 'client';
   const isDivisionRole = role === 'division_role';
 
-  // TODO: Date range filter - Helper functions temporarily disabled for future work
-  // const parseISODate = (value?: string) => {
-  //   if (!value) return undefined;
-  //   const [year, month, day] = value.split('-').map(Number);
-  //   if (!year || !month || !day) return undefined;
-  //   return new Date(year, month - 1, day);
-  // };
+  // Helper functions for date parsing
+  const parseISODate = (value?: string) => {
+    if (!value) return undefined;
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) return undefined;
+    return new Date(year, month - 1, day);
+  };
 
-  // const getTodayISO = () => format(new Date(), 'yyyy-MM-dd');
+  const getTodayISO = () => format(new Date(), 'yyyy-MM-dd');
 
-  // const formatDateToISO = (date: Date | undefined) => (date ? format(date, 'yyyy-MM-dd') : getTodayISO());
+  const formatDateToISO = (date: Date | undefined) => (date ? format(date, 'yyyy-MM-dd') : getTodayISO());
   
   // State for geography data
   const [divisions, setDivisions] = useState<Division[]>([]);
@@ -443,7 +442,6 @@ export const FilterBar = () => {
           </SelectContent>
         </Select>
 
-        {/* TODO: Date range filter - Temporarily disabled for future work
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs md:text-sm text-muted-foreground">From:</span>
           <DatePicker
@@ -467,7 +465,6 @@ export const FilterBar = () => {
             placeholder="End date"
           />
         </div>
-        */}
 
         <Button
           variant="ghost"
