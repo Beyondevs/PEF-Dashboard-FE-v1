@@ -11,11 +11,7 @@ interface FilterContextType {
 
 const FILTER_STORAGE_KEY = 'pef_dashboard_filters';
 
-const getTodayISO = () => new Date().toISOString().split('T')[0];
-
 const defaultFilters: FilterState = {
-  startDate: getTodayISO(),
-  endDate: getTodayISO(),
 };
 
 // Load filters from localStorage
@@ -50,12 +46,10 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [filters, setFiltersState] = useState<FilterState>(() => {
     const stored = loadFiltersFromStorage();
     // For division_role users, ensure division is set from auth context or localStorage if available
-    const initialFilters = {
-      ...defaultFilters,
-      ...stored,
-      startDate: stored.startDate || getTodayISO(),
-      endDate: stored.endDate || getTodayISO(),
-    };
+      const initialFilters = {
+        ...defaultFilters,
+        ...stored,
+      };
     
     // Check localStorage for divisionId (for division_role users)
     // This ensures division is set even before auth context fully loads
@@ -113,8 +107,6 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const resetFilters = () => {
     const resetToDefaults: FilterState = {
-      startDate: getTodayISO(),
-      endDate: getTodayISO(),
       // For division_role users, keep division locked even on reset
       ...(isDivisionRole && divisionId ? { division: divisionId } : {}),
     };

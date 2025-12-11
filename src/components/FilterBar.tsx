@@ -32,7 +32,7 @@ export const FilterBar = () => {
 
   const getTodayISO = () => format(new Date(), 'yyyy-MM-dd');
 
-  const formatDateToISO = (date: Date | undefined) => (date ? format(date, 'yyyy-MM-dd') : getTodayISO());
+  const formatDateToISO = (date: Date | undefined) => (date ? format(date, 'yyyy-MM-dd') : undefined);
   
   // State for geography data
   const [divisions, setDivisions] = useState<Division[]>([]);
@@ -445,7 +445,7 @@ export const FilterBar = () => {
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs md:text-sm text-muted-foreground">From:</span>
           <DatePicker
-            date={parseISODate(filters.startDate) ?? new Date()}
+            date={parseISODate(filters.startDate)}
             onDateChange={(date) => {
               const dateStr = formatDateToISO(date);
               setFilters(prev => ({ ...prev, startDate: dateStr }));
@@ -457,7 +457,7 @@ export const FilterBar = () => {
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs md:text-sm text-muted-foreground">To:</span>
           <DatePicker
-            date={parseISODate(filters.endDate) ?? new Date()}
+            date={parseISODate(filters.endDate)}
             onDateChange={(date) => {
               const dateStr = formatDateToISO(date);
               setFilters(prev => ({ ...prev, endDate: dateStr }));
