@@ -104,8 +104,13 @@ const Sessions = () => {
 
       setApiSessions(response.data.data || []);
       const total = (response.data as any).totalItems || (response.data as any).total || 0;
+      const computedTotalPages = Math.max(1, Math.ceil(total / pageSize));
       setTotalItems(total);
-      setTotalPages(Math.ceil(total / pageSize));
+      setTotalPages(computedTotalPages);
+      // If the current page is now out of range after applying filters, snap back to page 1
+      if (currentPage > computedTotalPages) {
+        setCurrentPage(1);
+      }
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
       setApiError(true);
