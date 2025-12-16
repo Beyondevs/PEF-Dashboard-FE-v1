@@ -300,140 +300,33 @@ export default function Teachers() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 justify-end">
-          {isAdmin() && (
-            <>
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  const blob = await api.downloadTeachersTemplate();
-                  const url = window.URL.createObjectURL(blob);
-                  const link = document.createElement('a');
-                  link.href = url;
-                  link.download = 'teachers-template.csv';
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                  window.URL.revokeObjectURL(url);
-                }}
-              >
-                <FileText className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Template</span>
-                <span className="sm:hidden">Template</span>
-              </Button>
-              {role === 'admin' && (
-                <ImportButton
-                  label="Import"
-                  importFn={async (file) => {
-                    const response = await api.importTeachersCSV(file);
-                    return response.data as any;
-                  }}
-                  onSuccess={fetchTeachers}
-                />
-              )}
-              <ExportButton
-                label="Export"
-                exportFn={async () => {
-                  const params: Record<string, string | number> = {};
-                  if (filters.division) params.divisionId = filters.division;
-                  if (filters.district) params.districtId = filters.district;
-                  if (filters.tehsil) params.tehsilId = filters.tehsil;
-                  if (filters.school) params.schoolId = filters.school;
-                  if (activeSearchTerm) params.search = activeSearchTerm;
-                  // Add status filter
-                  if (statusFilter === 'active') {
-                    params.isActive = 'true';
-                  } else if (statusFilter === 'inactive') {
-                    params.isActive = 'false';
-                  }
-                  return api.exportTeachers(params);
-                }}
-                filename="teachers.csv"
-              />
-            </>
-          )}
+       <div className="flex flex-wrap gap-2 justify-end">
+  {/* ✅ Add Export Button Here */}
+  <ExportButton
+    label="Export"
+    exportFn={async () => {
+      const params: Record<string, string | number> = {};
+      if (filters.division) params.divisionId = filters.division;
+      if (filters.district) params.districtId = filters.district;
+      if (filters.tehsil) params.tehsilId = filters.tehsil;
+      if (filters.school) params.schoolId = filters.school;
+      if (activeSearchTerm) params.search = activeSearchTerm;
+      if (statusFilter === 'active') {
+        params.isActive = 'true';
+      } else if (statusFilter === 'inactive') {
+        params.isActive = 'false';
+      }
+      return api.exportTeachers(params);
+    }}
+    filename="teachers.csv"
+  />
 
-        {canEdit() && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateDialog} className="flex-1 sm:flex-initial">
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Add Teacher</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Name</Label>
-                  <Input 
-                    placeholder="Enter name" 
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input 
-                    type="email" 
-                    placeholder="Enter email" 
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Phone</Label>
-                  <Input 
-                    placeholder="Enter phone" 
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>CNIC</Label>
-                  <Input 
-                    placeholder="Enter CNIC" 
-                    value={formData.cnic}
-                    onChange={(e) => setFormData({ ...formData, cnic: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>School</Label>
-                  <select 
-                    className="w-full border rounded-md p-2"
-                    value={formData.schoolId}
-                    onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
-                  >
-                    <option value="">Select school</option>
-                    {schools.map((school: any) => (
-                      <option key={school.id} value={school.id}>
-                        {school.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {!editingTeacher && (
-                  <div>
-                    <Label>Password</Label>
-                    <Input 
-                      type="password" 
-                      placeholder="Enter password" 
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    />
-                  </div>
-                )}
-                  <Button onClick={handleSave} className="w-full">
-                    Save
-                  </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
-        </div>
+  {canEdit() && (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      ...
+    </Dialog>
+  )}
+</div>
       </div>
 
       {/* Status Tabs */}

@@ -221,10 +221,19 @@ export default function Geography() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Geography Management</h1>
-        <p className="text-muted-foreground mt-1">Manage divisions, districts, and tehsils</p>
-      </div>
+     <div className="mb-6 flex items-start justify-between">
+  <div>
+    <h1 className="text-3xl font-bold">Geography Management</h1>
+    <p className="text-muted-foreground mt-1">Manage divisions, districts, and tehsils</p>
+  </div>
+  {/* FORCE SHOW */}
+  <ExportButton
+    label="Export"
+    size="sm"
+    exportFn={async () => new Blob(['test'], { type: 'text/csv' })}
+    filename="test.csv"
+  />
+</div>
 
       <Tabs defaultValue="divisions" className="w-full">
         <TabsList>

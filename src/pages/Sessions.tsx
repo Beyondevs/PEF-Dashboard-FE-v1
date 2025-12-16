@@ -379,41 +379,16 @@ const Sessions = () => {
     setIsEditOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Training Sessions</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Manage and monitor all training sessions</p>
-          </div>
-        </div>
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="space-y-3">
-                  <div className="h-4 bg-muted rounded w-1/4"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                  <div className="h-3 bg-muted rounded w-1/3"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Training Sessions</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Manage and monitor all training sessions</p>
-          
         </div>
+
         <div className="flex flex-wrap gap-2 justify-end">
+          {/* Admin-only tools */}
           {isAdmin() && (
             <>
               <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1 sm:flex-initial">
@@ -431,23 +406,62 @@ const Sessions = () => {
                   onSuccess={fetchSessions}
                 />
               )}
-              <ExportButton
-                label="Export"
-                exportFn={async () => {
-                  const params: Record<string, string | number> = {};
-                  if (filters.division) params.divisionId = filters.division;
-                  if (filters.district) params.districtId = filters.district;
-                  if (filters.tehsil) params.tehsilId = filters.tehsil;
-                  if (filters.school) params.schoolId = filters.school;
-                  if (filters.startDate) params.from = filters.startDate;
-                  if (filters.endDate) params.to = filters.endDate;
-                  if (activeSearchTerm) params.search = activeSearchTerm;
-                  return exportSessionsCSV(params);
-                }}
-                filename="sessions.csv"
-              />
             </>
           )}
+
+          {/* Export visible to everyone */}
+         <ExportButton
+  label="Export"
+  exportFn={async () => {
+    /* 1.  Get full list with the same filters you used for the table
+           (but WITHOUT sessionId)                                     */
+    const listParams: Record<string, string | number> = {};
+    if (filters.division) listParams.divisionId = filters.division;
+    if (filters.district) listParams.districtId = filters.district;
+    if (filters.tehsil) listParams.tehsilId = filters.tehsil;
+    if (filters.school) listParams.schoolId = filters.school;
+    if (filters.startDate) listParams.from = filters.startDate;
+    if (filters.endDate) listParams.to = filters.endDate;
+    if (activeSearchTerm) listParams.search = activeSearchTerm;
+    listParams.pageSize = 1000; // enough to get everything
+
+    const listRes = await getSessions(listParams);
+    let rows = listRes.data.data || [];
+
+    /* 2.  If a single session is selected, keep only that row   */
+    if (filters.sessionId) {
+      rows = rows.filter((s: any) => s.id === filters.sessionId);
+    }
+
+    /* 3.  Build CSV manually and return as Blob                */
+    if (rows.length === 0) {
+      return new Blob([''], { type: 'text/csv' });
+    }
+    const headers = ['Title', 'Course', 'Date', 'StartTime', 'EndTime', 'School', 'Status'];
+    const csv = [
+      headers.join(','),
+      ...rows.map((r: any) =>
+        [
+          `"${r.title}"`,
+          `"${r.courseName}"`,
+          `"${r.date}"`,
+          `"${r.startTime}"`,
+          `"${r.endTime}"`,
+          `"${r.school?.name || ''}"`,
+          `"${r.status}"`,
+        ].join(',')
+      ),
+    ].join('\n');
+
+    return new Blob([csv], { type: 'text/csv' });
+  }}
+  filename={
+    filters.sessionId
+      ? `session-${filters.sessionId}.csv`
+      : 'sessions.csv'
+  }
+/>
+
           {canManageSessions() && (
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
@@ -607,160 +621,9 @@ const Sessions = () => {
               </DialogContent>
             </Dialog>
           )}
-          {canManageSessions() && (
-            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Edit Session</DialogTitle>
-                  <DialogDescription>
-                    Update session details
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-title">Session Title</Label>
-                    <Input 
-                      id="edit-title" 
-                      placeholder="Enter session title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-date">Date</Label>
-                      <Input 
-                        id="edit-date" 
-                        type="date" 
-                        value={formData.date}
-                        onChange={(e) => setFormData({...formData, date: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-time">Start Time</Label>
-                      <Input 
-                        id="edit-time" 
-                        type="time" 
-                        value={formData.startTime}
-                        onChange={(e) => setFormData({...formData, startTime: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-endTime">End Time</Label>
-                    <Input 
-                      id="edit-endTime" 
-                      type="time" 
-                      value={formData.endTime}
-                      onChange={(e) => setFormData({...formData, endTime: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-school">School</Label>
-                    <Popover open={schoolSearchOpen} onOpenChange={setSchoolSearchOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={schoolSearchOpen}
-                          className="w-full justify-between"
-                        >
-                          {formData.schoolId 
-                            ? getSchoolName(formData.schoolId)
-                            : "Select school..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search schools by name or EMIS code..." />
-                          <CommandList>
-                            <CommandEmpty>No school found.</CommandEmpty>
-                            <CommandGroup>
-                              {apiSchools.map((school) => (
-                                <CommandItem
-                                  key={school.id}
-                                  value={`${school.name} ${school.emisCode || ''}`}
-                                  onSelect={() => {
-                                    setFormData({...formData, schoolId: school.id});
-                                    setSchoolSearchOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      formData.schoolId === school.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <div className="flex flex-col">
-                                    <span>{school.name}</span>
-                                    {school.emisCode && (
-                                      <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
-                                    )}
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-trainer">Trainer</Label>
-                    <Popover open={trainerSearchOpen} onOpenChange={setTrainerSearchOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={trainerSearchOpen}
-                          className="w-full justify-between"
-                        >
-                          {formData.trainerId 
-                            ? getTrainerName(formData.trainerId)
-                            : "Select trainer..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search trainers..." />
-                          <CommandList>
-                            <CommandEmpty>No trainer found.</CommandEmpty>
-                            <CommandGroup>
-                              {apiTrainers.map((trainer) => (
-                                <CommandItem
-                                  key={trainer.id}
-                                  value={trainer.trainerProfile?.name || trainer.email}
-                                  onSelect={() => {
-                                    setFormData({...formData, trainerId: trainer.id});
-                                    setTrainerSearchOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      formData.trainerId === trainer.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {trainer.trainerProfile?.name || trainer.email}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <Button className="w-full" onClick={handleEditSession}>
-                    Update Session
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
         </div>
       </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <div className="relative flex-1 sm:max-w-sm flex gap-2">
           <div className="relative flex-1">

@@ -402,97 +402,116 @@ const Attendance = () => {
     );
   }
 
-  return (
+return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Existing Header Block (Attendance Title and Search/Action Buttons) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Attendance</h1>
           <p className="text-sm sm:text-base text-muted-foreground">View and manage attendance records</p>
-          
         </div>
-        <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
-          <div className="relative w-full sm:w-64 flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                onKeyPress={handleSearchKeyPress}
-                placeholder="Search by name, CNIC, or roll number..."
-                className="pl-10"
-              />
-            </div>
-            <Button onClick={handleSearch} size="default" className="shrink-0">
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-          {showDataTransferButtons && (
-            <>
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  try {
-                    const blob = await downloadAttendanceTemplate();
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'attendance-template.csv';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                  } catch (error) {
-                    console.error('Failed to download attendance template:', error);
-                    toast.error('Failed to download template');
-                  }
-                }}
-                className="flex-1 sm:flex-initial"
-              >
-                <FileText className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Template</span>
-                <span className="sm:hidden">Template</span>
-              </Button>
-              {role === 'admin' && (
-                <ImportButton
-                  label="Import"
-                  importFn={async (file) => {
-                    const response = await importAttendanceCSV(file);
-                    return response.data as any;
-                  }}
-                  onSuccess={() => fetchAttendance()}
-                />
-              )}
-              <ExportButton
-                label="Export"
-                exportFn={async () => {
-                  const params = buildExportParams();
-                  return exportAttendance(params);
-                }}
-                filename={activeTab === 'teachers' ? 'attendance-teachers.csv' : 'attendance-students.csv'}
-              />
-            </>
-          )}
-          {hasManagePermissions && (
-            <>
-              <Button
-                variant={editMode ? 'default' : 'outline'}
-                onClick={editMode ? handleCancelEdit : () => setEditMode(true)}
-                className="flex-1 sm:flex-initial"
-              >
-                <span className="hidden sm:inline">{editMode ? 'Cancel Edit' : 'Edit Mode'}</span>
-                <span className="sm:hidden">{editMode ? 'Cancel' : 'Edit'}</span>
-              </Button>
-              {editMode && Object.keys(attendanceChanges).length > 0 && (
-                <Button onClick={handleSaveChanges} className="flex-1 sm:flex-initial">
-                  <Save className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Save Changes ({Object.keys(attendanceChanges).length})</span>
-                  <span className="sm:hidden">Save ({Object.keys(attendanceChanges).length})</span>
-                </Button>
-              )}
-            </>
-          )}
-        </div>
+      <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
+  {/* Search bar */}
+  <div className="relative w-full sm:w-64 flex gap-2">
+    <div className="relative flex-1">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        value={searchTerm}
+        onChange={(event) => setSearchTerm(event.target.value)}
+        onKeyPress={handleSearchKeyPress}
+        placeholder="Search by name, CNIC, or roll number..."
+        className="pl-10"
+      />
+    </div>
+    <Button onClick={handleSearch} size="default" className="shrink-0">
+      <Search className="h-4 w-4" />
+    </Button>
+  </div>
+
+  {/* Admin-only Template / Import */}
+  {showDataTransferButtons && (
+    <>
+      <Button
+        variant="outline"
+        onClick={async () => {
+          try {
+            const blob = await downloadAttendanceTemplate();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'attendance-template.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          } catch (error) {
+            console.error('Failed to download attendance template:', error);
+            toast.error('Failed to download template');
+          }
+        }}
+        className="flex-1 sm:flex-initial"
+      >
+        <FileText className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Template</span>
+        <span className="sm:hidden">Template</span>
+      </Button>
+      {role === 'admin' && (
+        <ImportButton
+          label="Import"
+          importFn={async (file) => {
+            const response = await importAttendanceCSV(file);
+            return response.data as any;
+          }}
+          onSuccess={() => fetchAttendance()}
+        />
+      )}
+    </>
+  )}
+
+  {/* Export visible to everyone (single button) */}
+  <ExportButton
+    label="Export"
+    exportFn={async () => {
+      const params: Record<string, string> = {};
+      if (filters.sessionId) params.sessionId = filters.sessionId;
+      if (filters.division) params.divisionId = filters.division;
+      if (filters.district) params.districtId = filters.district;
+      if (filters.tehsil) params.tehsilId = filters.tehsil;
+      if (filters.school) params.schoolId = filters.school;
+      if (filters.startDate) params.from = filters.startDate;
+      if (filters.endDate) params.to = filters.endDate;
+      params.personType = activeTab === 'teachers' ? 'teacher' : 'student';
+      if (activeSearchTerm) params.search = activeSearchTerm;
+      return exportAttendance(params);
+    }}
+    filename={activeTab === 'teachers' ? 'attendance-teachers.csv' : 'attendance-students.csv'}
+  />
+
+  {/* Edit / Save buttons (remain permission-based) */}
+  {hasManagePermissions && (
+    <>
+      <Button
+        variant={editMode ? 'default' : 'outline'}
+        onClick={editMode ? handleCancelEdit : () => setEditMode(true)}
+        className="flex-1 sm:flex-initial"
+      >
+        <span className="hidden sm:inline">{editMode ? 'Cancel Edit' : 'Edit Mode'}</span>
+        <span className="sm:hidden">{editMode ? 'Cancel' : 'Edit'}</span>
+      </Button>
+      {editMode && Object.keys(attendanceChanges).length > 0 && (
+        <Button onClick={handleSaveChanges} className="flex-1 sm:flex-initial">
+          <Save className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Save Changes ({Object.keys(attendanceChanges).length})</span>
+          <span className="sm:hidden">Save ({Object.keys(attendanceChanges).length})</span>
+        </Button>
+      )}
+    </>
+  )}
+</div>
       </div>
+      
+     
+
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
@@ -635,56 +654,56 @@ const Attendance = () => {
             </CardHeader>
             <CardContent>
               {isMobile ? (
-                    <div className="space-y-3">
-                  {apiStudentAttendance.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8">
-                      {isLoading ? 'Loading student attendance...' : 'No student attendance records found for the selected filters.'}
-                    </div>
-                  ) : (
-                    apiStudentAttendance.map(att => {
-                      const originalStatus = isRecordPresent(att);
-                      const currentStatus = getAttendanceStatus(att.id, originalStatus);
-                      const hasChanges = attendanceChanges[att.id] !== undefined;
-                      const rollNumber = att.personRollNumber ?? att.rollNumber ?? 'N/A';
-                      
-                      return (
-                        <MobileCard
-                          key={att.id}
-                          title={att.personName}
-                          subtitle={att.session?.title}
-                          badges={[
-                            { label: `Roll ${rollNumber}`, variant: 'outline' },
-                            { label: `Grade ${att.personGrade ?? att.gradeLevel ?? 'N/A'}`, variant: 'secondary' },
-                            { label: currentStatus ? 'Present' : 'Absent', variant: currentStatus ? 'default' : 'destructive' }
-                          ]}
-                          metadata={[
-                            {
-                              label: "Date",
-                              value: new Date(att.session?.date).toLocaleDateString(),
-                              icon: <CalendarIcon className="h-3 w-3" />
-                            },
-                            {
-                              label: 'Roll Number',
-                              value: rollNumber,
-                              icon: <FileText className="h-3 w-3" />
-                            }
-                          ]}
-                          actions={editMode && (
-                            <div className="flex items-center justify-between w-full">
-                              <span className="text-sm font-medium">Mark Attendance:</span>
-                              <Switch
-                                checked={currentStatus}
-                                onCheckedChange={() => handleToggleAttendance(att.id, currentStatus)}
-                                className="data-[state=checked]:bg-primary"
-                              />
-                            </div>
-                          )}
-                          className={hasChanges ? 'bg-muted/50 border-primary' : ''}
-                        />
-                      );
-                    })
-                  )}
-                </div>
+                      <div className="space-y-3">
+                    {apiStudentAttendance.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-8">
+                        {isLoading ? 'Loading student attendance...' : 'No student attendance records found for the selected filters.'}
+                      </div>
+                    ) : (
+                      apiStudentAttendance.map(att => {
+                        const originalStatus = isRecordPresent(att);
+                        const currentStatus = getAttendanceStatus(att.id, originalStatus);
+                        const hasChanges = attendanceChanges[att.id] !== undefined;
+                        const rollNumber = att.personRollNumber ?? att.rollNumber ?? 'N/A';
+                        
+                        return (
+                          <MobileCard
+                            key={att.id}
+                            title={att.personName}
+                            subtitle={att.session?.title}
+                            badges={[
+                              { label: `Roll ${rollNumber}`, variant: 'outline' },
+                              { label: `Grade ${att.personGrade ?? att.gradeLevel ?? 'N/A'}`, variant: 'secondary' },
+                              { label: currentStatus ? 'Present' : 'Absent', variant: currentStatus ? 'default' : 'destructive' }
+                            ]}
+                            metadata={[
+                              {
+                                label: "Date",
+                                value: new Date(att.session?.date).toLocaleDateString(),
+                                icon: <CalendarIcon className="h-3 w-3" />
+                              },
+                              {
+                                label: 'Roll Number',
+                                value: rollNumber,
+                                icon: <FileText className="h-3 w-3" />
+                              }
+                            ]}
+                            actions={editMode && (
+                              <div className="flex items-center justify-between w-full">
+                                <span className="text-sm font-medium">Mark Attendance:</span>
+                                <Switch
+                                  checked={currentStatus}
+                                  onCheckedChange={() => handleToggleAttendance(att.id, currentStatus)}
+                                  className="data-[state=checked]:bg-primary"
+                                />
+                              </div>
+                            )}
+                            className={hasChanges ? 'bg-muted/50 border-primary' : ''}
+                          />
+                        );
+                      })
+                    )}
+                  </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>

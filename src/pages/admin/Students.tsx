@@ -79,7 +79,7 @@ export default function Students() {
 
       // Check if filters have changed - if so, reset to page 1
       const prevFilters = prevFiltersRef.current;
-      const filtersChanged = 
+      const filtersChanged =
         prevFilters.division !== filters.division ||
         prevFilters.district !== filters.district ||
         prevFilters.tehsil !== filters.tehsil ||
@@ -106,32 +106,32 @@ export default function Students() {
         }
       }
 
-      const params: Record<string, string | number> = { 
-        page: effectivePage, 
+      const params: Record<string, string | number> = {
+        page: effectivePage,
         pageSize: pagination.pageSize
       };
-      
+
       // Add geography filters if selected
       if (filters.division) params.divisionId = filters.division;
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
-      
+
       // Add search parameter if provided
       if (activeSearchTerm && activeSearchTerm.trim()) {
         params.search = activeSearchTerm.trim();
       }
-      
+
       // Include disabled students for management page
       params.includeDisabled = 'true';
-      
+
       // Add status filter
       if (statusFilter === 'active') {
         params.isActive = 'true';
       } else if (statusFilter === 'inactive') {
         params.isActive = 'false';
       }
-      
+
       const response = await api.getStudents(params);
       setStudents(response.data.data);
       setPagination(prev => ({
@@ -175,7 +175,7 @@ export default function Students() {
         ...formData,
         grade: parseInt(formData.grade),
       };
-      
+
       if (editingStudent) {
         await api.updateStudent(editingStudent.id, payload);
         toast({ title: 'Success', description: 'Student updated successfully' });
@@ -222,7 +222,7 @@ export default function Students() {
     }
 
     if (!confirm(`Are you sure you want to disable ${student.name}? They will not be able to mark attendance or perform any actions.`)) return;
-    
+
     try {
       await api.updateStudent(student.id, { isActive: false });
       toast({ title: 'Success', description: `${student.name} has been disabled successfully` });
@@ -247,7 +247,7 @@ export default function Students() {
     }
 
     if (!confirm(`Are you sure you want to enable ${student.name}? They will be able to mark attendance and perform actions again.`)) return;
-    
+
     try {
       await api.updateStudent(student.id, { isActive: true });
       toast({ title: 'Success', description: `${student.name} has been enabled successfully` });
@@ -294,11 +294,33 @@ export default function Students() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Students Management</h1>
-        <p className="text-muted-foreground mt-1">Manage student records and enrollments</p>
-      </div>
+      {/* ---------- TOP BAR : title + Export button ---------- */}
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Students Management</h1>
+          <p className="text-muted-foreground mt-1">Manage student records and enrollments</p>
+        </div>
 
+        {/* ✅ EXPORT BUTTON PLACED HERE (blue-pen highlight) */}
+      <ExportButton
+  label="Export"
+  exportFn={async () => {
+    const params: Record<string, string | number> = {};
+    if (filters.division) params.divisionId = filters.division;
+    if (filters.district) params.districtId = filters.district;
+    if (filters.tehsil) params.tehsilId = filters.tehsil;
+    if (filters.school) params.schoolId = filters.school;
+    if (activeSearchTerm) params.search = activeSearchTerm;
+    if (statusFilter === 'active') params.isActive = 'true';
+    else if (statusFilter === 'inactive') params.isActive = 'false';
+    return api.exportStudents(params);
+  }}
+  filename="students.csv"
+/>
+      </div>
+      {/* ----------------------------------------------------- */}
+
+      {/* Search + Add Student row */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex gap-2">
           <div className="relative flex gap-2 w-full sm:w-auto">
@@ -348,99 +370,80 @@ export default function Students() {
                   onSuccess={() => fetchStudents()}
                 />
               )}
-              <ExportButton
-                label="Export"
-                exportFn={async () => {
-                  const params: Record<string, string | number> = {};
-                  if (filters.division) params.divisionId = filters.division;
-                  if (filters.district) params.districtId = filters.district;
-                  if (filters.tehsil) params.tehsilId = filters.tehsil;
-                  if (filters.school) params.schoolId = filters.school;
-                  if (activeSearchTerm) params.search = activeSearchTerm;
-                  // Add status filter
-                  if (statusFilter === 'active') {
-                    params.isActive = 'true';
-                  } else if (statusFilter === 'inactive') {
-                    params.isActive = 'false';
-                  }
-                  return api.exportStudents(params);
-                }}
-                filename="students.csv"
-              />
             </>
           )}
 
-        {canEdit() && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Student
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Name</Label>
-                  <Input 
-                    placeholder="Enter name" 
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Roll No</Label>
-                  <Input 
-                    placeholder="Enter roll number" 
-                    value={formData.rollNo}
-                    onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Grade</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="Enter grade" 
-                    value={formData.grade}
-                    onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Gender</Label>
-                  <select 
-                    className="w-full border rounded-md p-2"
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>School</Label>
-                  <select 
-                    className="w-full border rounded-md p-2"
-                    value={formData.schoolId}
-                    onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
-                  >
-                    <option value="">Select school</option>
-                    {schools.map((school: any) => (
-                      <option key={school.id} value={school.id}>
-                        {school.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          {canEdit() && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openCreateDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Student
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      placeholder="Enter name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Roll No</Label>
+                    <Input
+                      placeholder="Enter roll number"
+                      value={formData.rollNo}
+                      onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Grade</Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter grade"
+                      value={formData.grade}
+                      onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Gender</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={formData.gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    >
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>School</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={formData.schoolId}
+                      onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
+                    >
+                      <option value="">Select school</option>
+                      {schools.map((school: any) => (
+                        <option key={school.id} value={school.id}>
+                          {school.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <Button onClick={handleSave} className="w-full">
                     Save
                   </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
@@ -484,9 +487,9 @@ export default function Students() {
               students.map((student: any) => {
                 const status = getStudentStatus(student);
                 const isDisabled = student.userId && student.user && !student.user.isActive;
-                
+
                 return (
-                  <TableRow 
+                  <TableRow
                     key={student.id}
                     className={isDisabled ? 'opacity-60' : ''}
                   >
@@ -511,18 +514,18 @@ export default function Students() {
                       </Badge>
                     </TableCell>
                     {(canEdit() || canDelete() || isAdmin()) && (
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {canEdit() && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(student)}
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {canEdit() && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(student)}
                               disabled={isDisabled}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
 
                           {isAdmin() && student.userId && (
                             <>
@@ -548,19 +551,19 @@ export default function Students() {
                             </>
                           )}
 
-                        {canDelete() && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(student.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
+                          {canDelete() && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(student.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
                 );
               })
             )}
