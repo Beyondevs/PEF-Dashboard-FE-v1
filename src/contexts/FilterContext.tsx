@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FilterState } from '@/types';
+import { FilterState, UserRole } from '@/types';
 import { useAuth } from './AuthContext';
 
 interface FilterContextType {
@@ -9,15 +9,32 @@ interface FilterContextType {
   isDivisionLocked: boolean;
 }
 
-const FILTER_STORAGE_KEY = 'pef_dashboard_filters';
+// Generate role-specific storage key to isolate filters between different user roles
+const getFilterStorageKey = (role: UserRole | null): string => {
+  if (!role) return 'pef_dashboard_filters_guest';
+  return `pef_dashboard_filters_${role}`;
+};
+
+// Clear all filter storage keys (called on logout)
+export const clearAllFilterStorage = () => {
+  const roles: (UserRole | 'guest')[] = ['admin', 'client', 'trainer', 'teacher', 'student', 'division_role', 'guest'];
+  roles.forEach(role => {
+    try {
+      localStorage.removeItem(`pef_dashboard_filters_${role}`);
+    } catch (error) {
+      console.error(`Failed to clear filters for role ${role}:`, error);
+    }
+  });
+};
 
 const defaultFilters: FilterState = {
 };
 
-// Load filters from localStorage
-const loadFiltersFromStorage = (): FilterState => {
+// Load filters from localStorage for specific role
+const loadFiltersFromStorage = (role: UserRole | null): FilterState => {
   try {
-    const stored = localStorage.getItem(FILTER_STORAGE_KEY);
+    const storageKey = getFilterStorageKey(role);
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
       return JSON.parse(stored);
     }
@@ -27,10 +44,11 @@ const loadFiltersFromStorage = (): FilterState => {
   return defaultFilters;
 };
 
-// Save filters to localStorage
-const saveFiltersToStorage = (filters: FilterState) => {
+// Save filters to localStorage for specific role
+const saveFiltersToStorage = (filters: FilterState, role: UserRole | null) => {
   try {
-    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
+    const storageKey = getFilterStorageKey(role);
+    localStorage.setItem(storageKey, JSON.stringify(filters));
   } catch (error) {
     console.error('Failed to save filters to storage:', error);
   }
@@ -44,7 +62,7 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const isDivisionLocked = isDivisionRole && !!divisionId;
   
   const [filters, setFiltersState] = useState<FilterState>(() => {
-    const stored = loadFiltersFromStorage();
+    const stored = loadFiltersFromStorage(role);
     // For division_role users, ensure division is set from auth context or localStorage if available
       const initialFilters = {
         ...defaultFilters,
@@ -66,6 +84,26 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return initialFilters;
   });
 
+  // Reset filters when role changes to ensure isolation between different user roles
+  useEffect(() => {
+    if (!authLoading && role) {
+      setFiltersState(() => {
+        const stored = loadFiltersFromStorage(role);
+        const initialFilters = {
+          ...defaultFilters,
+          ...stored,
+        };
+        
+        // For division_role users, ensure division is set
+        if (isDivisionRole && divisionId && !initialFilters.division) {
+          initialFilters.division = divisionId;
+        }
+        
+        return initialFilters;
+      });
+    }
+  }, [role, authLoading]); // Only trigger when role changes
+
   // Auto-apply division filter for division_role users
   useEffect(() => {
     if (!authLoading && isDivisionRole && divisionId) {
@@ -81,13 +119,13 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             school: undefined,
             sessionId: undefined,
           };
-          saveFiltersToStorage(newFilters);
+          saveFiltersToStorage(newFilters, role);
           return newFilters;
         }
         return prev;
       });
     }
-  }, [authLoading, isDivisionRole, divisionId]);
+  }, [authLoading, isDivisionRole, divisionId, role]);
 
   // Wrapper to save to localStorage whenever filters change
   // For division_role users, prevent changing the division filter
@@ -100,7 +138,7 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         newFilters.division = divisionId;
       }
       
-      saveFiltersToStorage(newFilters);
+      saveFiltersToStorage(newFilters, role);
       return newFilters;
     });
   };
@@ -111,7 +149,7 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       ...(isDivisionRole && divisionId ? { division: divisionId } : {}),
     };
     setFiltersState(resetToDefaults);
-    saveFiltersToStorage(resetToDefaults);
+    saveFiltersToStorage(resetToDefaults, role);
   };
 
   return (

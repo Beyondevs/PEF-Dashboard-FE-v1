@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import { UserRole } from '@/types';
 import { login as apiLogin, getProfile, refresh } from '@/lib/api';
 import { STORAGE_KEYS } from '@/lib/config';
+import { clearAllFilterStorage } from './FilterContext';
 
 interface AuthContextType {
   role: UserRole | null;
@@ -127,6 +128,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem(STORAGE_KEYS.userRole);
     localStorage.removeItem(STORAGE_KEYS.divisionId);
     localStorage.removeItem(STORAGE_KEYS.divisionName);
+    
+    // Clear all filter storage to ensure fresh filters on next login
+    clearAllFilterStorage();
     
     // Reset state
     setRole(null);
