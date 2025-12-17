@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Mail, Phone as PhoneIcon, CreditCard, School, Ban, CheckCircle, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Mail, Phone as PhoneIcon, CreditCard, School, Ban, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useFilters } from '@/contexts/FilterContext';
@@ -53,10 +53,9 @@ export default function Teachers() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete, isAdmin, role } = useAuth();
+  const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
-  // Track previous filter values to detect changes and reset pagination
   const prevFiltersRef = useRef({
     division: filters.division,
     district: filters.district,
@@ -68,22 +67,18 @@ export default function Teachers() {
 
   const handleSearch = () => {
     setActiveSearchTerm(searchTerm.trim());
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+    if (e.key === 'Enter') handleSearch();
   };
 
   const fetchTeachers = useCallback(async (page = pagination.page) => {
     try {
       setLoading(true);
-
-      // Check if filters have changed - if so, reset to page 1
       const prevFilters = prevFiltersRef.current;
-      const filtersChanged = 
+      const filtersChanged =
         prevFilters.division !== filters.division ||
         prevFilters.district !== filters.district ||
         prevFilters.tehsil !== filters.tehsil ||
@@ -91,10 +86,7 @@ export default function Teachers() {
         prevFilters.activeSearchTerm !== activeSearchTerm ||
         prevFilters.statusFilter !== statusFilter;
 
-      // Determine effective page: use page 1 if filters changed
       const effectivePage = filtersChanged ? 1 : page;
-
-      // Update the ref to track current filter values
       if (filtersChanged) {
         prevFiltersRef.current = {
           division: filters.division,
@@ -104,65 +96,37 @@ export default function Teachers() {
           activeSearchTerm: activeSearchTerm,
           statusFilter: statusFilter,
         };
-        // Also update state to keep UI in sync
-        if (pagination.page !== 1) {
-          setPagination(prev => ({ ...prev, page: 1 }));
-        }
+        if (pagination.page !== 1) setPagination(prev => ({ ...prev, page: 1 }));
       }
 
-      const params: Record<string, string | number> = { 
-        page: effectivePage, 
-        pageSize: pagination.pageSize
-      };
-      
-      // Add geography filters if selected
+      const params: Record<string, string | number> = { page: effectivePage, pageSize: pagination.pageSize };
       if (filters.division) params.divisionId = filters.division;
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
-      
-      // Add search parameter if provided
-      if (activeSearchTerm && activeSearchTerm.trim()) {
-        params.search = activeSearchTerm.trim();
-      }
-      
-      // Include disabled teachers for management page
+      if (activeSearchTerm.trim()) params.search = activeSearchTerm.trim();
       params.includeDisabled = 'true';
-      
-      // Add status filter
-      if (statusFilter === 'active') {
-        params.isActive = 'true';
-      } else if (statusFilter === 'inactive') {
-        params.isActive = 'false';
-      }
-      
+      if (statusFilter === 'active') params.isActive = 'true';
+      else if (statusFilter === 'inactive') params.isActive = 'false';
+
       const response = await api.getTeachers(params);
       setTeachers(response.data.data);
       setPagination(prev => ({
         ...prev,
         page: response.data.page,
         pageSize: response.data.pageSize,
-        total: (response.data as any).totalItems || response.data.total
+        total: (response.data as any).totalItems || response.data.total,
       }));
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load teachers',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to load teachers', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.pageSize, filters.division, filters.district, filters.tehsil, filters.school, activeSearchTerm, statusFilter, toast]);
+  }, [pagination.page, pagination.pageSize, filters, activeSearchTerm, statusFilter, toast]);
 
-  // Fetch teachers when filters, search, status, or page changes
-  useEffect(() => {
-    fetchTeachers();
-  }, [fetchTeachers]);
+  useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
 
-  useEffect(() => {
-    fetchSchools();
-  }, [filters.division, filters.district, filters.tehsil, filters.school]);
+  useEffect(() => { fetchSchools(); }, [filters.division, filters.district, filters.tehsil, filters.school]);
 
   const fetchSchools = async () => {
     try {
@@ -187,11 +151,7 @@ export default function Teachers() {
       setFormData({ name: '', email: '', phone: '', cnic: '', schoolId: '', password: '' });
       fetchTeachers();
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Operation failed',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Operation failed', variant: 'destructive' });
     }
   };
 
@@ -202,50 +162,34 @@ export default function Teachers() {
       toast({ title: 'Success', description: 'Teacher deleted successfully' });
       fetchTeachers();
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete teacher',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete teacher', variant: 'destructive' });
     }
   };
 
   const handleDisable = async (teacher: any) => {
-    if (!confirm(`Are you sure you want to disable ${teacher.teacherProfile?.name || 'this teacher'}? They will not be able to mark attendance or perform any actions.`)) return;
-    
+    if (!confirm(`Disable ${teacher.teacherProfile?.name || 'this teacher'}?`)) return;
     try {
       await api.updateTeacher(teacher.id, { isActive: false });
-      toast({ title: 'Success', description: `${teacher.teacherProfile?.name || 'Teacher'} has been disabled successfully` });
+      toast({ title: 'Success', description: 'Teacher disabled' });
       fetchTeachers();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error?.message || 'Failed to disable teacher',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error?.message || 'Failed to disable teacher', variant: 'destructive' });
     }
   };
 
   const handleEnable = async (teacher: any) => {
-    if (!confirm(`Are you sure you want to enable ${teacher.teacherProfile?.name || 'this teacher'}? They will be able to mark attendance and perform actions again.`)) return;
-    
+    if (!confirm(`Enable ${teacher.teacherProfile?.name || 'this teacher'}?`)) return;
     try {
       await api.updateTeacher(teacher.id, { isActive: true });
-      toast({ title: 'Success', description: `${teacher.teacherProfile?.name || 'Teacher'} has been enabled successfully` });
+      toast({ title: 'Success', description: 'Teacher enabled' });
       fetchTeachers();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error?.message || 'Failed to enable teacher',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error?.message || 'Failed to enable teacher', variant: 'destructive' });
     }
   };
 
   const getTeacherStatus = (teacher: any) => {
-    if (!teacher.isActive) {
-      return { label: 'Disabled', variant: 'destructive' as const };
-    }
+    if (!teacher.isActive) return { label: 'Disabled', variant: 'destructive' as const };
     return { label: 'Active', variant: 'default' as const };
   };
 
@@ -268,12 +212,10 @@ export default function Teachers() {
     setIsDialogOpen(true);
   };
 
-  const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
-
+  const handlePageChange = (newPage: number) => setPagination(prev => ({ ...prev, page: newPage }));
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
 
+  /* ---------- UI ---------- */
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-4 sm:mb-6">
@@ -281,6 +223,7 @@ export default function Teachers() {
         <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage teacher accounts and school assignments</p>
       </div>
 
+      {/* Search + Add / Export */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
         <div className="flex gap-2 flex-1">
           <div className="relative flex gap-2 flex-1 sm:w-auto">
@@ -290,7 +233,7 @@ export default function Teachers() {
                 placeholder="Search teachers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleSearchKeyPress}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="pl-10"
               />
             </div>
@@ -300,40 +243,104 @@ export default function Teachers() {
           </div>
         </div>
 
-       <div className="flex flex-wrap gap-2 justify-end">
-  {/* ✅ Add Export Button Here */}
-  <ExportButton
-    label="Export"
-    exportFn={async () => {
-      const params: Record<string, string | number> = {};
-      if (filters.division) params.divisionId = filters.division;
-      if (filters.district) params.districtId = filters.district;
-      if (filters.tehsil) params.tehsilId = filters.tehsil;
-      if (filters.school) params.schoolId = filters.school;
-      if (activeSearchTerm) params.search = activeSearchTerm;
-      if (statusFilter === 'active') {
-        params.isActive = 'true';
-      } else if (statusFilter === 'inactive') {
-        params.isActive = 'false';
-      }
-      return api.exportTeachers(params);
-    }}
-    filename="teachers.csv"
-  />
+        <div className="flex flex-wrap gap-2 justify-end">
+          {/* REAL EXPORT - uses same filters as table */}
+          <ExportButton
+            label="Export"
+            exportFn={async () => {
+              const params: Record<string, string | number> = {};
+              if (filters.division) params.divisionId = filters.division;
+              if (filters.district) params.districtId = filters.district;
+              if (filters.tehsil) params.tehsilId = filters.tehsil;
+              if (filters.school) params.schoolId = filters.school;
+              if (activeSearchTerm) params.search = activeSearchTerm;
+              if (statusFilter === 'active') params.isActive = 'true';
+              else if (statusFilter === 'inactive') params.isActive = 'false';
+              return api.exportTeachers(params);
+            }}
+            filename="teachers.csv"
+          />
 
-  {canEdit() && (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      ...
-    </Dialog>
-  )}
-</div>
+          {canEdit() && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" onClick={openCreateDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Teacher
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingTeacher ? 'Edit Teacher' : 'Add Teacher'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Phone</Label>
+                    <Input
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>CNIC</Label>
+                    <Input
+                      value={formData.cnic}
+                      onChange={(e) => setFormData({ ...formData, cnic: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>School</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={formData.schoolId}
+                      onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
+                    >
+                      <option value="">Select school</option>
+                      {schools.map((s: any) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Password {!editingTeacher ? '' : '(leave empty to keep current)'}</Label>
+                    <Input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    />
+                  </div>
+                  <Button onClick={handleSave} className="w-full">
+                    Save
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {/* Status Tabs */}
       <div className="mb-4">
-        <Tabs value={statusFilter} onValueChange={(value) => {
-          setStatusFilter(value as 'all' | 'active' | 'inactive');
-          setPagination(prev => ({ ...prev, page: 1 }));
+        <Tabs value={statusFilter} onValueChange={(v) => {
+          setStatusFilter(v as 'all' | 'active' | 'inactive');
+          setPagination(p => ({ ...p, page: 1 }));
         }}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
@@ -343,6 +350,7 @@ export default function Teachers() {
         </Tabs>
       </div>
 
+      {/* MOBILE CARDS */}
       {isMobile ? (
         <div className="space-y-3">
           {loading ? (
@@ -350,195 +358,162 @@ export default function Teachers() {
           ) : teachers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No teachers found</div>
           ) : (
-            teachers.map((teacher: any) => {
-              const status = getTeacherStatus(teacher);
-              const isDisabled = !teacher.isActive;
-              
+            teachers.map((t: any) => {
+              const status = getTeacherStatus(t);
+              const isDisabled = !t.isActive;
               return (
-              <MobileCard
-                key={teacher.id}
-                title={teacher.teacherProfile?.name || 'N/A'}
-                  subtitle={<Badge variant={status.variant} className="mt-1">{status.label}</Badge> as any}
-                metadata={[
-                    { label: 'Email', value: teacher.email, icon: <Mail className="h-3 w-3" /> },
-                    { label: 'Phone', value: teacher.phone || 'N/A', icon: <PhoneIcon className="h-3 w-3" /> },
-                    { label: 'CNIC', value: teacher.teacherProfile?.cnic || 'N/A', icon: <CreditCard className="h-3 w-3" /> },
-                    { label: 'School', value: teacher.teacherProfile?.school?.name || 'N/A', icon: <School className="h-3 w-3" /> },
-                ]}
+                <MobileCard
+                  key={t.id}
+                  title={t.teacherProfile?.name || 'N/A'}
+                  subtitle={<Badge variant={status.variant}>{status.label}</Badge> as any}
+                  metadata={[
+                    { label: 'Email', value: t.email, icon: <Mail className="h-3 w-3" /> },
+                    { label: 'Phone', value: t.phone || 'N/A', icon: <PhoneIcon className="h-3 w-3" /> },
+                    { label: 'CNIC', value: t.teacherProfile?.cnic || 'N/A', icon: <CreditCard className="h-3 w-3" /> },
+                    { label: 'School', value: t.teacherProfile?.school?.name || 'N/A', icon: <School className="h-3 w-3" /> },
+                  ]}
                   actions={
                     (canEdit() || canDelete() || isAdmin()) ? (
-                  <div className="flex gap-2 flex-wrap">
-                    {canEdit() && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEditDialog(teacher)}
-                        disabled={isDisabled}
-                        className="flex-1"
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
-                    )}
-                    {isAdmin() && (
-                      <>
-                        {teacher.isActive ? (
+                      <div className="flex gap-2 flex-wrap">
+                        {canEdit() && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDisable(teacher)}
+                            onClick={() => openEditDialog(t)}
+                            disabled={isDisabled}
                             className="flex-1"
                           >
-                            <Ban className="h-4 w-4 mr-2" />
-                            Disable
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEnable(teacher)}
-                            className="flex-1"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Enable
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
                           </Button>
                         )}
-                      </>
-                    )}
-                    {canDelete() && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(teacher.id)}
-                        className="flex-1"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </Button>
-                    )}
-                  </div>
+                        {isAdmin() && (
+                          <>
+                            {t.isActive ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDisable(t)}
+                                className="flex-1"
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Disable
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEnable(t)}
+                                className="flex-1"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Enable
+                              </Button>
+                            )}
+                          </>
+                        )}
+                        {canDelete() && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(t.id)}
+                            className="flex-1"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     ) : undefined
                   }
-              />
+                />
               );
             })
           )}
         </div>
       ) : (
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>CNIC</TableHead>
-              <TableHead>School</TableHead>
-              <TableHead>Status</TableHead>
-              {(canEdit() || canDelete() || isAdmin()) && <TableHead>Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+        /* DESKTOP TABLE */
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
               <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    Loading...
-                  </TableCell>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>CNIC</TableHead>
+                <TableHead>School</TableHead>
+                <TableHead>Status</TableHead>
+                {(canEdit() || canDelete() || isAdmin()) && <TableHead>Actions</TableHead>}
               </TableRow>
-            ) : teachers.length === 0 ? (
-              <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    No teachers found
-                  </TableCell>
-              </TableRow>
-            ) : (
-              teachers.map((teacher: any) => {
-                const status = getTeacherStatus(teacher);
-                const isDisabled = !teacher.isActive;
-                
-                return (
-                    <TableRow key={teacher.id} className={isDisabled ? 'opacity-60' : ''}>
-                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                      {teacher.teacherProfile?.name || 'N/A'}
-                    </TableCell>
-                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                      {teacher.email}
-                    </TableCell>
-                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                      {teacher.phone || 'N/A'}
-                    </TableCell>
-                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                      {teacher.teacherProfile?.cnic || 'N/A'}
-                    </TableCell>
-                    <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
-                      {teacher.teacherProfile?.school?.name || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                    </TableCell>
-                    {(canEdit() || canDelete() || isAdmin()) && (
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {canEdit() && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(teacher)}
-                              disabled={isDisabled}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-
-                          {isAdmin() && (
-                            <>
-                              {teacher.isActive ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDisable(teacher)}
-                                  title="Disable teacher"
-                                >
-                                  <Ban className="h-4 w-4" />
-                                </Button>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEnable(teacher)}
-                                  title="Enable teacher"
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </>
-                          )}
-
-                        {canDelete() && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(teacher.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  )}
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">Loading...</TableCell>
                 </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : teachers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">No teachers found</TableCell>
+                </TableRow>
+              ) : (
+                teachers.map((t: any) => {
+                  const status = getTeacherStatus(t);
+                  const isDisabled = !t.isActive;
+                  return (
+                    <TableRow key={t.id} className={isDisabled ? 'opacity-60' : ''}>
+                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.teacherProfile?.name || 'N/A'}</TableCell>
+                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.email}</TableCell>
+                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.phone || 'N/A'}</TableCell>
+                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.teacherProfile?.cnic || 'N/A'}</TableCell>
+                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.teacherProfile?.school?.name || 'N/A'}</TableCell>
+                      <TableCell><Badge variant={status.variant}>{status.label}</Badge></TableCell>
+                      {(canEdit() || canDelete() || isAdmin()) && (
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {canEdit() && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openEditDialog(t)}
+                                disabled={isDisabled}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {isAdmin() && (
+                              <>
+                                {t.isActive ? (
+                                  <Button size="sm" variant="outline" onClick={() => handleDisable(t)} title="Disable teacher">
+                                    <Ban className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" variant="outline" onClick={() => handleEnable(t)} title="Enable teacher">
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                            {canDelete() && (
+                              <Button size="sm" variant="destructive" onClick={() => handleDelete(t.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {/* Pagination */}
       {pagination.total > 0 && (
         <div className="flex items-center justify-between flex-wrap mt-4">
-          <div className="text-sm text-muted-foreground mb-4">
+          <div className="text-sm text-muted-foreground">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} teachers
             {activeSearchTerm && ` (filtered)`}
           </div>
@@ -549,34 +524,30 @@ export default function Teachers() {
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page <= 1}
             >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
+              <ChevronLeft className="h-4 w-4" /> Previous
             </Button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, Math.min(totalPages - 4, pagination.page - 2)) + i;
-                if (pageNum > totalPages) return null;
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={pagination.page === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePageChange(pageNum)}
-                    className="w-8 h-8 p-0"
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-            </div>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = Math.max(1, Math.min(totalPages - 4, pagination.page - 2)) + i;
+              if (pageNum > totalPages) return null;
+              return (
+                <Button
+                  key={pageNum}
+                  variant={pagination.page === pageNum ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePageChange(pageNum)}
+                  className="w-8 h-8 p-0"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page >= totalPages}
             >
-              Next
-              <ChevronRight className="h-4 w-4" />
+              Next <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

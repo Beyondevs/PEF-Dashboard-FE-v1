@@ -26,29 +26,51 @@ import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import PaginationControls from '@/components/PaginationControls';
 
+/* ----------  tiny CSV helper  ---------- */
+function toCsvBlob(rows: Record<string, any>[], columns: string[]): Blob {
+  const header = columns.join(',');
+  const body = rows.map(r =>
+    columns.map(c => {
+      const v = String(r[c] ?? '');
+      return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+    }).join(',')
+  );
+  const csv = [header, ...body].join('\n');
+  return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+}
+/* --------------------------------------- */
+
 export default function Geography() {
-  const [divisions, setDivisions] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [tehsils, setTehsils] = useState([]);
+  const [divisions, setDivisions] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [tehsils, setTehsils] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  /* dialog open flags */
   const [isDivisionDialogOpen, setIsDivisionDialogOpen] = useState(false);
   const [isDistrictDialogOpen, setIsDistrictDialogOpen] = useState(false);
   const [isTehsilDialogOpen, setIsTehsilDialogOpen] = useState(false);
+
+  /* editing items */
   const [editingDivision, setEditingDivision] = useState<any>(null);
   const [editingDistrict, setEditingDistrict] = useState<any>(null);
   const [editingTehsil, setEditingTehsil] = useState<any>(null);
-  
+
+  /* forms */
   const [divisionForm, setDivisionForm] = useState({ name: '', code: '' });
   const [districtForm, setDistrictForm] = useState({ name: '', code: '', divisionId: '' });
   const [tehsilForm, setTehsilForm] = useState({ name: '', code: '', districtId: '' });
+
+  /* pagination */
+  const PAGE_SIZE = 10;
   const [divisionPage, setDivisionPage] = useState(1);
   const [districtPage, setDistrictPage] = useState(1);
   const [tehsilPage, setTehsilPage] = useState(1);
-  const PAGE_SIZE = 10;
-  
+
   const { canEdit, canDelete, isAdmin } = useAuth();
   const { toast } = useToast();
 
+  /* initial load */
   useEffect(() => {
     fetchAll();
   }, []);
@@ -68,17 +90,13 @@ export default function Geography() {
       setDistrictPage(1);
       setTehsilPage(1);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load geography data',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to load geography data', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  // Division handlers
+  /* ----------  Division handlers  ---------- */
   const handleSaveDivision = async () => {
     try {
       if (editingDivision) {
@@ -108,7 +126,7 @@ export default function Geography() {
     }
   };
 
-  // District handlers
+  /* ----------  District handlers  ---------- */
   const handleSaveDistrict = async () => {
     try {
       if (editingDistrict) {
@@ -138,7 +156,7 @@ export default function Geography() {
     }
   };
 
-  // Tehsil handlers
+  /* ----------  Tehsil handlers  ---------- */
   const handleSaveTehsil = async () => {
     try {
       if (editingTehsil) {
@@ -168,6 +186,7 @@ export default function Geography() {
     }
   };
 
+  /* ----------  pagination helpers  ---------- */
   const paginate = <T,>(items: T[], page: number) => {
     const start = (page - 1) * PAGE_SIZE;
     return items.slice(start, start + PAGE_SIZE);
@@ -178,62 +197,35 @@ export default function Geography() {
   const tehsilTotalPages = Math.ceil(tehsils.length / PAGE_SIZE) || 1;
 
   useEffect(() => {
-    if (divisionPage > divisionTotalPages) {
-      setDivisionPage(divisionTotalPages);
-    }
+    if (divisionPage > divisionTotalPages) setDivisionPage(divisionTotalPages);
   }, [divisionPage, divisionTotalPages]);
 
   useEffect(() => {
-    if (districtPage > districtTotalPages) {
-      setDistrictPage(districtTotalPages);
-    }
+    if (districtPage > districtTotalPages) setDistrictPage(districtTotalPages);
   }, [districtPage, districtTotalPages]);
 
   useEffect(() => {
-    if (tehsilPage > tehsilTotalPages) {
-      setTehsilPage(tehsilTotalPages);
-    }
+    if (tehsilPage > tehsilTotalPages) setTehsilPage(tehsilTotalPages);
   }, [tehsilPage, tehsilTotalPages]);
 
-  const paginatedDivisions = useMemo(
-    () => paginate(divisions, divisionPage),
-    [divisions, divisionPage],
-  );
-
-  const paginatedDistricts = useMemo(
-    () => paginate(districts, districtPage),
-    [districts, districtPage],
-  );
-
-  const paginatedTehsils = useMemo(
-    () => paginate(tehsils, tehsilPage),
-    [tehsils, tehsilPage],
-  );
+  const paginatedDivisions = useMemo(() => paginate(divisions, divisionPage), [divisions, divisionPage]);
+  const paginatedDistricts = useMemo(() => paginate(districts, districtPage), [districts, districtPage]);
+  const paginatedTehsils = useMemo(() => paginate(tehsils, tehsilPage), [tehsils, tehsilPage]);
 
   const buildPageInfo = (total: number, page: number) => {
-    if (total === 0) {
-      return 'No records found';
-    }
+    if (total === 0) return 'No records found';
     const start = (page - 1) * PAGE_SIZE + 1;
     const end = Math.min(page * PAGE_SIZE, total);
     return `Showing ${start}-${end} of ${total}`;
   };
 
+  /* ----------  UI  ---------- */
   return (
     <div className="p-6">
-     <div className="mb-6 flex items-start justify-between">
-  <div>
-    <h1 className="text-3xl font-bold">Geography Management</h1>
-    <p className="text-muted-foreground mt-1">Manage divisions, districts, and tehsils</p>
-  </div>
-  {/* FORCE SHOW */}
-  <ExportButton
-    label="Export"
-    size="sm"
-    exportFn={async () => new Blob(['test'], { type: 'text/csv' })}
-    filename="test.csv"
-  />
-</div>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Geography Management</h1>
+        <p className="text-muted-foreground mt-1">Manage divisions, districts, and tehsils</p>
+      </div>
 
       <Tabs defaultValue="divisions" className="w-full">
         <TabsList>
@@ -242,7 +234,7 @@ export default function Geography() {
           <TabsTrigger value="tehsils">Tehsils</TabsTrigger>
         </TabsList>
 
-        {/* Divisions Tab */}
+        {/* ----------  Divisions Tab  ---------- */}
         <TabsContent value="divisions" className="mt-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="text-xl font-semibold">Divisions ({divisions.length})</h2>
@@ -276,18 +268,22 @@ export default function Geography() {
                     }}
                     onSuccess={fetchAll}
                   />
-                  <ExportButton
-                    label="Export"
-                    size="sm"
-                    exportFn={api.exportDivisions}
-                    filename="divisions.csv"
-                  />
                 </>
               )}
-
-            {canEdit() && (
-              <Dialog open={isDivisionDialogOpen} onOpenChange={setIsDivisionDialogOpen}>
-                <DialogTrigger asChild>
+              <ExportButton
+                label="Export"
+                size="sm"
+                exportFn={async () =>
+                  toCsvBlob(
+                    divisions.map(d => ({ name: d.name, code: d.code || '' })),
+                    ['name', 'code']
+                  )
+                }
+                filename="divisions.csv"
+              />
+              {canEdit() && (
+                <Dialog open={isDivisionDialogOpen} onOpenChange={setIsDivisionDialogOpen}>
+                  <DialogTrigger asChild>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -295,36 +291,36 @@ export default function Geography() {
                         setDivisionForm({ name: '', code: '' });
                       }}
                     >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Division
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingDivision ? 'Edit Division' : 'Add Division'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Name</Label>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Division
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{editingDivision ? 'Edit Division' : 'Add Division'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Name</Label>
                         <Input
                           value={divisionForm.name}
                           onChange={(e) => setDivisionForm({ ...divisionForm, name: e.target.value })}
                         />
-                    </div>
-                    <div>
-                      <Label>Code</Label>
+                      </div>
+                      <div>
+                        <Label>Code</Label>
                         <Input
                           value={divisionForm.code}
                           onChange={(e) => setDivisionForm({ ...divisionForm, code: e.target.value })}
                         />
-                    </div>
+                      </div>
                       <Button onClick={handleSaveDivision} className="w-full">
                         Save
                       </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
 
@@ -339,9 +335,13 @@ export default function Geography() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={3} className="text-center">Loading...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">Loading...</TableCell>
+                  </TableRow>
                 ) : divisions.length === 0 ? (
-                  <TableRow><TableCell colSpan={3} className="text-center">No divisions found</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">No divisions found</TableCell>
+                  </TableRow>
                 ) : (
                   paginatedDivisions.map((div: any) => (
                     <TableRow key={div.id}>
@@ -351,7 +351,15 @@ export default function Geography() {
                         <TableCell>
                           <div className="flex gap-2">
                             {canEdit() && (
-                              <Button size="sm" variant="outline" onClick={() => { setEditingDivision(div); setDivisionForm({ name: div.name, code: div.code || '' }); setIsDivisionDialogOpen(true); }}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingDivision(div);
+                                  setDivisionForm({ name: div.name, code: div.code || '' });
+                                  setIsDivisionDialogOpen(true);
+                                }}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                             )}
@@ -378,7 +386,7 @@ export default function Geography() {
           />
         </TabsContent>
 
-        {/* Districts Tab */}
+        {/* ----------  Districts Tab  ---------- */}
         <TabsContent value="districts" className="mt-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="text-xl font-semibold">Districts ({districts.length})</h2>
@@ -412,18 +420,26 @@ export default function Geography() {
                     }}
                     onSuccess={fetchAll}
                   />
-                  <ExportButton
-                    label="Export"
-                    size="sm"
-                    exportFn={api.exportDistricts}
-                    filename="districts.csv"
-                  />
                 </>
               )}
-
-            {canEdit() && (
-              <Dialog open={isDistrictDialogOpen} onOpenChange={setIsDistrictDialogOpen}>
-                <DialogTrigger asChild>
+              <ExportButton
+                label="Export"
+                size="sm"
+                exportFn={async () =>
+                  toCsvBlob(
+                    districts.map(d => ({
+                      name: d.name,
+                      code: d.code || '',
+                      division: d.division?.name || '',
+                    })),
+                    ['name', 'code', 'division']
+                  )
+                }
+                filename="districts.csv"
+              />
+              {canEdit() && (
+                <Dialog open={isDistrictDialogOpen} onOpenChange={setIsDistrictDialogOpen}>
+                  <DialogTrigger asChild>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -431,51 +447,51 @@ export default function Geography() {
                         setDistrictForm({ name: '', code: '', divisionId: '' });
                       }}
                     >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add District
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingDistrict ? 'Edit District' : 'Add District'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Name</Label>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add District
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{editingDistrict ? 'Edit District' : 'Add District'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Name</Label>
                         <Input
                           value={districtForm.name}
                           onChange={(e) => setDistrictForm({ ...districtForm, name: e.target.value })}
                         />
-                    </div>
-                    <div>
-                      <Label>Code</Label>
+                      </div>
+                      <div>
+                        <Label>Code</Label>
                         <Input
                           value={districtForm.code}
                           onChange={(e) => setDistrictForm({ ...districtForm, code: e.target.value })}
                         />
-                    </div>
-                    <div>
-                      <Label>Division</Label>
+                      </div>
+                      <div>
+                        <Label>Division</Label>
                         <select
                           className="w-full border rounded-md p-2"
                           value={districtForm.divisionId}
                           onChange={(e) => setDistrictForm({ ...districtForm, divisionId: e.target.value })}
                         >
-                        <option value="">Select division</option>
-                        {divisions.map((div: any) => (
+                          <option value="">Select division</option>
+                          {divisions.map((div: any) => (
                             <option key={div.id} value={div.id}>
                               {div.name}
                             </option>
-                        ))}
-                      </select>
-                    </div>
+                          ))}
+                        </select>
+                      </div>
                       <Button onClick={handleSaveDistrict} className="w-full">
                         Save
                       </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
 
@@ -491,9 +507,13 @@ export default function Geography() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                  </TableRow>
                 ) : districts.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center">No districts found</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">No districts found</TableCell>
+                  </TableRow>
                 ) : (
                   paginatedDistricts.map((dist: any) => (
                     <TableRow key={dist.id}>
@@ -504,7 +524,15 @@ export default function Geography() {
                         <TableCell>
                           <div className="flex gap-2">
                             {canEdit() && (
-                              <Button size="sm" variant="outline" onClick={() => { setEditingDistrict(dist); setDistrictForm({ name: dist.name, code: dist.code || '', divisionId: dist.divisionId }); setIsDistrictDialogOpen(true); }}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingDistrict(dist);
+                                  setDistrictForm({ name: dist.name, code: dist.code || '', divisionId: dist.divisionId });
+                                  setIsDistrictDialogOpen(true);
+                                }}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                             )}
@@ -531,7 +559,7 @@ export default function Geography() {
           />
         </TabsContent>
 
-        {/* Tehsils Tab */}
+        {/* ----------  Tehsils Tab  ---------- */}
         <TabsContent value="tehsils" className="mt-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="text-xl font-semibold">Tehsils ({tehsils.length})</h2>
@@ -565,18 +593,26 @@ export default function Geography() {
                     }}
                     onSuccess={fetchAll}
                   />
-                  <ExportButton
-                    label="Export"
-                    size="sm"
-                    exportFn={api.exportTehsils}
-                    filename="tehsils.csv"
-                  />
                 </>
               )}
-
-            {canEdit() && (
-              <Dialog open={isTehsilDialogOpen} onOpenChange={setIsTehsilDialogOpen}>
-                <DialogTrigger asChild>
+              <ExportButton
+                label="Export"
+                size="sm"
+                exportFn={async () =>
+                  toCsvBlob(
+                    tehsils.map(t => ({
+                      name: t.name,
+                      code: t.code || '',
+                      district: t.district?.name || '',
+                    })),
+                    ['name', 'code', 'district']
+                  )
+                }
+                filename="tehsils.csv"
+              />
+              {canEdit() && (
+                <Dialog open={isTehsilDialogOpen} onOpenChange={setIsTehsilDialogOpen}>
+                  <DialogTrigger asChild>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -584,51 +620,51 @@ export default function Geography() {
                         setTehsilForm({ name: '', code: '', districtId: '' });
                       }}
                     >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Tehsil
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingTehsil ? 'Edit Tehsil' : 'Add Tehsil'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Name</Label>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Tehsil
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{editingTehsil ? 'Edit Tehsil' : 'Add Tehsil'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Name</Label>
                         <Input
                           value={tehsilForm.name}
                           onChange={(e) => setTehsilForm({ ...tehsilForm, name: e.target.value })}
                         />
-                    </div>
-                    <div>
-                      <Label>Code</Label>
+                      </div>
+                      <div>
+                        <Label>Code</Label>
                         <Input
                           value={tehsilForm.code}
                           onChange={(e) => setTehsilForm({ ...tehsilForm, code: e.target.value })}
                         />
-                    </div>
-                    <div>
-                      <Label>District</Label>
+                      </div>
+                      <div>
+                        <Label>District</Label>
                         <select
                           className="w-full border rounded-md p-2"
                           value={tehsilForm.districtId}
                           onChange={(e) => setTehsilForm({ ...tehsilForm, districtId: e.target.value })}
                         >
-                        <option value="">Select district</option>
-                        {districts.map((dist: any) => (
+                          <option value="">Select district</option>
+                          {districts.map((dist: any) => (
                             <option key={dist.id} value={dist.id}>
                               {dist.name}
                             </option>
-                        ))}
-                      </select>
-                    </div>
+                          ))}
+                        </select>
+                      </div>
                       <Button onClick={handleSaveTehsil} className="w-full">
                         Save
                       </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
 
@@ -644,9 +680,13 @@ export default function Geography() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                  </TableRow>
                 ) : tehsils.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center">No tehsils found</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">No tehsils found</TableCell>
+                  </TableRow>
                 ) : (
                   paginatedTehsils.map((teh: any) => (
                     <TableRow key={teh.id}>
@@ -657,7 +697,15 @@ export default function Geography() {
                         <TableCell>
                           <div className="flex gap-2">
                             {canEdit() && (
-                              <Button size="sm" variant="outline" onClick={() => { setEditingTehsil(teh); setTehsilForm({ name: teh.name, code: teh.code || '', districtId: teh.districtId }); setIsTehsilDialogOpen(true); }}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingTehsil(teh);
+                                  setTehsilForm({ name: teh.name, code: teh.code || '', districtId: teh.districtId });
+                                  setIsTehsilDialogOpen(true);
+                                }}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                             )}
