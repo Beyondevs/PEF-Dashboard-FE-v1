@@ -521,7 +521,6 @@ export default function Students() {
                               size="sm"
                               variant="outline"
                               onClick={() => openEditDialog(student)}
-                              disabled={isDisabled}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>

@@ -373,7 +373,6 @@ export default function Teachers() {
                         size="sm"
                         variant="outline"
                         onClick={() => openEditDialog(teacher)}
-                        disabled={isDisabled}
                         className="flex-1"
                       >
                         <Edit className="h-4 w-4 mr-2" />
@@ -484,7 +483,6 @@ export default function Teachers() {
                             size="sm"
                             variant="outline"
                             onClick={() => openEditDialog(teacher)}
-                              disabled={isDisabled}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
