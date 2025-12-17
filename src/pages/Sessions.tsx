@@ -46,8 +46,8 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Sessions = () => {
-  const { role, isAdmin } = useAuth();
-  const canManageSessions = () => role === 'admin';
+  const { role, isAdmin, canEdit } = useAuth();
+  const canManageSessions = () => isAdmin();
   const { filters } = useFilters();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
