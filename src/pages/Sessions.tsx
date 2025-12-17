@@ -463,163 +463,159 @@ const Sessions = () => {
 />
 
           {canManageSessions() && (
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex-1 sm:flex-initial">
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Create Session</span>
-                  <span className="sm:hidden">Create</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Session</DialogTitle>
-                  <DialogDescription>
-                    Schedule a new training session
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Session Title</Label>
-                    <Input 
-                      id="title" 
-                      placeholder="Enter session title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date">Date</Label>
-                      <Input 
-                        id="date" 
-                        type="date" 
-                        value={formData.date}
-                        onChange={(e) => setFormData({...formData, date: e.target.value})}
+           
+<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+  <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle>Edit Session</DialogTitle>
+      <DialogDescription>Update the training-session details</DialogDescription>
+    </DialogHeader>
+
+    <div className="space-y-4 py-4">
+      <div className="space-y-2">
+        <Label>Session Title</Label>
+        <Input
+          placeholder="Session title"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Date</Label>
+          <Input
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Start Time</Label>
+          <Input
+            type="time"
+            value={formData.startTime}
+            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>End Time</Label>
+        <Input
+          type="time"
+          value={formData.endTime}
+          onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+        />
+      </div>
+
+      {/* School selector (same popover you already have) */}
+      <div className="space-y-2">
+        <Label>School</Label>
+        <Popover open={schoolSearchOpen} onOpenChange={setSchoolSearchOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={schoolSearchOpen}
+              className="w-full justify-between"
+            >
+              {formData.schoolId
+                ? getSchoolName(formData.schoolId)
+                : 'Select school...'}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Search schools..." />
+              <CommandList>
+                <CommandEmpty>No school found.</CommandEmpty>
+                <CommandGroup>
+                  {apiSchools.map((school) => (
+                    <CommandItem
+                      key={school.id}
+                      value={`${school.name} ${school.emisCode || ''}`}
+                      onSelect={() => {
+                        setFormData({ ...formData, schoolId: school.id });
+                        setSchoolSearchOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          formData.schoolId === school.id ? 'opacity-100' : 'opacity-0'
+                        )}
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="time">Start Time</Label>
-                      <Input 
-                        id="time" 
-                        type="time" 
-                        value={formData.startTime}
-                        onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+                      <div className="flex flex-col">
+                        <span>{school.name}</span>
+                        {school.emisCode && (
+                          <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Trainer selector (same popover you already have) */}
+      <div className="space-y-2">
+        <Label>Trainer</Label>
+        <Popover open={trainerSearchOpen} onOpenChange={setTrainerSearchOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={trainerSearchOpen}
+              className="w-full justify-between"
+            >
+              {formData.trainerId
+                ? getTrainerName(formData.trainerId)
+                : 'Select trainer...'}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Search trainers..." />
+              <CommandList>
+                <CommandEmpty>No trainer found.</CommandEmpty>
+                <CommandGroup>
+                  {apiTrainers.map((trainer) => (
+                    <CommandItem
+                      key={trainer.id}
+                      value={trainer.trainerProfile?.name || trainer.email}
+                      onSelect={() => {
+                        setFormData({ ...formData, trainerId: trainer.id });
+                        setTrainerSearchOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          formData.trainerId === trainer.id ? 'opacity-100' : 'opacity-0'
+                        )}
                       />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input 
-                      id="endTime" 
-                      type="time" 
-                      value={formData.endTime}
-                      onChange={(e) => setFormData({...formData, endTime: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="school">School</Label>
-                    <Popover open={schoolSearchOpen} onOpenChange={setSchoolSearchOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={schoolSearchOpen}
-                          className="w-full justify-between"
-                        >
-                          {formData.schoolId 
-                            ? getSchoolName(formData.schoolId)
-                            : "Select school..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search schools by name or EMIS code..." />
-                          <CommandList>
-                            <CommandEmpty>No school found.</CommandEmpty>
-                            <CommandGroup>
-                              {apiSchools.map((school) => (
-                                <CommandItem
-                                  key={school.id}
-                                  value={`${school.name} ${school.emisCode || ''}`}
-                                  onSelect={() => {
-                                    setFormData({...formData, schoolId: school.id});
-                                    setSchoolSearchOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      formData.schoolId === school.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <div className="flex flex-col">
-                                    <span>{school.name}</span>
-                                    {school.emisCode && (
-                                      <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
-                                    )}
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="trainer">Trainer</Label>
-                    <Popover open={trainerSearchOpen} onOpenChange={setTrainerSearchOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={trainerSearchOpen}
-                          className="w-full justify-between"
-                        >
-                          {formData.trainerId 
-                            ? getTrainerName(formData.trainerId)
-                            : "Select trainer..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search trainers..." />
-                          <CommandList>
-                            <CommandEmpty>No trainer found.</CommandEmpty>
-                            <CommandGroup>
-                              {apiTrainers.map((trainer) => (
-                                <CommandItem
-                                  key={trainer.id}
-                                  value={trainer.trainerProfile?.name || trainer.email}
-                                  onSelect={() => {
-                                    setFormData({...formData, trainerId: trainer.id});
-                                    setTrainerSearchOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      formData.trainerId === trainer.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {trainer.trainerProfile?.name || trainer.email}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <Button className="w-full" onClick={handleCreateSession}>
-                    Create Session
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                      {trainer.trainerProfile?.name || trainer.email}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      <Button className="w-full" onClick={handleEditSession}>
+        Update Session
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
           )}
         </div>
       </div>
