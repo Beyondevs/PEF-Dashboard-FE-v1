@@ -79,7 +79,7 @@ export default function Schools() {
 
       // Check if filters have changed - if so, reset to page 1
       const prevFilters = prevFiltersRef.current;
-      const filtersChanged = 
+      const filtersChanged =
         prevFilters.division !== filters.division ||
         prevFilters.district !== filters.district ||
         prevFilters.tehsil !== filters.tehsil ||
@@ -104,11 +104,11 @@ export default function Schools() {
         }
       }
 
-      const params: Record<string, string | number> = { 
-        page: effectivePage, 
-        pageSize: pagination.pageSize
+      const params: Record<string, string | number> = {
+        page: effectivePage,
+        pageSize: pagination.pageSize,
       };
-      
+
       // Add search parameter if provided
       if (activeSearchTerm && activeSearchTerm.trim()) {
         params.search = activeSearchTerm.trim();
@@ -127,14 +127,14 @@ export default function Schools() {
       if (filters.school) {
         params.schoolId = filters.school;
       }
-      
+
       const response = await api.getSchools(params);
       setSchools(response.data.data);
       setPagination(prev => ({
         ...prev,
         page: response.data.page,
         pageSize: response.data.pageSize,
-        total: (response.data as any).totalItems || response.data.total
+        total: (response.data as any).totalItems || response.data.total,
       }));
     } catch (error) {
       toast({
@@ -239,11 +239,11 @@ export default function Schools() {
 
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
 
-  const filteredDistricts = districts.filter((d: any) => 
+  const filteredDistricts = districts.filter((d: any) =>
     !formData.divisionId || d.divisionId === formData.divisionId
   );
 
-  const filteredTehsils = tehsils.filter((t: any) => 
+  const filteredTehsils = tehsils.filter((t: any) =>
     !formData.districtId || t.districtId === formData.districtId
   );
 
@@ -254,7 +254,7 @@ export default function Schools() {
         <p className="text-muted-foreground mt-1">Manage schools and their details</p>
       </div>
 
-            <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6">
         <div className="relative flex gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -329,12 +329,123 @@ export default function Schools() {
                   Add School
                 </Button>
               </DialogTrigger>
-              {/* dialog content ... */}
+
+              {/* --------------  DIALOG CONTENT  -------------- */}
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>{editingSchool ? 'Edit School' : 'Add New School'}</DialogTitle>
+                </DialogHeader>
+
+                <div className="grid gap-4 py-4">
+                  {/* EMIS Code */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="emisCode" className="text-right">EMIS Code</Label>
+                    <Input
+                      id="emisCode"
+                      value={formData.emisCode}
+                      onChange={(e) => setFormData({ ...formData, emisCode: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+
+                  {/* Name */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+
+                  {/* Division */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="divisionId" className="text-right">Division</Label>
+                    <select
+                      id="divisionId"
+                      value={formData.divisionId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, divisionId: e.target.value, districtId: '', tehsilId: '' })
+                      }
+                      className="col-span-3 form-select"
+                    >
+                      <option value="">-- Select Division --</option>
+                      {divisions.map((d: any) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* District */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="districtId" className="text-right">District</Label>
+                    <select
+                      id="districtId"
+                      value={formData.districtId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, districtId: e.target.value, tehsilId: '' })
+                      }
+                      className="col-span-3 form-select"
+                    >
+                      <option value="">-- Select District --</option>
+                      {filteredDistricts.map((d: any) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Tehsil */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="tehsilId" className="text-right">Tehsil</Label>
+                    <select
+                      id="tehsilId"
+                      value={formData.tehsilId}
+                      onChange={(e) => setFormData({ ...formData, tehsilId: e.target.value })}
+                      className="col-span-3 form-select"
+                    >
+                      <option value="">-- Select Tehsil --</option>
+                      {filteredTehsils.map((t: any) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Address */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="address" className="text-right">Address</Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+
+                  {/* Capacity */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="capacity" className="text-right">Capacity</Label>
+                    <Input
+                      id="capacity"
+                      type="number"
+                      value={formData.capacity}
+                      onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+
+                {/* Footer buttons */}
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleSave}>Save</Button>
+                </div>
+              </DialogContent>
+              {/* --------------  END DIALOG CONTENT  -------------- */}
             </Dialog>
           )}
         </div>
       </div>
-
 
       <div className="border rounded-lg">
         <Table>
