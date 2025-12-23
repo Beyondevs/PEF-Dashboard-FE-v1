@@ -47,7 +47,7 @@ import { cn } from '@/lib/utils';
 
 const Sessions = () => {
   const { role, isAdmin, canEdit } = useAuth();
-  const canManageSessions = () => isAdmin();
+  const canManageSessions = () => role === 'admin';
   const { filters } = useFilters();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -97,7 +97,6 @@ const Sessions = () => {
       setIsLoading(true);
       setApiError(false);
 
-      // Check if filters have changed - if so, reset to page 1
       const prevFilters = prevFiltersRef.current;
       const filtersChanged = 
         prevFilters.sessionId !== filters.sessionId ||
@@ -108,10 +107,8 @@ const Sessions = () => {
         prevFilters.startDate !== filters.startDate ||
         prevFilters.endDate !== filters.endDate;
 
-      // Determine effective page: use page 1 if filters changed
       const effectivePage = filtersChanged ? 1 : currentPage;
 
-      // Update the ref to track current filter values
       if (filtersChanged) {
         prevFiltersRef.current = {
           sessionId: filters.sessionId,
@@ -122,10 +119,7 @@ const Sessions = () => {
           startDate: filters.startDate,
           endDate: filters.endDate,
         };
-        // Also update state to keep UI in sync
-        if (currentPage !== 1) {
-          setCurrentPage(1);
-        }
+        if (currentPage !== 1) setCurrentPage(1);
       }
 
       const params: Record<string, string | number> = {
@@ -143,7 +137,6 @@ const Sessions = () => {
       if (activeSearchTerm) params.search = activeSearchTerm;
 
       const response = await getSessions(params);
-
       setApiSessions(response.data.data || []);
       const total = (response.data as any).totalItems || (response.data as any).total || 0;
       const computedTotalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -158,7 +151,6 @@ const Sessions = () => {
     }
   }, [currentPage, activeSearchTerm, filters.sessionId, filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
 
-  // Fetch sessions from API
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
@@ -172,21 +164,16 @@ const Sessions = () => {
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+    if (e.key === 'Enter') handleSearch();
   };
 
-  // Fetch schools and trainers for create form
   useEffect(() => {
     const fetchFormData = async () => {
       try {
-        // Load schools and trainers for better search experience
         const [schoolsResponse, trainersResponse] = await Promise.all([
           getSchools({ page: 1, pageSize: 1000 }),
           getTrainers({ page: 1, pageSize: 1000 })
         ]);
-        
         setApiSchools(schoolsResponse.data.data || []);
         setApiTrainers(trainersResponse.data.data || []);
       } catch (error) {
@@ -195,42 +182,33 @@ const Sessions = () => {
         setApiTrainers([]);
       }
     };
-
     fetchFormData();
   }, []);
 
-  // Use API pagination directly
   const paginatedSessions = apiSessions;
-  // Calculate pagination indices - ensure they're always valid
   const startIndex = totalItems > 0 && currentPage > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
   const endIndex = totalItems > 0 && currentPage > 0 ? Math.min(currentPage * pageSize, totalItems) : 0;
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
-      Planned: 'outline',
-      Ongoing: 'default',
-      Completed: 'secondary',
+      draft: 'outline',
+      published: 'outline',
+      in_progress: 'default',
+      completed: 'secondary',
+      cancelled: 'destructive',
     };
     return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
   };
 
   const formatDateForInput = (value: string | Date | null | undefined) => {
     if (!value) return '';
-
     const normalize = (date: Date) => {
       const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
       return adjusted.toISOString().split('T')[0];
     };
-
-    if (value instanceof Date) {
-      return normalize(value);
-    }
-
+    if (value instanceof Date) return normalize(value);
     const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) {
-      return normalize(parsed);
-    }
-
+    if (!Number.isNaN(parsed.getTime())) return normalize(parsed);
     const [datePart] = value.split('T');
     return datePart ?? value;
   };
@@ -264,13 +242,10 @@ const Sessions = () => {
 
   const handleCreateSession = async () => {
     try {
-      // Validate required fields
       if (!formData.title || !formData.schoolId || !formData.trainerId || !formData.date || !formData.startTime) {
         toast.error('Please fill in all required fields');
         return;
       }
-
-      // Prepare the data for API
       const sessionData = {
         title: formData.title,
         courseName: 'Spoken English Programme' as const,
@@ -280,24 +255,11 @@ const Sessions = () => {
         schoolId: formData.schoolId,
         trainerId: formData.trainerId,
       };
-
       await createSession(sessionData);
       toast.success('Session created successfully');
       setIsCreateOpen(false);
-      
-      // Reset form
-      setFormData({
-        title: '',
-        date: '',
-        startTime: '',
-        endTime: '',
-        schoolId: '',
-        trainerId: '',
-      });
-      
-      // Refresh sessions list
+      setFormData({ title: '', date: '', startTime: '', endTime: '', schoolId: '', trainerId: '' });
       await fetchSessions();
-      
     } catch (error) {
       console.error('Failed to create session:', error);
       toast.error('Failed to create session. Please try again.');
@@ -306,15 +268,11 @@ const Sessions = () => {
 
   const handleEditSession = async () => {
     if (!editingSession) return;
-
     try {
-      // Validate required fields
       if (!formData.title || !formData.schoolId || !formData.trainerId || !formData.date || !formData.startTime) {
         toast.error('Please fill in all required fields');
         return;
       }
-
-      // Prepare the data for API
       const sessionData = {
         title: formData.title,
         courseName: 'Spoken English Programme' as const,
@@ -324,24 +282,12 @@ const Sessions = () => {
         schoolId: formData.schoolId,
         trainerId: formData.trainerId,
       };
-
       await updateSession(editingSession.id, sessionData);
       toast.success('Session updated successfully');
       setIsEditOpen(false);
       setEditingSession(null);
-      
-      // Reset form
-      setFormData({
-        title: '',
-        date: '',
-        startTime: '',
-        endTime: '',
-        schoolId: '',
-      });
-      
-      // Refresh sessions list
+      setFormData({ title: '', date: '', startTime: '', endTime: '', schoolId: '', trainerId: '' });
       await fetchSessions();
-      
     } catch (error) {
       console.error('Failed to update session:', error);
       toast.error('Failed to update session. Please try again.');
@@ -349,17 +295,11 @@ const Sessions = () => {
   };
 
   const handleDeleteSession = async (sessionId: string) => {
-    if (!window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
-      return;
-    }
-
+    if (!window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) return;
     try {
       await deleteSession(sessionId);
       toast.success('Session deleted successfully');
-      
-      // Refresh sessions list
       await fetchSessions();
-      
     } catch (error) {
       console.error('Failed to delete session:', error);
       toast.error('Failed to delete session. Please try again.');
@@ -388,9 +328,12 @@ const Sessions = () => {
         </div>
 
         <div className="flex flex-wrap gap-2 justify-end">
-          {/* Admin-only tools */}
-          {isAdmin() && (
+          {canManageSessions() && (
             <>
+              <Button variant="default" onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                New Session
+              </Button>
               <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1 sm:flex-initial">
                 <FileText className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Template</span>
@@ -409,214 +352,41 @@ const Sessions = () => {
             </>
           )}
 
-          {/* Export visible to everyone */}
-         <ExportButton
-  label="Export"
-  exportFn={async () => {
-    /* 1.  Get full list with the same filters you used for the table
-           (but WITHOUT sessionId)                                     */
-    const listParams: Record<string, string | number> = {};
-    if (filters.division) listParams.divisionId = filters.division;
-    if (filters.district) listParams.districtId = filters.district;
-    if (filters.tehsil) listParams.tehsilId = filters.tehsil;
-    if (filters.school) listParams.schoolId = filters.school;
-    if (filters.startDate) listParams.from = filters.startDate;
-    if (filters.endDate) listParams.to = filters.endDate;
-    if (activeSearchTerm) listParams.search = activeSearchTerm;
-    listParams.pageSize = 1000; // enough to get everything
-
-    const listRes = await getSessions(listParams);
-    let rows = listRes.data.data || [];
-
-    /* 2.  If a single session is selected, keep only that row   */
-    if (filters.sessionId) {
-      rows = rows.filter((s: any) => s.id === filters.sessionId);
-    }
-
-    /* 3.  Build CSV manually and return as Blob                */
-    if (rows.length === 0) {
-      return new Blob([''], { type: 'text/csv' });
-    }
-    const headers = ['Title', 'Course', 'Date', 'StartTime', 'EndTime', 'School', 'Status'];
-    const csv = [
-      headers.join(','),
-      ...rows.map((r: any) =>
-        [
-          `"${r.title}"`,
-          `"${r.courseName}"`,
-          `"${r.date}"`,
-          `"${r.startTime}"`,
-          `"${r.endTime}"`,
-          `"${r.school?.name || ''}"`,
-          `"${r.status}"`,
-        ].join(',')
-      ),
-    ].join('\n');
-
-    return new Blob([csv], { type: 'text/csv' });
-  }}
-  filename={
-    filters.sessionId
-      ? `session-${filters.sessionId}.csv`
-      : 'sessions.csv'
-  }
-/>
-
-          {canManageSessions() && (
-           
-<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-  <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-    <DialogHeader>
-      <DialogTitle>Edit Session</DialogTitle>
-      <DialogDescription>Update the training-session details</DialogDescription>
-    </DialogHeader>
-
-    <div className="space-y-4 py-4">
-      <div className="space-y-2">
-        <Label>Session Title</Label>
-        <Input
-          placeholder="Session title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Date</Label>
-          <Input
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+          <ExportButton
+            label="Export"
+            exportFn={async () => {
+              const listParams: Record<string, string | number> = {};
+              if (filters.division) listParams.divisionId = filters.division;
+              if (filters.district) listParams.districtId = filters.district;
+              if (filters.tehsil) listParams.tehsilId = filters.tehsil;
+              if (filters.school) listParams.schoolId = filters.school;
+              if (filters.startDate) listParams.from = filters.startDate;
+              if (filters.endDate) listParams.to = filters.endDate;
+              if (activeSearchTerm) listParams.search = activeSearchTerm;
+              listParams.pageSize = 1000;
+              const listRes = await getSessions(listParams);
+              let rows = listRes.data.data || [];
+              if (filters.sessionId) rows = rows.filter((s: any) => s.id === filters.sessionId);
+              if (rows.length === 0) return new Blob([''], { type: 'text/csv' });
+              const headers = ['Title', 'Course', 'Date', 'StartTime', 'EndTime', 'School', 'Status'];
+              const csv = [
+                headers.join(','),
+                ...rows.map((r: any) =>
+                  [
+                    `"${r.title}"`,
+                    `"${r.courseName}"`,
+                    `"${r.date}"`,
+                    `"${r.startTime}"`,
+                    `"${r.endTime}"`,
+                    `"${r.school?.name || ''}"`,
+                    `"${r.status}"`,
+                  ].join(',')
+                ),
+              ].join('\n');
+              return new Blob([csv], { type: 'text/csv' });
+            }}
+            filename={filters.sessionId ? `session-${filters.sessionId}.csv` : 'sessions.csv'}
           />
-        </div>
-        <div className="space-y-2">
-          <Label>Start Time</Label>
-          <Input
-            type="time"
-            value={formData.startTime}
-            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>End Time</Label>
-        <Input
-          type="time"
-          value={formData.endTime}
-          onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-        />
-      </div>
-
-      {/* School selector (same popover you already have) */}
-      <div className="space-y-2">
-        <Label>School</Label>
-        <Popover open={schoolSearchOpen} onOpenChange={setSchoolSearchOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={schoolSearchOpen}
-              className="w-full justify-between"
-            >
-              {formData.schoolId
-                ? getSchoolName(formData.schoolId)
-                : 'Select school...'}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search schools..." />
-              <CommandList>
-                <CommandEmpty>No school found.</CommandEmpty>
-                <CommandGroup>
-                  {apiSchools.map((school) => (
-                    <CommandItem
-                      key={school.id}
-                      value={`${school.name} ${school.emisCode || ''}`}
-                      onSelect={() => {
-                        setFormData({ ...formData, schoolId: school.id });
-                        setSchoolSearchOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          formData.schoolId === school.id ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      <div className="flex flex-col">
-                        <span>{school.name}</span>
-                        {school.emisCode && (
-                          <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Trainer selector (same popover you already have) */}
-      <div className="space-y-2">
-        <Label>Trainer</Label>
-        <Popover open={trainerSearchOpen} onOpenChange={setTrainerSearchOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={trainerSearchOpen}
-              className="w-full justify-between"
-            >
-              {formData.trainerId
-                ? getTrainerName(formData.trainerId)
-                : 'Select trainer...'}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search trainers..." />
-              <CommandList>
-                <CommandEmpty>No trainer found.</CommandEmpty>
-                <CommandGroup>
-                  {apiTrainers.map((trainer) => (
-                    <CommandItem
-                      key={trainer.id}
-                      value={trainer.trainerProfile?.name || trainer.email}
-                      onSelect={() => {
-                        setFormData({ ...formData, trainerId: trainer.id });
-                        setTrainerSearchOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          formData.trainerId === trainer.id ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      {trainer.trainerProfile?.name || trainer.email}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <Button className="w-full" onClick={handleEditSession}>
-        Update Session
-      </Button>
-    </div>
-  </DialogContent>
-</Dialog>
-          )}
         </div>
       </div>
 
@@ -655,7 +425,7 @@ const Sessions = () => {
                     subtitle={school?.name}
                     badges={[
                       { label: session.courseName, variant: "secondary" },
-                      { label: session.status, variant: session.status === 'Completed' ? 'default' : session.status === 'Ongoing' ? 'destructive' : 'outline' }
+                      { label: session.status, variant: session.status === 'completed' ? 'default' : session.status === 'in_progress' ? 'destructive' : 'outline' }
                     ]}
                     metadata={[
                       {
@@ -671,15 +441,12 @@ const Sessions = () => {
                     ]}
                     actions={
                       <div className="flex flex-col gap-2 w-full">
-                        {/* Attendance indicator for mobile - icon only with tooltip */}
                         <div className="flex items-center gap-2">
                           <TooltipProvider>
                             {session.attendanceCount === 0 || session.attendanceCount === undefined ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <AlertCircle 
-                                    className="h-4 w-4 text-amber-600 cursor-help" 
-                                  />
+                                  <AlertCircle className="h-4 w-4 text-amber-600 cursor-help" />
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Attendance records not generated</p>
@@ -688,9 +455,7 @@ const Sessions = () => {
                             ) : (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <CheckCircle2 
-                                    className="h-4 w-4 text-green-600 cursor-help" 
-                                  />
+                                  <CheckCircle2 className="h-4 w-4 text-green-600 cursor-help" />
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Attendance records exist</p>
@@ -699,34 +464,21 @@ const Sessions = () => {
                             )}
                           </TooltipProvider>
                         </div>
-                      <div className="flex gap-2 w-full">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => navigate(`/sessions/${session.id}`)}
-                          className="flex-1"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
-                        </Button>
-                        {canManageSessions() && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditDialog(session)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteSession(session.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
+                        <div className="flex gap-2 w-full">
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/sessions/${session.id}`)} className="flex-1">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                          {canManageSessions() && (
+                            <>
+                              <Button size="sm" variant="outline" onClick={() => openEditDialog(session)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleDeleteSession(session.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     }
@@ -735,94 +487,77 @@ const Sessions = () => {
               })}
             </div>
           ) : (
-          <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>School</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedSessions.map(session => {
-                const school = apiSchools.find(s => s.id === session.schoolId);
-                return (
-                  <TableRow key={session.id}>
-                    <TableCell className="font-medium">{session.title}</TableCell>
-                    <TableCell>{session.courseName}</TableCell>
-                    <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{session.startTime} - {session.endTime}</TableCell>
-                    <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
-                    <TableCell>{getStatusBadge(session.status)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {/* Attendance indicator - icon only with tooltip */}
-                        <TooltipProvider>
-                          {session.attendanceCount === 0 || session.attendanceCount === undefined ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <AlertCircle 
-                                  className="h-4 w-4 text-amber-600 cursor-help" 
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Attendance records not generated</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <CheckCircle2 
-                                  className="h-4 w-4 text-green-600 cursor-help" 
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Attendance records exist</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                        </TooltipProvider>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => navigate(`/sessions/${session.id}`)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                        {canManageSessions() && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditDialog(session)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteSession(session.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        </div>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>School</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {paginatedSessions.map(session => {
+                    const school = apiSchools.find(s => s.id === session.schoolId);
+                    return (
+                      <TableRow key={session.id}>
+                        <TableCell className="font-medium">{session.title}</TableCell>
+                        <TableCell>{session.courseName}</TableCell>
+                        <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{session.startTime} - {session.endTime}</TableCell>
+                        <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
+                        <TableCell>{getStatusBadge(session.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <TooltipProvider>
+                              {session.attendanceCount === 0 || session.attendanceCount === undefined ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertCircle className="h-4 w-4 text-amber-600 cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Attendance records not generated</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <CheckCircle2 className="h-4 w-4 text-green-600 cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Attendance records exist</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </TooltipProvider>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" onClick={() => navigate(`/sessions/${session.id}`)}>
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              {canManageSessions() && (
+                                <>
+                                  <Button size="sm" variant="outline" onClick={() => openEditDialog(session)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="destructive" onClick={() => handleDeleteSession(session.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
 
           <PaginationControls
@@ -838,6 +573,302 @@ const Sessions = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Create Session Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Session</DialogTitle>
+            <DialogDescription>Fill in the details to create a new session</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Session Title</Label>
+              <Input
+                placeholder="Session title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>End Time</Label>
+              <Input
+                type="time"
+                value={formData.endTime}
+                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>School</Label>
+              <Popover open={schoolSearchOpen} onOpenChange={setSchoolSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={schoolSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {formData.schoolId ? getSchoolName(formData.schoolId) : 'Select school...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search schools..." />
+                    <CommandList>
+                      <CommandEmpty>No school found.</CommandEmpty>
+                      <CommandGroup>
+                        {apiSchools.map((school) => (
+                          <CommandItem
+                            key={school.id}
+                            value={`${school.name} ${school.emisCode || ''}`}
+                            onSelect={() => {
+                              setFormData({ ...formData, schoolId: school.id });
+                              setSchoolSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                formData.schoolId === school.id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span>{school.name}</span>
+                              {school.emisCode && (
+                                <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Trainer</Label>
+              <Popover open={trainerSearchOpen} onOpenChange={setTrainerSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={trainerSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {formData.trainerId ? getTrainerName(formData.trainerId) : 'Select trainer...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search trainers..." />
+                    <CommandList>
+                      <CommandEmpty>No trainer found.</CommandEmpty>
+                      <CommandGroup>
+                        {apiTrainers.map((trainer) => (
+                          <CommandItem
+                            key={trainer.id}
+                            value={trainer.trainerProfile?.name || trainer.email}
+                            onSelect={() => {
+                              setFormData({ ...formData, trainerId: trainer.id });
+                              setTrainerSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                formData.trainerId === trainer.id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            {trainer.trainerProfile?.name || trainer.email}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Button className="w-full" onClick={handleCreateSession}>
+              Create Session
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Session Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Session</DialogTitle>
+            <DialogDescription>Update the training-session details</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Session Title</Label>
+              <Input
+                placeholder="Session title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>End Time</Label>
+              <Input
+                type="time"
+                value={formData.endTime}
+                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>School</Label>
+              <Popover open={schoolSearchOpen} onOpenChange={setSchoolSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={schoolSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {formData.schoolId ? getSchoolName(formData.schoolId) : 'Select school...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search schools..." />
+                    <CommandList>
+                      <CommandEmpty>No school found.</CommandEmpty>
+                      <CommandGroup>
+                        {apiSchools.map((school) => (
+                          <CommandItem
+                            key={school.id}
+                            value={`${school.name} ${school.emisCode || ''}`}
+                            onSelect={() => {
+                              setFormData({ ...formData, schoolId: school.id });
+                              setSchoolSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                formData.schoolId === school.id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span>{school.name}</span>
+                              {school.emisCode && (
+                                <span className="text-xs text-muted-foreground">EMIS: {school.emisCode}</span>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Trainer</Label>
+              <Popover open={trainerSearchOpen} onOpenChange={setTrainerSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={trainerSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {formData.trainerId ? getTrainerName(formData.trainerId) : 'Select trainer...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search trainers..." />
+                    <CommandList>
+                      <CommandEmpty>No trainer found.</CommandEmpty>
+                      <CommandGroup>
+                        {apiTrainers.map((trainer) => (
+                          <CommandItem
+                            key={trainer.id}
+                            value={trainer.trainerProfile?.name || trainer.email}
+                            onSelect={() => {
+                              setFormData({ ...formData, trainerId: trainer.id });
+                              setTrainerSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                formData.trainerId === trainer.id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            {trainer.trainerProfile?.name || trainer.email}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Button className="w-full" onClick={handleEditSession}>
+              Update Session
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
