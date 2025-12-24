@@ -73,7 +73,8 @@ export const publishSession = (id: string) => apiClient.post<Session>(`/sessions
 // Attendance
 export const getSessionAttendance = (id: string) => apiClient.get<{ session: any; teachers: any[]; students: any[] }>(`/attendance/sessions/${id}`);
 export const bulkUpsertAttendance = (id: string, body: any) => apiClient.put(`/attendance/sessions/${id}`, body);
-export const toggleAttendance = (id: string) => apiClient.patch(`/attendance/${id}`, {});
+export const toggleAttendance = (id: string, present?: boolean) => 
+  apiClient.patch(`/attendance/${id}`, present !== undefined ? { present } : {});
 export const getAttendanceList = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<{ data: Attendance[]; page: number; pageSize: number; total: number }>(`/attendance${qs ? `?${qs}` : ''}`);

@@ -316,13 +316,17 @@ const Attendance = () => {
         return;
       }
       
-      // Batch API calls for records that need to be toggled
-      const savePromises = changesToSave.map(recordId => 
-        toggleAttendance(recordId).catch(error => {
+      // Batch API calls for records that need to be updated
+      // Pass the desired value directly instead of toggling
+      const savePromises = changesToSave.map(recordId => {
+        const originalRecord = attendanceMap.get(recordId);
+        const desiredValue = attendanceChanges[recordId];
+        // Pass the desired value to set it directly
+        return toggleAttendance(recordId, desiredValue).catch(error => {
           console.error(`Failed to save attendance for record ${recordId}:`, error);
           return { error: true, recordId };
-        })
-      );
+        });
+      });
 
       const results = await Promise.all(savePromises);
       
