@@ -102,8 +102,8 @@ const Assessments = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
     params.subjectType = activeTab === 'students' ? 'student' : 'teacher';
-    if (filters.startDate) params.from = filters.startDate;
-    if (filters.endDate) params.to = filters.endDate;
+    if (filters.startDate) params.startDate = filters.startDate;
+    if (filters.endDate) params.endDate = filters.endDate;
     if (activeSearchTerm) params.search = activeSearchTerm;
     return params;
   };
