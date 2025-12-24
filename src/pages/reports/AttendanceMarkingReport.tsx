@@ -65,32 +65,39 @@ const AttendanceMarkingReport = () => {
   const navigate = useNavigate();
   const [reportData, setReportData] = useState<AttendanceMarkingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'marked' | 'unmarked'>('unmarked');
 
   const handleExport = async () => {
+    setIsExporting(true);
     try {
       const params: Record<string, string> = {};
-      
-      // Apply geography filters
+
+      // geography filters
       if (filters.division) params.divisionId = filters.division;
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
-      
-      // Apply date filters from FilterBar
+
+      // date filters
       if (filters.startDate) params.from = filters.startDate;
       if (filters.endDate) params.to = filters.endDate;
+
+      // NEW: send active tab so backend exports only that slice
+      params.attendanceStatus =
+        activeTab === 'marked' ? 'marked' : activeTab === 'unmarked' ? 'unmarked' : 'all';
 
       const blob = await exportAttendanceMarkingCSV(params);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const dateRange = filters.startDate && filters.endDate 
-        ? `-${filters.startDate}-to-${filters.endDate}` 
-        : filters.startDate 
-          ? `-from-${filters.startDate}` 
+      const dateRange =
+        filters.startDate && filters.endDate
+          ? `-${filters.startDate}-to-${filters.endDate}`
+          : filters.startDate
+          ? `-from-${filters.startDate}`
           : '';
-      link.download = `attendance-marking-status${dateRange}.csv`;
+      link.download = `attendance-marking-${activeTab}${dateRange}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -99,6 +106,8 @@ const AttendanceMarkingReport = () => {
     } catch (error) {
       console.error('Failed to export attendance marking report:', error);
       toast.error('Failed to export attendance marking report');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -107,13 +116,10 @@ const AttendanceMarkingReport = () => {
       setIsLoading(true);
       const params: Record<string, string> = {};
 
-      // Apply geography filters
       if (filters.division) params.divisionId = filters.division;
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
-      
-      // Apply date filters from FilterBar
       if (filters.startDate) params.from = filters.startDate;
       if (filters.endDate) params.to = filters.endDate;
 
@@ -125,9 +131,8 @@ const AttendanceMarkingReport = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
+  }, [filters]);
 
-  // Fetch data when filters change
   useEffect(() => {
     fetchReportData();
   }, [fetchReportData]);
@@ -141,11 +146,12 @@ const AttendanceMarkingReport = () => {
     return <Badge variant={variants[status] || 'secondary'}>{status}</Badge>;
   };
 
-  const displaySessions = activeTab === 'marked' 
-    ? reportData?.markedSessions || []
-    : activeTab === 'unmarked'
-    ? reportData?.unmarkedSessions || []
-    : [...(reportData?.markedSessions || []), ...(reportData?.unmarkedSessions || [])];
+  const displaySessions =
+    activeTab === 'marked'
+      ? reportData?.markedSessions || []
+      : activeTab === 'unmarked'
+      ? reportData?.unmarkedSessions || []
+      : [...(reportData?.markedSessions || []), ...(reportData?.unmarkedSessions || [])];
 
   const {
     items: paginatedSessions,
@@ -188,9 +194,13 @@ const AttendanceMarkingReport = () => {
             </p>
           </div>
         </div>
-        <Button onClick={handleExport} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export
+        <Button onClick={handleExport} variant="outline" disabled={isExporting}>
+          {isExporting ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4 mr-2" />
+          )}
+          {isExporting ? 'Exporting…' : 'Export'}
         </Button>
       </div>
 
@@ -397,5 +407,3 @@ const AttendanceMarkingReport = () => {
 };
 
 export default AttendanceMarkingReport;
-
-
