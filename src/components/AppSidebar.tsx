@@ -12,6 +12,7 @@ import {
   UserCog,
   GraduationCap,
   MapPin,
+  Mic2,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -32,6 +33,7 @@ const trainerItems = [
   { title: 'Sessions', url: '/sessions', icon: Calendar },
   { title: 'Attendance', url: '/attendance', icon: Users },
   { title: 'Assessments', url: '/assessments', icon: ClipboardCheck },
+  { title: 'Speaking Assessment', url: '/speaking-assessments', icon: Mic2 },
   { title: 'Leaderboard', url: '/leaderboard', icon: Trophy },
   { title: 'Reports', url: '/reports', icon: FileText },
   { title: 'Schools', url: '/schools', icon: School },
@@ -42,6 +44,7 @@ const teacherItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Sessions', url: '/sessions', icon: Calendar },
   { title: 'Assessments', url: '/assessments', icon: ClipboardCheck },
+  { title: 'Speaking Assessment', url: '/speaking-assessments', icon: Mic2 },
   { title: 'Leaderboard', url: '/leaderboard', icon: Trophy },
   { title: 'Reports', url: '/reports', icon: FileText },
 ];
@@ -51,6 +54,7 @@ const adminClientItems = [
   { title: 'Sessions', url: '/sessions', icon: Calendar },
   { title: 'Attendance', url: '/attendance', icon: Users },
   { title: 'Assessments', url: '/assessments', icon: ClipboardCheck },
+  { title: 'Speaking Assessment', url: '/speaking-assessments', icon: Mic2 },
   { title: 'Leaderboard', url: '/leaderboard', icon: Trophy },
   { title: 'Reports', url: '/reports', icon: FileText },
   // { title: 'Repository', url: '/repository', icon: FolderOpen }, // Hidden for now

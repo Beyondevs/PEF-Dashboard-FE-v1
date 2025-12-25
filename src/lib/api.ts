@@ -508,4 +508,85 @@ export const downloadSessionsTemplate = async (): Promise<Blob> => {
   return response.data;
 };
 
+// ==================== SPEAKING ASSESSMENTS ====================
+
+// Speaking Assessment Types
+export type SpeakingAssessmentStatus = 'pending' | 'pre_completed' | 'mid_completed' | 'completed';
+export type AssessmentPhase = 'pre' | 'mid' | 'post';
+
+export interface FillStudentSpeakingAssessmentPayload {
+  phase: AssessmentPhase;
+  fluency: number;
+  completeSentences: number;
+  accuracy: number;
+  pronunciation: number;
+  vocabulary: number;
+  confidence: number;
+  askingQuestions: number;
+  answeringQuestions: number;
+  sharingInfo: number;
+  describing: number;
+  feelings: number;
+  audience: number;
+  notes?: string;
+}
+
+export interface FillTeacherSpeakingAssessmentPayload {
+  phase: AssessmentPhase;
+  fluency: number;
+  sentences: number;
+  accuracy: number;
+  pronunciation: number;
+  vocabulary: number;
+  confidence: number;
+  asking: number;
+  answering: number;
+  classroomInstructions: number;
+  feedback: number;
+  engagingStudents: number;
+  professionalInteraction: number;
+  passion: number;
+  roleModel: number;
+  notes?: string;
+}
+
+// Student Speaking Assessments
+export const getStudentSpeakingAssessments = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: any[]; page: number; pageSize: number; totalItems: number; totalPages: number }>(
+    `/speaking-assessments/students${qs ? `?${qs}` : ''}`
+  );
+};
+
+export const getStudentSpeakingAssessmentById = (id: string) =>
+  apiClient.get<any>(`/speaking-assessments/students/${id}`);
+
+export const fillStudentSpeakingAssessment = (id: string, data: FillStudentSpeakingAssessmentPayload) =>
+  apiClient.patch(`/speaking-assessments/students/${id}/fill`, data);
+
+// Teacher Speaking Assessments
+export const getTeacherSpeakingAssessments = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: any[]; page: number; pageSize: number; totalItems: number; totalPages: number }>(
+    `/speaking-assessments/teachers${qs ? `?${qs}` : ''}`
+  );
+};
+
+export const getTeacherSpeakingAssessmentById = (id: string) =>
+  apiClient.get<any>(`/speaking-assessments/teachers/${id}`);
+
+export const fillTeacherSpeakingAssessment = (id: string, data: FillTeacherSpeakingAssessmentPayload) =>
+  apiClient.patch(`/speaking-assessments/teachers/${id}/fill`, data);
+
+// Speaking Assessment Reports
+export const getStudentSpeakingAssessmentReport = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/speaking-assessments/reports/students${qs ? `?${qs}` : ''}`);
+};
+
+export const getTeacherSpeakingAssessmentReport = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/speaking-assessments/reports/teachers${qs ? `?${qs}` : ''}`);
+};
+
 

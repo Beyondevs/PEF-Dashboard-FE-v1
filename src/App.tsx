@@ -13,6 +13,8 @@ import Sessions from "./pages/Sessions";
 import SessionDetail from "./pages/SessionDetail";
 import Attendance from "./pages/Attendance";
 import Assessments from "./pages/Assessments";
+import SpeakingAssessments from "./pages/SpeakingAssessments";
+import SpeakingAssessmentReports from "./pages/SpeakingAssessmentReports";
 import Leaderboard from "./pages/Leaderboard";
 import Reports from "./pages/Reports";
 import TodayReport from "./pages/reports/TodayReport";
@@ -66,6 +68,8 @@ const App = () => (
               <Route path="/sessions/:id" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><SessionDetail /></PrivateRoute></ProtectedLayout>} />
               <Route path="/attendance" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Attendance /></PrivateRoute></ProtectedLayout>} />
               <Route path="/assessments" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Assessments /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/speaking-assessments" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><SpeakingAssessments /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/speaking-assessments/reports" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role']}><SpeakingAssessmentReports /></PrivateRoute></ProtectedLayout>} />
               <Route path="/leaderboard" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Leaderboard /></PrivateRoute></ProtectedLayout>} />
               <Route path="/reports" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Reports /></PrivateRoute></ProtectedLayout>} />
               <Route path="/reports/today" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><TodayReport /></PrivateRoute></ProtectedLayout>} />
