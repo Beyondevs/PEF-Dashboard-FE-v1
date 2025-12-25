@@ -32,6 +32,7 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
@@ -370,7 +371,15 @@ const SpeakingAssessments = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
+                {isLoading && activeTab === 'students' && studentAssessments.length > 0 && (
+                  <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Loading assessments...</p>
+                    </div>
+                  </div>
+                )}
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -386,7 +395,21 @@ const SpeakingAssessments = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {studentAssessments.length === 0 ? (
+                    {isLoading && activeTab === 'students' && studentAssessments.length === 0 ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={`skeleton-${i}`}>
+                          <TableCell><div className="h-4 bg-muted rounded w-24 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-32 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-6 bg-muted rounded w-16 animate-pulse"></div></TableCell>
+                          <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
+                          <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
+                          <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
+                          <TableCell className="text-right"><div className="h-8 bg-muted rounded w-16 ml-auto animate-pulse"></div></TableCell>
+                        </TableRow>
+                      ))
+                    ) : studentAssessments.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={9} className="text-center text-muted-foreground py-12">
                           <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -465,13 +488,18 @@ const SpeakingAssessments = () => {
                 </Table>
               </div>
               {studentTotalItems > 0 && (
-                <PaginationControls
-                  currentPage={studentPage}
-                  totalPages={studentTotalPages}
-                  onPageChange={setStudentPage}
-                  pageInfo={`Showing ${studentStartIndex}-${studentEndIndex} of ${studentTotalItems} assessments`}
-                  className="mt-6"
-                />
+                <div className={`mt-6 ${isLoading && activeTab === 'students' ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <PaginationControls
+                    currentPage={studentPage}
+                    totalPages={studentTotalPages}
+                    onPageChange={(page) => {
+                      if (!isLoading || activeTab !== 'students') {
+                        setStudentPage(page);
+                      }
+                    }}
+                    pageInfo={`Showing ${studentStartIndex}-${studentEndIndex} of ${studentTotalItems} assessments`}
+                  />
+                </div>
               )}
             </CardContent>
           </Card>
@@ -486,7 +514,15 @@ const SpeakingAssessments = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
+                {isLoading && activeTab === 'teachers' && teacherAssessments.length > 0 && (
+                  <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Loading assessments...</p>
+                    </div>
+                  </div>
+                )}
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -502,7 +538,21 @@ const SpeakingAssessments = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {teacherAssessments.length === 0 ? (
+                    {isLoading && activeTab === 'teachers' && teacherAssessments.length === 0 ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={`skeleton-${i}`}>
+                          <TableCell><div className="h-4 bg-muted rounded w-24 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-32 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-6 bg-muted rounded w-16 animate-pulse"></div></TableCell>
+                          <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
+                          <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
+                          <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
+                          <TableCell className="text-right"><div className="h-8 bg-muted rounded w-16 ml-auto animate-pulse"></div></TableCell>
+                        </TableRow>
+                      ))
+                    ) : teacherAssessments.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={9} className="text-center text-muted-foreground py-12">
                           <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -581,13 +631,18 @@ const SpeakingAssessments = () => {
                 </Table>
               </div>
               {teacherTotalItems > 0 && (
-                <PaginationControls
-                  currentPage={teacherPage}
-                  totalPages={teacherTotalPages}
-                  onPageChange={setTeacherPage}
-                  pageInfo={`Showing ${teacherStartIndex}-${teacherEndIndex} of ${teacherTotalItems} assessments`}
-                  className="mt-6"
-                />
+                <div className={`mt-6 ${isLoading && activeTab === 'teachers' ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <PaginationControls
+                    currentPage={teacherPage}
+                    totalPages={teacherTotalPages}
+                    onPageChange={(page) => {
+                      if (!isLoading || activeTab !== 'teachers') {
+                        setTeacherPage(page);
+                      }
+                    }}
+                    pageInfo={`Showing ${teacherStartIndex}-${teacherEndIndex} of ${teacherTotalItems} assessments`}
+                  />
+                </div>
               )}
             </CardContent>
           </Card>
