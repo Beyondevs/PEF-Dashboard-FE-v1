@@ -98,27 +98,23 @@ const SpeakingAssessments = () => {
     }
   };
 
-  const buildFilters = (pageNumber: number) => {
-    const apiFilters: Record<string, string | number> = {
-      page: pageNumber,
-      pageSize,
-    };
-
-    if (selectedStatus !== 'all') apiFilters.status = selectedStatus;
-    if (filters.division) apiFilters.divisionId = filters.division;
-    if (filters.district) apiFilters.districtId = filters.district;
-    if (filters.school) apiFilters.schoolId = filters.school;
-    if (filters.startDate) apiFilters.from = filters.startDate;
-    if (filters.endDate) apiFilters.to = filters.endDate;
-    if (activeSearchTerm) apiFilters.search = activeSearchTerm;
-
-    return apiFilters;
-  };
-
   const fetchStudentAssessments = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await getStudentSpeakingAssessments(buildFilters(studentPage));
+      const apiFilters: Record<string, string | number> = {
+        page: studentPage,
+        pageSize,
+      };
+
+      if (selectedStatus !== 'all') apiFilters.status = selectedStatus;
+      if (filters.division) apiFilters.divisionId = filters.division;
+      if (filters.district) apiFilters.districtId = filters.district;
+      if (filters.school) apiFilters.schoolId = filters.school;
+      if (filters.startDate) apiFilters.from = filters.startDate;
+      if (filters.endDate) apiFilters.to = filters.endDate;
+      if (activeSearchTerm) apiFilters.search = activeSearchTerm;
+
+      const response = await getStudentSpeakingAssessments(apiFilters);
       const { data, totalItems, totalPages } = response.data;
 
       setStudentAssessments(data ?? []);
@@ -131,12 +127,25 @@ const SpeakingAssessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [studentPage, filters, selectedStatus, activeSearchTerm]);
+  }, [studentPage, pageSize, selectedStatus, filters.division, filters.district, filters.school, filters.startDate, filters.endDate, activeSearchTerm]);
 
   const fetchTeacherAssessments = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await getTeacherSpeakingAssessments(buildFilters(teacherPage));
+      const apiFilters: Record<string, string | number> = {
+        page: teacherPage,
+        pageSize,
+      };
+
+      if (selectedStatus !== 'all') apiFilters.status = selectedStatus;
+      if (filters.division) apiFilters.divisionId = filters.division;
+      if (filters.district) apiFilters.districtId = filters.district;
+      if (filters.school) apiFilters.schoolId = filters.school;
+      if (filters.startDate) apiFilters.from = filters.startDate;
+      if (filters.endDate) apiFilters.to = filters.endDate;
+      if (activeSearchTerm) apiFilters.search = activeSearchTerm;
+
+      const response = await getTeacherSpeakingAssessments(apiFilters);
       const { data, totalItems, totalPages } = response.data;
 
       setTeacherAssessments(data ?? []);
@@ -149,7 +158,13 @@ const SpeakingAssessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [teacherPage, filters, selectedStatus, activeSearchTerm]);
+  }, [teacherPage, pageSize, selectedStatus, filters.division, filters.district, filters.school, filters.startDate, filters.endDate, activeSearchTerm]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setStudentPage(1);
+    setTeacherPage(1);
+  }, [filters.division, filters.district, filters.school, filters.startDate, filters.endDate, selectedStatus]);
 
   useEffect(() => {
     if (activeTab === 'students') {
