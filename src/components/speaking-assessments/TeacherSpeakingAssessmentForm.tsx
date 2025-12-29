@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { fillTeacherSpeakingAssessment, AssessmentPhase } from '@/lib/api';
 
 interface TeacherSpeakingAssessmentFormProps {
   assessment: any;
+  phaseToFill?: AssessmentPhase; // Optional: if provided, edit this phase; otherwise use nextPhase
   onClose: () => void;
   onSuccess: () => void;
 }
 
 const TeacherSpeakingAssessmentForm: React.FC<TeacherSpeakingAssessmentFormProps> = ({
   assessment,
+  phaseToFill,
   onClose,
   onSuccess,
 }) => {
@@ -35,7 +37,45 @@ const TeacherSpeakingAssessmentForm: React.FC<TeacherSpeakingAssessmentFormProps
     { id: 'roleModel', label: 'Professional Attitude/Role Model', desc: 'Serves as a role model in communication for students.' },
   ];
 
-  const nextPhase = assessment.nextPhase as AssessmentPhase;
+  // Use phaseToFill if provided (for editing), otherwise use nextPhase (for new fill)
+  const activePhase = (phaseToFill || assessment.nextPhase) as AssessmentPhase;
+  const isEditing = !!phaseToFill;
+
+  // Pre-populate form data when editing
+  useEffect(() => {
+    if (isEditing && assessment) {
+      const prefix = activePhase;
+      const initialData: Record<string, number> = {};
+      
+      // Map assessment fields to form data
+      const fieldMapping: Record<string, string> = {
+        fluency: 'Fluency',
+        sentences: 'Sentences',
+        accuracy: 'Accuracy',
+        pronunciation: 'Pronunciation',
+        vocabulary: 'Vocabulary',
+        confidence: 'Confidence',
+        asking: 'Asking',
+        answering: 'Answering',
+        classroomInstructions: 'ClassroomInstructions',
+        feedback: 'Feedback',
+        engagingStudents: 'EngagingStudents',
+        professionalInteraction: 'ProfessionalInteraction',
+        passion: 'Passion',
+        roleModel: 'RoleModel',
+      };
+
+      Object.entries(fieldMapping).forEach(([formKey, assessmentKey]) => {
+        const value = assessment[`${prefix}${assessmentKey}`];
+        if (value && value > 0) {
+          initialData[formKey] = value;
+        }
+      });
+
+      setFormData(initialData);
+      setNotes(assessment.notes || '');
+    }
+  }, [isEditing, activePhase, assessment]);
 
   const phaseLabel = {
     pre: 'Pre-Assessment',
@@ -61,7 +101,7 @@ const TeacherSpeakingAssessmentForm: React.FC<TeacherSpeakingAssessmentFormProps
     setLoading(true);
 
     const payload = {
-      phase: nextPhase,
+      phase: activePhase,
       fluency: formData.fluency,
       sentences: formData.sentences,
       accuracy: formData.accuracy,
@@ -89,7 +129,7 @@ const TeacherSpeakingAssessmentForm: React.FC<TeacherSpeakingAssessmentFormProps
     }
   };
 
-  if (!nextPhase) {
+  if (!activePhase) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
@@ -119,7 +159,7 @@ const TeacherSpeakingAssessmentForm: React.FC<TeacherSpeakingAssessmentFormProps
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-2xl font-semibold mb-2">
-                Teacher Speaking {phaseLabel[nextPhase]}
+                Teacher Speaking {phaseLabel[activePhase]} {isEditing ? '(Edit)' : ''}
               </h1>
               <p className="text-sm text-gray-600 mb-2">
                 Teacher: <strong>{assessment.teacherName}</strong> | School: <strong>{assessment.schoolName}</strong>
@@ -191,7 +231,7 @@ const TeacherSpeakingAssessmentForm: React.FC<TeacherSpeakingAssessmentFormProps
                 loading ? 'bg-gray-400' : 'bg-[#673AB7] hover:bg-[#5E35A6]'
               } text-white px-8 py-2 rounded font-medium transition-colors shadow-md`}
             >
-              {loading ? 'Saving...' : `Submit ${phaseLabel[nextPhase]}`}
+              {loading ? 'Saving...' : `${isEditing ? 'Update' : 'Submit'} ${phaseLabel[activePhase]}`}
             </button>
             <button
               type="button"

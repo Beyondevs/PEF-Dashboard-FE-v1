@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { fillStudentSpeakingAssessment, AssessmentPhase } from '@/lib/api';
 
 interface StudentSpeakingAssessmentFormProps {
   assessment: any;
+  phaseToFill?: AssessmentPhase; // Optional: if provided, edit this phase; otherwise use nextPhase
   onClose: () => void;
   onSuccess: () => void;
 }
 
 const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps> = ({
   assessment,
+  phaseToFill,
   onClose,
   onSuccess,
 }) => {
@@ -33,7 +35,43 @@ const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps
     { id: 'audience', label: 'Speaking for an Audience', desc: 'Can speak clearly when giving a short presentation.' },
   ];
 
-  const nextPhase = assessment.nextPhase as AssessmentPhase;
+  // Use phaseToFill if provided (for editing), otherwise use nextPhase (for new fill)
+  const activePhase = (phaseToFill || assessment.nextPhase) as AssessmentPhase;
+  const isEditing = !!phaseToFill;
+
+  // Pre-populate form data when editing
+  useEffect(() => {
+    if (isEditing && assessment) {
+      const prefix = activePhase;
+      const initialData: Record<string, number> = {};
+      
+      // Map assessment fields to form data
+      const fieldMapping: Record<string, string> = {
+        fluency: 'Fluency',
+        completeSentences: 'CompleteSentences',
+        accuracy: 'Accuracy',
+        pronunciation: 'Pronunciation',
+        vocabulary: 'Vocabulary',
+        confidence: 'Confidence',
+        askingQuestions: 'AskingQuestions',
+        answeringQuestions: 'AnsweringQuestions',
+        sharingInfo: 'SharingInfo',
+        describing: 'Describing',
+        feelings: 'Feelings',
+        audience: 'Audience',
+      };
+
+      Object.entries(fieldMapping).forEach(([formKey, assessmentKey]) => {
+        const value = assessment[`${prefix}${assessmentKey}`];
+        if (value && value > 0) {
+          initialData[formKey] = value;
+        }
+      });
+
+      setFormData(initialData);
+      setNotes(assessment.notes || '');
+    }
+  }, [isEditing, activePhase, assessment]);
 
   const phaseLabel = {
     pre: 'Pre-Assessment',
@@ -59,7 +97,7 @@ const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps
     setLoading(true);
 
     const payload = {
-      phase: nextPhase,
+      phase: activePhase,
       fluency: formData.fluency,
       completeSentences: formData.completeSentences,
       accuracy: formData.accuracy,
@@ -85,7 +123,7 @@ const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps
     }
   };
 
-  if (!nextPhase) {
+  if (!activePhase) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
@@ -115,7 +153,7 @@ const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-2xl font-semibold mb-2">
-                Student Speaking {phaseLabel[nextPhase]}
+                Student Speaking {phaseLabel[activePhase]} {isEditing ? '(Edit)' : ''}
               </h1>
               <p className="text-sm text-gray-600 mb-2">
                 Student: <strong>{assessment.studentName}</strong> | School: <strong>{assessment.schoolName}</strong>
@@ -187,7 +225,7 @@ const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps
                 loading ? 'bg-gray-400' : 'bg-[#673AB7] hover:bg-[#5E35A6]'
               } text-white px-8 py-2 rounded font-medium transition-colors shadow-md`}
             >
-              {loading ? 'Saving...' : `Submit ${phaseLabel[nextPhase]}`}
+              {loading ? 'Saving...' : `${isEditing ? 'Update' : 'Submit'} ${phaseLabel[activePhase]}`}
             </button>
             <button
               type="button"

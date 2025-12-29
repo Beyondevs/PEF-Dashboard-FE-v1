@@ -47,6 +47,8 @@ import {
 import {
   getStudentSpeakingAssessments,
   getTeacherSpeakingAssessments,
+  getStudentSpeakingAssessmentById,
+  getTeacherSpeakingAssessmentById,
   type SpeakingAssessmentStatus,
 } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
@@ -70,6 +72,7 @@ const SpeakingAssessments = () => {
   const [showTeacherForm, setShowTeacherForm] = useState(false);
   const [showStudentDetail, setShowStudentDetail] = useState(false);
   const [showTeacherDetail, setShowTeacherDetail] = useState(false);
+  const [editingPhase, setEditingPhase] = useState<'pre' | 'mid' | 'post' | null>(null);
 
   // Student assessments state
   const [studentAssessments, setStudentAssessments] = useState<any[]>([]);
@@ -181,6 +184,7 @@ const SpeakingAssessments = () => {
   const handleStudentFormSuccess = () => {
     setShowStudentForm(false);
     setSelectedStudentAssessment(null);
+    setEditingPhase(null);
     fetchStudentAssessments();
     toast.success('Assessment phase saved successfully');
   };
@@ -188,6 +192,7 @@ const SpeakingAssessments = () => {
   const handleTeacherFormSuccess = () => {
     setShowTeacherForm(false);
     setSelectedTeacherAssessment(null);
+    setEditingPhase(null);
     fetchTeacherAssessments();
     toast.success('Assessment phase saved successfully');
   };
@@ -248,12 +253,14 @@ const SpeakingAssessments = () => {
   // Handle student fill form click
   const handleStudentFillForm = (assessment: any) => {
     setSelectedStudentAssessment(assessment);
+    setEditingPhase(null); // Not editing, filling next phase
     setShowStudentForm(true);
   };
 
   // Handle teacher fill form click
   const handleTeacherFillForm = (assessment: any) => {
     setSelectedTeacherAssessment(assessment);
+    setEditingPhase(null); // Not editing, filling next phase
     setShowTeacherForm(true);
   };
 
@@ -270,15 +277,36 @@ const SpeakingAssessments = () => {
   };
 
   // Handle edit phase from detail view
-  const handleStudentEditPhase = (phase: 'pre' | 'mid' | 'post') => {
+  const handleStudentEditPhase = async (phase: 'pre' | 'mid' | 'post') => {
     setShowStudentDetail(false);
-    // For editing, we would need a different approach - for now, just show the form
-    toast.info('Edit functionality for completed phases coming soon');
+    setEditingPhase(phase);
+    
+    try {
+      // Fetch full assessment details to get all phase data
+      const response = await getStudentSpeakingAssessmentById(selectedStudentAssessment.id);
+      const fullAssessment = response.data;
+      setSelectedStudentAssessment(fullAssessment);
+      setShowStudentForm(true);
+    } catch (error) {
+      console.error('Failed to fetch assessment details:', error);
+      toast.error('Failed to load assessment details');
+    }
   };
 
-  const handleTeacherEditPhase = (phase: 'pre' | 'mid' | 'post') => {
+  const handleTeacherEditPhase = async (phase: 'pre' | 'mid' | 'post') => {
     setShowTeacherDetail(false);
-    toast.info('Edit functionality for completed phases coming soon');
+    setEditingPhase(phase);
+    
+    try {
+      // Fetch full assessment details to get all phase data
+      const response = await getTeacherSpeakingAssessmentById(selectedTeacherAssessment.id);
+      const fullAssessment = response.data;
+      setSelectedTeacherAssessment(fullAssessment);
+      setShowTeacherForm(true);
+    } catch (error) {
+      console.error('Failed to fetch assessment details:', error);
+      toast.error('Failed to load assessment details');
+    }
   };
 
   if (isLoading && studentAssessments.length === 0 && teacherAssessments.length === 0) {
@@ -668,9 +696,11 @@ const SpeakingAssessments = () => {
       {showStudentForm && selectedStudentAssessment && (
         <StudentSpeakingAssessmentForm
           assessment={selectedStudentAssessment}
+          phaseToFill={editingPhase || undefined}
           onClose={() => {
             setShowStudentForm(false);
             setSelectedStudentAssessment(null);
+            setEditingPhase(null);
           }}
           onSuccess={handleStudentFormSuccess}
         />
@@ -680,9 +710,11 @@ const SpeakingAssessments = () => {
       {showTeacherForm && selectedTeacherAssessment && (
         <TeacherSpeakingAssessmentForm
           assessment={selectedTeacherAssessment}
+          phaseToFill={editingPhase || undefined}
           onClose={() => {
             setShowTeacherForm(false);
             setSelectedTeacherAssessment(null);
+            setEditingPhase(null);
           }}
           onSuccess={handleTeacherFormSuccess}
         />
