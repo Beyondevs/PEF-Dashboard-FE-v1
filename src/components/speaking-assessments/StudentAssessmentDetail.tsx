@@ -52,7 +52,7 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
 
   const renderPhaseSection = (phase: 'pre' | 'mid' | 'post', title: string) => {
     const prefix = phase;
-    const totalScore = assessment[`${prefix}TotalScore`];
+    const totalScore = assessment[`${prefix}TotalScore`] ?? 0;
     const assessedAt = assessment[`${prefix}AssessedAt`];
     const isCompleted = totalScore > 0;
     const canEdit = assessment.status !== 'pending' || phase === 'pre';
@@ -91,12 +91,19 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
         {isCompleted ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              {categories.map((cat) => (
-                <div key={cat.id} className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">{cat.label}</span>
-                  {renderStars(assessment[`${prefix}${cat.id}`] || 0)}
-                </div>
-              ))}
+              {categories.map((cat) => {
+                // Map category ID to database field name (e.g., 'pre' + 'Fluency' = 'preFluency')
+                const fieldName = `${prefix}${cat.id}`;
+                const value = assessment[fieldName];
+                // Ensure we have a valid number (0-5)
+                const rating = typeof value === 'number' && value >= 0 && value <= 5 ? value : 0;
+                return (
+                  <div key={cat.id} className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-600">{cat.label}</span>
+                    {renderStars(rating)}
+                  </div>
+                );
+              })}
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-gray-200">
               <div>

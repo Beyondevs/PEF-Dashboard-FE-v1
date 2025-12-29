@@ -265,15 +265,31 @@ const SpeakingAssessments = () => {
   };
 
   // Handle student view details click
-  const handleStudentViewDetails = (assessment: any) => {
-    setSelectedStudentAssessment(assessment);
-    setShowStudentDetail(true);
+  const handleStudentViewDetails = async (assessment: any) => {
+    try {
+      // Fetch full assessment details to get all phase-specific fields
+      const response = await getStudentSpeakingAssessmentById(assessment.id);
+      const fullAssessment = response.data;
+      setSelectedStudentAssessment(fullAssessment);
+      setShowStudentDetail(true);
+    } catch (error) {
+      console.error('Failed to fetch assessment details:', error);
+      toast.error('Failed to load assessment details');
+    }
   };
 
   // Handle teacher view details click
-  const handleTeacherViewDetails = (assessment: any) => {
-    setSelectedTeacherAssessment(assessment);
-    setShowTeacherDetail(true);
+  const handleTeacherViewDetails = async (assessment: any) => {
+    try {
+      // Fetch full assessment details to get all phase-specific fields
+      const response = await getTeacherSpeakingAssessmentById(assessment.id);
+      const fullAssessment = response.data;
+      setSelectedTeacherAssessment(fullAssessment);
+      setShowTeacherDetail(true);
+    } catch (error) {
+      console.error('Failed to fetch assessment details:', error);
+      toast.error('Failed to load assessment details');
+    }
   };
 
   // Handle edit phase from detail view
