@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle } from 'lucide-react';
+import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle, Mic } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -42,6 +42,15 @@ const Reports = () => {
       color: 'text-amber-600',
       path: '/reports/attendance-marking',
       restrictedRoles: ['client', 'trainer'], // Hide from client and trainer roles
+    },
+    {
+      id: 5,
+      title: 'Speaking Assessment Report',
+      description: 'View comprehensive reports on student and teacher speaking skills assessments across all phases',
+      icon: Mic,
+      color: 'text-purple-600',
+      path: '/speaking-assessments/reports',
+      restrictedRoles: ['teacher', 'student'], // Hide from teachers and students
     },
   ];
 
