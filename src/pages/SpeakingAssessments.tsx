@@ -87,7 +87,7 @@ const SpeakingAssessments = () => {
   const [teacherTotalItems, setTeacherTotalItems] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
-  const pageSize = 20;
+  const pageSize = 100;
 
   const handleSearch = () => {
     setActiveSearchTerm(searchTerm.trim());
