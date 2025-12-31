@@ -294,34 +294,14 @@ export default function Students() {
 
   return (
     <div className="p-6">
-      {/* ---------- TOP BAR : title + Export button ---------- */}
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Students Management</h1>
-          <p className="text-muted-foreground mt-1">Manage student records and enrollments</p>
-        </div>
-
-        {/* ✅ EXPORT BUTTON PLACED HERE (blue-pen highlight) */}
-      <ExportButton
-  label="Export"
-  exportFn={async () => {
-    const params: Record<string, string | number> = {};
-    if (filters.division) params.divisionId = filters.division;
-    if (filters.district) params.districtId = filters.district;
-    if (filters.tehsil) params.tehsilId = filters.tehsil;
-    if (filters.school) params.schoolId = filters.school;
-    if (activeSearchTerm) params.search = activeSearchTerm;
-    if (statusFilter === 'active') params.isActive = 'true';
-    else if (statusFilter === 'inactive') params.isActive = 'false';
-    return api.exportStudents(params);
-  }}
-  filename="students.csv"
-/>
+      {/* Header */}
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">Students Management</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage student records and enrollments</p>
       </div>
-      {/* ----------------------------------------------------- */}
 
-      {/* Search + Add Student row */}
-      <div className="flex justify-between items-center mb-6">
+      {/* Search + Action buttons row - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div className="flex gap-2">
           <div className="relative flex gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
@@ -341,6 +321,23 @@ export default function Students() {
         </div>
 
         <div className="flex flex-wrap gap-2 justify-end">
+          {/* Export Button - Always visible */}
+          <ExportButton
+            label="Export"
+            exportFn={async () => {
+              const params: Record<string, string | number> = {};
+              if (filters.division) params.divisionId = filters.division;
+              if (filters.district) params.districtId = filters.district;
+              if (filters.tehsil) params.tehsilId = filters.tehsil;
+              if (filters.school) params.schoolId = filters.school;
+              if (activeSearchTerm) params.search = activeSearchTerm;
+              if (statusFilter === 'active') params.isActive = 'true';
+              else if (statusFilter === 'inactive') params.isActive = 'false';
+              return api.exportStudents(params);
+            }}
+            filename="students.csv"
+          />
+
           {isAdmin() && (
             <>
               <Button

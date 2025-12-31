@@ -244,7 +244,7 @@ export default function Teachers() {
         </div>
 
         <div className="flex flex-wrap gap-2 justify-end">
-          {/* REAL EXPORT - uses same filters as table */}
+          {/* Export Button */}
           <ExportButton
             label="Export"
             exportFn={async () => {
@@ -260,6 +260,18 @@ export default function Teachers() {
             }}
             filename="teachers.csv"
           />
+
+          {/* Import Button - Only for admin */}
+          {isAdmin() && (
+            <ImportButton
+              label="Import"
+              importFn={async (file) => {
+                const response = await api.importTeachersCSV(file);
+                return response.data as any;
+              }}
+              onSuccess={() => fetchTeachers()}
+            />
+          )}
 
           {canEdit() && (
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
