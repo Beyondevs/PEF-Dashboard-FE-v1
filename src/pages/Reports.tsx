@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle, Mic } from 'lucide-react';
+import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle, Mic, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -51,6 +51,15 @@ const Reports = () => {
       color: 'text-purple-600',
       path: '/speaking-assessments/reports',
       restrictedRoles: ['teacher', 'student'], // Hide from teachers and students
+    },
+    {
+      id: 6,
+      title: 'Monthly Attendance Calendar',
+      description: 'View student attendance in a calendar format with color-coded status for each day of the month',
+      icon: Calendar,
+      color: 'text-blue-600',
+      path: '/reports/monthly-attendance-calendar',
+      restrictedRoles: ['trainer'], // Hide from trainers - admin only
     },
   ];
 

@@ -155,6 +155,31 @@ export const exportAttendanceMarkingCSV = async (params: Record<string, string |
   return response.data;
 };
 
+export const getMonthlyAttendanceCalendar = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{
+    persons: Array<{
+      id: string;
+      name: string;
+      rollNo?: string;
+      cnic?: string;
+      school: { name: string; emisCode: string };
+      attendance: Record<string, 'P' | 'A' | 'H' | 'NS' | null>;
+    }>;
+    personType: 'student' | 'teacher';
+    month: number;
+    year: number;
+    totalDays: number;
+    holidays: string[];
+  }>(`/reports/monthly-attendance-calendar${qs ? `?${qs}` : ''}`);
+};
+
+export const exportMonthlyAttendanceCalendar = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/reports/monthly-attendance-calendar/export${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
 // Dashboard Aggregate (deprecated - use individual APIs)
 export const getDashboardAggregate = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();

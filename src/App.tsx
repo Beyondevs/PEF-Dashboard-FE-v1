@@ -21,6 +21,7 @@ import TodayReport from "./pages/reports/TodayReport";
 import DrilldownReport from "./pages/reports/DrilldownReport";
 import DistrictCompareReport from "./pages/reports/DistrictCompareReport";
 import AttendanceMarkingReport from "./pages/reports/AttendanceMarkingReport";
+import MonthlyAttendanceCalendar from "./pages/reports/MonthlyAttendanceCalendar";
 import Schools from "./pages/Schools";
 import Repository from "./pages/Repository";
 import WeeklySummaries from "./pages/WeeklySummaries";
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="/reports/drilldown" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><DrilldownReport /></PrivateRoute></ProtectedLayout>} />
               <Route path="/reports/district-compare" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><DistrictCompareReport /></PrivateRoute></ProtectedLayout>} />
               <Route path="/reports/attendance-marking" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><AttendanceMarkingReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/monthly-attendance-calendar" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><MonthlyAttendanceCalendar /></PrivateRoute></ProtectedLayout>} />
               <Route path="/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role']}><Schools /></PrivateRoute></ProtectedLayout>} />
               <Route path="/repository" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role']}><Repository /></PrivateRoute></ProtectedLayout>} />
               <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />
