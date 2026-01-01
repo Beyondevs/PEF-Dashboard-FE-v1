@@ -54,6 +54,9 @@ const MonthlyAttendanceCalendar = () => {
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
+  // Helper function to pad numbers with leading zeros
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -365,8 +368,7 @@ const MonthlyAttendanceCalendar = () => {
                                 {person.rollNo || '-'}
                               </TableCell>
                               {daysInMonth.map((day) => {
-                                const date = new Date(selectedYear, selectedMonth - 1, day);
-                                const dateKey = date.toISOString().split('T')[0];
+                                const dateKey = `${selectedYear}-${pad2(selectedMonth)}-${pad2(day)}`;
                                 const status = getDayStatus(dateKey, person.attendance, data.holidays);
                                 
                                 if (status === 'NS') {
@@ -496,8 +498,7 @@ const MonthlyAttendanceCalendar = () => {
                                 {person.cnic || '-'}
                               </TableCell>
                               {daysInMonth.map((day) => {
-                                const date = new Date(selectedYear, selectedMonth - 1, day);
-                                const dateKey = date.toISOString().split('T')[0];
+                                const dateKey = `${selectedYear}-${pad2(selectedMonth)}-${pad2(day)}`;
                                 const status = getDayStatus(dateKey, person.attendance, data.holidays);
                                 
                                 if (status === 'NS') {
