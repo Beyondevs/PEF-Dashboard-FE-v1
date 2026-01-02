@@ -151,7 +151,7 @@ export const exportDrilldownCSV = async (params: Record<string, string | number 
 
 export const exportAttendanceMarkingCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
   const qs = new URLSearchParams(params as any).toString();
-  const response = await apiClient.getBlob(`/data-transfer/reports/attendance-marking/export${qs ? `?${qs}` : ''}`);
+  const response = await apiClient.getBlob(`/reports/export/attendance-marking${qs ? `?${qs}` : ''}`);
   return response.data;
 };
 

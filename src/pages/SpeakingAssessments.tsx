@@ -296,7 +296,7 @@ const SpeakingAssessments = () => {
   const handleStudentEditPhase = async (phase: 'pre' | 'mid' | 'post') => {
     setShowStudentDetail(false);
     setEditingPhase(phase);
-    
+
     try {
       // Fetch full assessment details to get all phase data
       const response = await getStudentSpeakingAssessmentById(selectedStudentAssessment.id);
@@ -312,7 +312,7 @@ const SpeakingAssessments = () => {
   const handleTeacherEditPhase = async (phase: 'pre' | 'mid' | 'post') => {
     setShowTeacherDetail(false);
     setEditingPhase(phase);
-    
+
     try {
       // Fetch full assessment details to get all phase data
       const response = await getTeacherSpeakingAssessmentById(selectedTeacherAssessment.id);
@@ -397,15 +397,17 @@ const SpeakingAssessments = () => {
             </SelectContent>
           </Select>
 
-          {/* Reports Button */}
-          <Button
-            variant="outline"
-            onClick={() => navigate('/speaking-assessments/reports')}
-            className="gap-2"
-          >
-            <BarChart3 className="h-4 w-4" />
-            Reports
-          </Button>
+          {/* Reports Button - Hidden for trainers */}
+          {role !== 'trainer' && (
+            <Button
+              variant="outline"
+              onClick={() => navigate('/speaking-assessments/reports')}
+              className="gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Reports
+            </Button>
+          )}
         </div>
       </div>
 
