@@ -12,6 +12,7 @@ import { RotateCcw } from 'lucide-react';
 import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSessions, getDivisions, getDistricts, getTehsils, getSchools } from '@/lib/api';
+import { formatDateDDMMYYYY } from '@/lib/date';
 import { useState, useEffect } from 'react';
 import type { Session, Division, District, Tehsil, School } from '@/types';
 
@@ -435,7 +436,7 @@ export const FilterBar = () => {
             ) : (
               sessions.map(session => (
                 <SelectItem key={session.id} value={session.id}>
-                  {session.title} ({new Date(session.date).toLocaleDateString()})
+                  {session.title} ({formatDateDDMMYYYY(session.date)})
                 </SelectItem>
               ))
             )}
