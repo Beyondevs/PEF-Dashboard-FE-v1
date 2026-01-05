@@ -70,6 +70,10 @@ const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps
 
       setFormData(initialData);
       setNotes(assessment.notes || '');
+    } else {
+      // For new fill, ensure form is empty
+      setFormData({});
+      setNotes('');
     }
   }, [isEditing, activePhase, assessment]);
 

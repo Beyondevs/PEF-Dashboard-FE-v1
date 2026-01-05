@@ -713,6 +713,7 @@ const SpeakingAssessments = () => {
       {/* Student Form Modal */}
       {showStudentForm && selectedStudentAssessment && (
         <StudentSpeakingAssessmentForm
+          key={`student-form-${selectedStudentAssessment.id}-${editingPhase || 'next'}`}
           assessment={selectedStudentAssessment}
           phaseToFill={editingPhase || undefined}
           onClose={() => {
@@ -727,6 +728,7 @@ const SpeakingAssessments = () => {
       {/* Teacher Form Modal */}
       {showTeacherForm && selectedTeacherAssessment && (
         <TeacherSpeakingAssessmentForm
+          key={`teacher-form-${selectedTeacherAssessment.id}-${editingPhase || 'next'}`}
           assessment={selectedTeacherAssessment}
           phaseToFill={editingPhase || undefined}
           onClose={() => {
