@@ -196,7 +196,7 @@ const Sessions = () => {
       published: 'outline',
       in_progress: 'default',
       completed: 'secondary',
-      cancelled: 'destructive',
+      cancelled: 'outline',
     };
     return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
   };
@@ -358,35 +358,18 @@ const Sessions = () => {
           <ExportButton
             label="Export"
             exportFn={async () => {
-              const listParams: Record<string, string | number> = {};
-              if (filters.division) listParams.divisionId = filters.division;
-              if (filters.district) listParams.districtId = filters.district;
-              if (filters.tehsil) listParams.tehsilId = filters.tehsil;
-              if (filters.school) listParams.schoolId = filters.school;
-              if (filters.startDate) listParams.from = filters.startDate;
-              if (filters.endDate) listParams.to = filters.endDate;
-              if (activeSearchTerm) listParams.search = activeSearchTerm;
-              listParams.pageSize = 1000;
-              const listRes = await getSessions(listParams);
-              let rows = listRes.data.data || [];
-              if (filters.sessionId) rows = rows.filter((s: any) => s.id === filters.sessionId);
-              if (rows.length === 0) return new Blob([''], { type: 'text/csv' });
-              const headers = ['Title', 'Course', 'Date', 'StartTime', 'EndTime', 'School', 'Status'];
-              const csv = [
-                headers.join(','),
-                ...rows.map((r: any) =>
-                  [
-                    `"${r.title}"`,
-                    `"${r.courseName}"`,
-                    `"${r.date}"`,
-                    `"${r.startTime}"`,
-                    `"${r.endTime}"`,
-                    `"${r.school?.name || ''}"`,
-                    `"${r.status}"`,
-                  ].join(',')
-                ),
-              ].join('\n');
-              return new Blob([csv], { type: 'text/csv' });
+              const params: Record<string, string | number | boolean> = {};
+              if (filters.division) params.divisionId = filters.division;
+              if (filters.district) params.districtId = filters.district;
+              if (filters.tehsil) params.tehsilId = filters.tehsil;
+              if (filters.school) params.schoolId = filters.school;
+              if (filters.startDate) params.from = filters.startDate;
+              if (filters.endDate) params.to = filters.endDate;
+              if (activeSearchTerm) params.search = activeSearchTerm;
+              if (filters.sessionId) params.sessionId = filters.sessionId;
+
+              // Use backend export endpoint so we export ALL sessions (not limited to 1000)
+              return exportSessionsCSV(params);
             }}
             filename={filters.sessionId ? `session-${filters.sessionId}.csv` : 'sessions.csv'}
           />
