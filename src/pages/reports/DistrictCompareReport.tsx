@@ -16,6 +16,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { useEffect, useState, useCallback } from 'react';
 import { getDistrictComparisonReport, exportDistrictComparisonCSV } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DistrictData {
   district: {
@@ -35,6 +36,7 @@ interface DistrictData {
 
 const DistrictCompareReport = () => {
   const { filters } = useFilters();
+  const { role } = useAuth();
   const [districtData, setDistrictData] = useState<DistrictData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -121,10 +123,12 @@ const DistrictCompareReport = () => {
           <h1 className="text-3xl font-bold text-foreground">District Comparison Report</h1>
           <p className="text-muted-foreground">Compare performance metrics across all districts in Punjab</p>
         </div>
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
+        {role !== 'bnu' && (
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+        )}
       </div>
 
       {isLoading ? (

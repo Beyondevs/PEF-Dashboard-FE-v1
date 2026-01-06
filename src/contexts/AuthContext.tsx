@@ -108,6 +108,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           teacher: 'Teacher',
           student: 'Student',
           division_role: 'Division User',
+          bnu: 'BNU User',
         };
         setUserName(nameMap[userRole] || 'User');
       }
@@ -198,6 +199,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           teacher: 'Teacher',
           student: 'Student',
           division_role: profile?.division?.name || 'Division User',
+          bnu: 'BNU User',
         };
         setUserName(nameMap[userRole] || 'User');
       }

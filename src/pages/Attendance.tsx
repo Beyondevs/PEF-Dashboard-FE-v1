@@ -55,7 +55,7 @@ const Attendance = () => {
   const [studentTotalItems, setStudentTotalItems] = useState(0);
   const pageSize = 100;
   const hasManagePermissions = canMarkAttendance();
-  const showDataTransferButtons = isAdmin();
+  const showDataTransferButtons = isAdmin() || role === 'client';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
 

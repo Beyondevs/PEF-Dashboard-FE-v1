@@ -32,7 +32,7 @@ const Assessments = () => {
   const { role, isAdmin } = useAuth();
   const isAdminUser = isAdmin();
   const canManageAssessments = isAdminUser || role === 'trainer';
-  const showDataTransferButtons = isAdminUser;
+  const showDataTransferButtons = isAdminUser || role === 'client';
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const [editMode, setEditMode] = useState(false);
   

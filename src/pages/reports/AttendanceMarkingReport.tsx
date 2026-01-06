@@ -17,6 +17,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { getAttendanceMarkingStatus, exportAttendanceMarkingCSV } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SessionData {
   id: string;
@@ -62,6 +63,7 @@ interface AttendanceMarkingData {
 
 const AttendanceMarkingReport = () => {
   const { filters } = useFilters();
+  const { role } = useAuth();
   const navigate = useNavigate();
   const [reportData, setReportData] = useState<AttendanceMarkingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -187,13 +189,14 @@ const AttendanceMarkingReport = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Reports
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Attendance Marking Status Report</h1>
-            <p className="text-muted-foreground">
-              View which sessions have attendance marked and which are still pending
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Attendance Marking Status Report</h1>
+          <p className="text-muted-foreground">
+            View which sessions have attendance marked and which are still pending
+          </p>
         </div>
+      </div>
+      {role !== 'bnu' && (
         <Button onClick={handleExport} variant="outline" disabled={isExporting}>
           {isExporting ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -202,7 +205,8 @@ const AttendanceMarkingReport = () => {
           )}
           {isExporting ? 'Exporting…' : 'Export'}
         </Button>
-      </div>
+      )}
+    </div>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">

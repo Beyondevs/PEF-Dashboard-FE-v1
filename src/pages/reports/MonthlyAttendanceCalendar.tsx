@@ -6,6 +6,7 @@ import { Download, ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-r
 import { toast } from 'sonner';
 import { getMonthlyAttendanceCalendar, exportMonthlyAttendanceCalendar } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePagination } from '@/hooks/usePagination';
 import PaginationControls from '@/components/PaginationControls';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,6 +45,7 @@ interface MonthlyAttendanceData {
 
 const MonthlyAttendanceCalendar = () => {
   const { filters } = useFilters();
+  const { role } = useAuth();
   const [data, setData] = useState<MonthlyAttendanceData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -237,10 +239,12 @@ const MonthlyAttendanceCalendar = () => {
           <h1 className="text-3xl font-bold text-foreground">Monthly Attendance Calendar</h1>
           <p className="text-muted-foreground">View student and teacher attendance in calendar format</p>
         </div>
-        <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-          <Download className="h-4 w-4 mr-2" />
-          Export CSV
-        </Button>
+        {role !== 'bnu' && (
+          <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        )}
       </div>
 
       {/* Month/Year Selector and Search */}

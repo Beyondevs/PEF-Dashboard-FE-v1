@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ExportButtonProps {
   label?: string;
@@ -20,6 +21,12 @@ export function ExportButton({
 }: ExportButtonProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { role } = useAuth();
+
+  // BNU role is view-only and cannot export
+  if (role === 'bnu') {
+    return null;
+  }
 
   const handleExport = async () => {
     try {

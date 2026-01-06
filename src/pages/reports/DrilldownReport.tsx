@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { getDrilldownReport, exportDrilldownCSV } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 type DrillLevel = 'province' | 'division' | 'district' | 'tehsil' | 'school';
 
@@ -42,6 +43,7 @@ interface DrillItem {
 
 const DrilldownReport = () => {
   const { filters } = useFilters();
+  const { role } = useAuth();
   const [drillState, setDrillState] = useState<DrillState>({ level: 'province' });
   const [divisions, setDivisions] = useState<DrillItem[]>([]);
   const [districts, setDistricts] = useState<DrillItem[]>([]);
@@ -678,10 +680,12 @@ const DrilldownReport = () => {
           <h1 className="text-3xl font-bold text-foreground">Hierarchical Drill-Down Report</h1>
           <p className="text-muted-foreground">Province → Division → District → Tehsil → School performance metrics</p>
         </div>
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
+        {role !== 'bnu' && (
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+        )}
       </div>
 
       {drillState.level === 'province' && renderProvinceLevel()}

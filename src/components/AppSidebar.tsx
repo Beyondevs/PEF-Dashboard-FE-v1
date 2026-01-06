@@ -79,12 +79,12 @@ export function AppSidebar() {
   const { role } = useAuth();
   
   const menuItems = 
-    role === 'admin' || role === 'client' || role === 'division_role' ? adminClientItems :
+    role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu' ? adminClientItems :
     role === 'trainer' ? trainerItems : 
     teacherItems;
   
-  const showUserManagement = role === 'admin' || role === 'client' || role === 'division_role';
-  const showSystemManagement = role === 'admin' || role === 'client' || role === 'division_role';
+  const showUserManagement = role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu';
+  const showSystemManagement = role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu';
   const showHybridMonitoring = false; // Hidden for now
 
   return (
@@ -149,7 +149,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
                 {userManagementItems
-                  .filter((item) => role !== 'client' || item.url !== '/admin/trainers')
+                  .filter((item) => (role !== 'client' && role !== 'bnu') || item.url !== '/admin/trainers')
                   .map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild className="group">

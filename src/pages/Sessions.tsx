@@ -47,7 +47,8 @@ import { cn } from '@/lib/utils';
 
 const Sessions = () => {
   const { role, isAdmin, canEdit } = useAuth();
-  const canManageSessions = () => role === 'admin';
+  const canManageSessions = () => role === 'admin' || role === 'division_role';
+  const canViewDataTransfer = () => role === 'admin' || role === 'division_role' || role === 'client';
   const { filters } = useFilters();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -328,12 +329,14 @@ const Sessions = () => {
         </div>
 
         <div className="flex flex-wrap gap-2 justify-end">
-          {canManageSessions() && (
+          {canViewDataTransfer() && (
             <>
-              <Button variant="default" onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                New Session
-              </Button>
+              {canManageSessions() && (
+                <Button variant="default" onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Session
+                </Button>
+              )}
               <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1 sm:flex-initial">
                 <FileText className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Template</span>

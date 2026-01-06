@@ -41,7 +41,7 @@ const Reports = () => {
       icon: AlertCircle,
       color: 'text-amber-600',
       path: '/reports/attendance-marking',
-      restrictedRoles: ['client', 'trainer'], // Hide from client and trainer roles
+      restrictedRoles: ['client', 'trainer', 'bnu'], // Hide from client, trainer and bnu roles
     },
     {
       id: 5,

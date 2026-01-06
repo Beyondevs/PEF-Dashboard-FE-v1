@@ -16,6 +16,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { useEffect, useState, useCallback } from 'react';
 import { getTodayActivityReport, exportTodayActivityCSV } from '@/lib/api';
 import { useFilters } from '@/contexts/FilterContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SessionData {
   id: string;
@@ -67,6 +68,7 @@ interface TodayActivityData {
 
 const TodayReport = () => {
   const { filters } = useFilters();
+  const { role } = useAuth();
   const [todayData, setTodayData] = useState<TodayActivityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const today = new Date().toISOString().split('T')[0];
@@ -173,10 +175,12 @@ const TodayReport = () => {
           <h1 className="text-3xl font-bold text-foreground">Today's Activity Report</h1>
           <p className="text-muted-foreground">Real-time snapshot of ongoing sessions and attendance - {new Date().toLocaleDateString()}</p>
         </div>
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
+        {role !== 'bnu' && (
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

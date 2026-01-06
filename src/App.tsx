@@ -65,28 +65,28 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<RootRedirect />} />
               <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
-              <Route path="/sessions" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Sessions /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/sessions/:id" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><SessionDetail /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/attendance" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Attendance /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/assessments" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Assessments /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/speaking-assessments" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><SpeakingAssessments /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/speaking-assessments/reports" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role']}><SpeakingAssessmentReports /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/leaderboard" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Leaderboard /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/reports" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Reports /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/reports/today" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><TodayReport /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/reports/drilldown" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><DrilldownReport /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/reports/district-compare" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><DistrictCompareReport /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/reports/attendance-marking" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><AttendanceMarkingReport /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/reports/monthly-attendance-calendar" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><MonthlyAttendanceCalendar /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role']}><Schools /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/repository" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role']}><Repository /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/sessions" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><Sessions /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/sessions/:id" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><SessionDetail /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/attendance" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><Attendance /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/assessments" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><Assessments /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/speaking-assessments" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><SpeakingAssessments /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/speaking-assessments/reports" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><SpeakingAssessmentReports /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/leaderboard" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><Leaderboard /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><Reports /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/today" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><TodayReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/drilldown" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><DrilldownReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/district-compare" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><DistrictCompareReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/attendance-marking" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><AttendanceMarkingReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/monthly-attendance-calendar" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><MonthlyAttendanceCalendar /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Schools /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/repository" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Repository /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/trainers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'division_role']}><Trainers /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/teachers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role']}><Teachers /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/students" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role']}><Students /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role']}><AdminSchools /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/geography" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role']}><Geography /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/help" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role']}><Help /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/teachers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Teachers /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/students" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Students /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><AdminSchools /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/geography" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Geography /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/help" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><Help /></PrivateRoute></ProtectedLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
