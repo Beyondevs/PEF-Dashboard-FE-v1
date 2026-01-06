@@ -418,47 +418,42 @@ const SpeakingAssessments = () => {
             filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0,10)}.csv`}
             exportFn={async () => {
               const rows = activeTab === 'students' ? studentAssessments : teacherAssessments;
-              const columns = activeTab === 'students'
+              const headers = activeTab === 'students'
                 ? ['Student', 'School', 'District', 'Status', 'Pre', 'Mid', 'Post', 'Created']
                 : ['Teacher', 'School', 'District', 'Status', 'Pre', 'Mid', 'Post', 'Created'];
-              const now = new Date();
-              const data = rows.map((r) => {
-                if (activeTab === 'students') {
-                  return {
-                    Student: r.studentName || '',
-                    School: r.schoolName || '',
-                    District: r.district || '',
-                    Status: r.status || '',
-                    Pre: r.preTotalScore ?? '',
-                    Mid: r.midTotalScore ?? '',
-                    Post: r.postTotalScore ?? '',
-                    Created: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
-                  };
-                } else {
-                  return {
-                    Teacher: r.teacherName || '',
-                    School: r.schoolName || '',
-                    District: r.district || '',
-                    Status: r.status || '',
-                    Pre: r.preTotalScore ?? '',
-                    Mid: r.midTotalScore ?? '',
-                    Post: r.postTotalScore ?? '',
-                    Created: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
-                  };
-                }
-              });
-              // Build CSV content
-              const header = columns.join(',');
-              const body = (data.length ? data : [{} as any]).map((row) => {
-                const values = Object.values(row);
-                // Escape quotes
-                const escaped = values.map((v) => {
-                  const s = String(v ?? '');
-                  return s.includes('"') || s.includes(',') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
-                });
-                return escaped.join(',');
-              }).join('\\n');
-              const csv = header + '\\n' + body;
+
+              const escapeCSV = (value: any) => {
+                const s = String(value ?? '');
+                return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+              };
+
+              const headerLine = headers.join(',');
+              const bodyLines = rows.map((r) => {
+                const values = activeTab === 'students' 
+                  ? [
+                      r.studentName ?? '',
+                      r.schoolName ?? '',
+                      r.district ?? '',
+                      r.status ?? '',
+                      r.preTotalScore ?? '',
+                      r.midTotalScore ?? '',
+                      r.postTotalScore ?? '',
+                      r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
+                    ]
+                  : [
+                      r.teacherName ?? '',
+                      r.schoolName ?? '',
+                      r.district ?? '',
+                      r.status ?? '',
+                      r.preTotalScore ?? '',
+                      r.midTotalScore ?? '',
+                      r.postTotalScore ?? '',
+                      r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
+                    ];
+                return values.map(escapeCSV).join(',');
+              }).join('\n');
+
+              const csv = [headerLine, bodyLines].filter(Boolean).join('\n');
               return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             }}
           />
