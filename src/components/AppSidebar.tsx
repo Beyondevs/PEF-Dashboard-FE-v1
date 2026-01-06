@@ -56,7 +56,6 @@ const adminClientItems = [
   { title: 'Assessment', url: '/speaking-assessments', icon: Mic2 },
   { title: 'Leaderboard', url: '/leaderboard', icon: Trophy },
   { title: 'Reports', url: '/reports', icon: FileText },
-  { title: 'Schools', url: '/schools', icon: School },
 ];
 
 const userManagementItems = [
