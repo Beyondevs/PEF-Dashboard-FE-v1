@@ -146,7 +146,9 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
-                {userManagementItems.map((item) => (
+                {userManagementItems
+                  .filter((item) => (role !== 'client') || item.url !== '/admin/trainers')
+                  .map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild className="group">
                       <NavLink 
