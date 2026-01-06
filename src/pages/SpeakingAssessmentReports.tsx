@@ -17,14 +17,31 @@ import {
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
 import {
   getStudentSpeakingAssessmentReport,
   getTeacherSpeakingAssessmentReport,
 } from '@/lib/api';
 
+function toCsvBlob(rows: Record<string, any>[], columns: string[]): Blob {
+  const header = columns.join(',');
+  const body = rows.map((r) =>
+    columns
+      .map((c) => {
+        const v = String(r[c] ?? '');
+        return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+      })
+      .join(','),
+  );
+  const csv = [header, ...body].join('\n');
+  return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+}
+
 const SpeakingAssessmentReports = () => {
   const { filters } = useFilters();
   const navigate = useNavigate();
+  const { role } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   
@@ -67,6 +84,7 @@ const SpeakingAssessmentReports = () => {
 
   const currentReport = activeTab === 'students' ? studentReport : teacherReport;
   const maxScore = activeTab === 'students' ? 60 : 70;
+  const canExport = role === 'admin' || role === 'client' || role === 'division_role';
 
   const getProgressPercentage = (score: number) => {
     return ((score / maxScore) * 100);
@@ -122,6 +140,43 @@ const SpeakingAssessmentReports = () => {
             <p className="text-muted-foreground">Analyze assessment results across phases</p>
           </div>
         </div>
+
+        {canExport && (
+          <div className="flex items-center justify-end">
+            <ExportButton
+              label="Export CSV"
+              filename={`speaking_assessment_report_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`}
+              exportFn={async () => {
+                const report = currentReport;
+                const rows: Array<{ metric: string; value: string | number }> = [
+                  { metric: 'reportType', value: activeTab },
+                  { metric: 'generatedAt', value: new Date().toISOString() },
+                  { metric: 'maxScore', value: maxScore },
+                  { metric: 'filter_divisionId', value: filters.division || '' },
+                  { metric: 'filter_districtId', value: filters.district || '' },
+                  { metric: 'filter_schoolId', value: filters.school || '' },
+                  { metric: 'filter_from', value: filters.startDate || '' },
+                  { metric: 'filter_to', value: filters.endDate || '' },
+                ];
+
+                if (report) {
+                  rows.push(
+                    { metric: 'totalAssessments', value: report.totalAssessments ?? 0 },
+                    { metric: 'status_pending', value: report.statusBreakdown?.pending ?? 0 },
+                    { metric: 'status_pre_completed', value: report.statusBreakdown?.pre_completed ?? 0 },
+                    { metric: 'status_mid_completed', value: report.statusBreakdown?.mid_completed ?? 0 },
+                    { metric: 'status_completed', value: report.statusBreakdown?.completed ?? 0 },
+                    { metric: 'average_pre', value: report.averageScores?.pre ?? 0 },
+                    { metric: 'average_mid', value: report.averageScores?.mid ?? 0 },
+                    { metric: 'average_post', value: report.averageScores?.post ?? 0 },
+                  );
+                }
+
+                return toCsvBlob(rows, ['metric', 'value']);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'students' | 'teachers')} className="space-y-6">
