@@ -357,7 +357,7 @@ const MonthlyAttendanceCalendar = () => {
                           {paginatedPersons.map((person, index) => (
                             <TableRow key={person.id}>
                               <TableCell className="sticky left-0 z-10 bg-background font-medium">
-                                {startIndex + index + 1}
+                                {startIndex + index}
                               </TableCell>
                               <TableCell className="sticky left-[40px] z-10 bg-background">
                                 {person.school.emisCode || '-'}
@@ -487,7 +487,7 @@ const MonthlyAttendanceCalendar = () => {
                           {paginatedPersons.map((person, index) => (
                             <TableRow key={person.id}>
                               <TableCell className="sticky left-0 z-10 bg-background font-medium">
-                                {startIndex + index + 1}
+                                {startIndex + index}
                               </TableCell>
                               <TableCell className="sticky left-[40px] z-10 bg-background">
                                 {person.school.emisCode || '-'}
