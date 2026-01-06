@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -398,7 +399,8 @@ const SpeakingAssessments = () => {
             </SelectContent>
           </Select>
 
-          {/* Reports Button - Hidden for trainers */}
+        {/* Reports Button - Hidden for trainers; also provide client/admin/division_role export option */}
+        <div className="flex items-center gap-2">
           {role !== 'trainer' && (
             <Button
               variant="outline"
@@ -409,6 +411,58 @@ const SpeakingAssessments = () => {
               Reports
             </Button>
           )}
+          {/* Client/admin/division_role export of current view data */}
+          {/* Simple client-side export of the currently visible assessments. Hidden for BNU by ExportButton itself */}
+          <ExportButton
+            label="Export CSV"
+            filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0,10)}.csv`}
+            exportFn={async () => {
+              const rows = activeTab === 'students' ? studentAssessments : teacherAssessments;
+              const columns = activeTab === 'students'
+                ? ['Student', 'School', 'District', 'Status', 'Pre', 'Mid', 'Post', 'Created']
+                : ['Teacher', 'School', 'District', 'Status', 'Pre', 'Mid', 'Post', 'Created'];
+              const now = new Date();
+              const data = rows.map((r) => {
+                if (activeTab === 'students') {
+                  return {
+                    Student: r.studentName || '',
+                    School: r.schoolName || '',
+                    District: r.district || '',
+                    Status: r.status || '',
+                    Pre: r.preTotalScore ?? '',
+                    Mid: r.midTotalScore ?? '',
+                    Post: r.postTotalScore ?? '',
+                    Created: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
+                  };
+                } else {
+                  return {
+                    Teacher: r.teacherName || '',
+                    School: r.schoolName || '',
+                    District: r.district || '',
+                    Status: r.status || '',
+                    Pre: r.preTotalScore ?? '',
+                    Mid: r.midTotalScore ?? '',
+                    Post: r.postTotalScore ?? '',
+                    Created: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
+                  };
+                }
+              });
+              // Build CSV content
+              const header = columns.join(',');
+              const body = (data.length ? data : [{} as any]).map((row) => {
+                const values = Object.values(row);
+                // Escape quotes
+                const escaped = values.map((v) => {
+                  const s = String(v ?? '');
+                  return s.includes('"') || s.includes(',') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+                });
+                return escaped.join(',');
+              }).join('\\n');
+              const csv = header + '\\n' + body;
+              return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            }}
+          />
+        </div>
         </div>
       </div>
 
