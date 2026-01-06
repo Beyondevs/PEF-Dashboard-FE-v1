@@ -59,6 +59,7 @@ const SpeakingAssessments = () => {
   const navigate = useNavigate();
   const isAdminUser = isAdmin();
   const canFillAssessment = isAdminUser || role === 'trainer';
+  const canEditAssessments = isAdminUser || role === 'trainer';
 
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const [selectedStatus, setSelectedStatus] = useState<SpeakingAssessmentStatus | 'all'>('all');
@@ -748,7 +749,7 @@ const SpeakingAssessments = () => {
             setShowStudentDetail(false);
             setSelectedStudentAssessment(null);
           }}
-          onEditPhase={handleStudentEditPhase}
+          onEditPhase={canEditAssessments ? handleStudentEditPhase : undefined}
         />
       )}
 
@@ -760,7 +761,7 @@ const SpeakingAssessments = () => {
             setShowTeacherDetail(false);
             setSelectedTeacherAssessment(null);
           }}
-          onEditPhase={handleTeacherEditPhase}
+          onEditPhase={canEditAssessments ? handleTeacherEditPhase : undefined}
         />
       )}
     </div>

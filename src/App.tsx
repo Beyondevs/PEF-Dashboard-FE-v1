@@ -81,7 +81,7 @@ const App = () => (
               <Route path="/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Schools /></PrivateRoute></ProtectedLayout>} />
               <Route path="/repository" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Repository /></PrivateRoute></ProtectedLayout>} />
               <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/trainers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'division_role']}><Trainers /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/trainers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'division_role', 'bnu']}><Trainers /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/teachers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Teachers /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/students" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Students /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><AdminSchools /></PrivateRoute></ProtectedLayout>} />
