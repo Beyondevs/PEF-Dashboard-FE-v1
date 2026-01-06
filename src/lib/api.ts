@@ -614,4 +614,16 @@ export const getTeacherSpeakingAssessmentReport = (params: Record<string, string
   return apiClient.get<any>(`/speaking-assessments/reports/teachers${qs ? `?${qs}` : ''}`);
 };
 
+export const exportStudentSpeakingAssessmentsCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/speaking-assessments/students/export${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
+export const exportTeacherSpeakingAssessmentsCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/speaking-assessments/teachers/export${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
 

@@ -50,6 +50,8 @@ import {
   getTeacherSpeakingAssessments,
   getStudentSpeakingAssessmentById,
   getTeacherSpeakingAssessmentById,
+  exportStudentSpeakingAssessmentsCSV,
+  exportTeacherSpeakingAssessmentsCSV,
   type SpeakingAssessmentStatus,
 } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
@@ -415,46 +417,22 @@ const SpeakingAssessments = () => {
           {/* Simple client-side export of the currently visible assessments. Hidden for BNU by ExportButton itself */}
           <ExportButton
             label="Export CSV"
-            filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0,10)}.csv`}
+            filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`}
             exportFn={async () => {
-              const rows = activeTab === 'students' ? studentAssessments : teacherAssessments;
-              const headers = activeTab === 'students'
-                ? ['Student', 'School', 'District', 'Status', 'Pre', 'Mid', 'Post', 'Created']
-                : ['Teacher', 'School', 'District', 'Status', 'Pre', 'Mid', 'Post', 'Created'];
+              const params: Record<string, string | number | boolean> = {};
+              if (selectedStatus !== 'all') params.status = selectedStatus;
+              if (filters.division) params.divisionId = filters.division;
+              if (filters.district) params.districtId = filters.district;
+              if (filters.school) params.schoolId = filters.school;
+              if (filters.startDate) params.from = filters.startDate;
+              if (filters.endDate) params.to = filters.endDate;
+              if (activeSearchTerm) params.search = activeSearchTerm;
 
-              const escapeCSV = (value: any) => {
-                const s = String(value ?? '');
-                return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-              };
-
-              const headerLine = headers.join(',');
-              const bodyLines = rows.map((r) => {
-                const values = activeTab === 'students' 
-                  ? [
-                      r.studentName ?? '',
-                      r.schoolName ?? '',
-                      r.district ?? '',
-                      r.status ?? '',
-                      r.preTotalScore ?? '',
-                      r.midTotalScore ?? '',
-                      r.postTotalScore ?? '',
-                      r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
-                    ]
-                  : [
-                      r.teacherName ?? '',
-                      r.schoolName ?? '',
-                      r.district ?? '',
-                      r.status ?? '',
-                      r.preTotalScore ?? '',
-                      r.midTotalScore ?? '',
-                      r.postTotalScore ?? '',
-                      r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
-                    ];
-                return values.map(escapeCSV).join(',');
-              }).join('\n');
-
-              const csv = [headerLine, bodyLines].filter(Boolean).join('\n');
-              return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              if (activeTab === 'students') {
+                return exportStudentSpeakingAssessmentsCSV(params);
+              } else {
+                return exportTeacherSpeakingAssessmentsCSV(params);
+              }
             }}
           />
         </div>
