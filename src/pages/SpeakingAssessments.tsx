@@ -64,6 +64,7 @@ const SpeakingAssessments = () => {
   const isAdminUser = isAdmin();
   const canFillAssessment = isAdminUser || role === 'trainer';
   const canEditAssessments = isAdminUser || role === 'trainer';
+  const canExportAssessments = role === 'admin' || role === 'client' || role === 'division_role';
 
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const [selectedStatus, setSelectedStatus] = useState<SpeakingAssessmentStatus | 'all'>('all');
@@ -433,26 +434,28 @@ const SpeakingAssessments = () => {
           )}
           {/* Client/admin/division_role export of current view data */}
           {/* Simple client-side export of the currently visible assessments. Hidden for BNU by ExportButton itself */}
-          <ExportButton
-            label="Export CSV"
-            filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`}
-            exportFn={async () => {
-              const params: Record<string, string | number | boolean> = {};
-              if (selectedStatus !== 'all') params.status = selectedStatus;
-              if (filters.division) params.divisionId = filters.division;
-              if (filters.district) params.districtId = filters.district;
-              if (filters.school) params.schoolId = filters.school;
-              if (filters.startDate) params.from = filters.startDate;
-              if (filters.endDate) params.to = filters.endDate;
-              if (activeSearchTerm) params.search = activeSearchTerm;
+          {canExportAssessments && (
+            <ExportButton
+              label="Export CSV"
+              filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`}
+              exportFn={async () => {
+                const params: Record<string, string | number | boolean> = {};
+                if (selectedStatus !== 'all') params.status = selectedStatus;
+                if (filters.division) params.divisionId = filters.division;
+                if (filters.district) params.districtId = filters.district;
+                if (filters.school) params.schoolId = filters.school;
+                if (filters.startDate) params.from = filters.startDate;
+                if (filters.endDate) params.to = filters.endDate;
+                if (activeSearchTerm) params.search = activeSearchTerm;
 
-              if (activeTab === 'students') {
-                return exportStudentSpeakingAssessmentsCSV(params);
-              } else {
-                return exportTeacherSpeakingAssessmentsCSV(params);
-              }
-            }}
-          />
+                if (activeTab === 'students') {
+                  return exportStudentSpeakingAssessmentsCSV(params);
+                } else {
+                  return exportTeacherSpeakingAssessmentsCSV(params);
+                }
+              }}
+            />
+          )}
         </div>
         </div>
       </div>

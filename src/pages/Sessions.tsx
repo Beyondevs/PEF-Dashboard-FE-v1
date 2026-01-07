@@ -358,24 +358,26 @@ const Sessions = () => {
             </>
           )}
 
-          <ExportButton
-            label="Export"
-            exportFn={async () => {
-              const params: Record<string, string | number | boolean> = {};
-              if (filters.division) params.divisionId = filters.division;
-              if (filters.district) params.districtId = filters.district;
-              if (filters.tehsil) params.tehsilId = filters.tehsil;
-              if (filters.school) params.schoolId = filters.school;
-              if (filters.startDate) params.from = filters.startDate;
-              if (filters.endDate) params.to = filters.endDate;
-              if (activeSearchTerm) params.search = activeSearchTerm;
-              if (filters.sessionId) params.sessionId = filters.sessionId;
+          {canViewDataTransfer() && (
+            <ExportButton
+              label="Export"
+              exportFn={async () => {
+                const params: Record<string, string | number | boolean> = {};
+                if (filters.division) params.divisionId = filters.division;
+                if (filters.district) params.districtId = filters.district;
+                if (filters.tehsil) params.tehsilId = filters.tehsil;
+                if (filters.school) params.schoolId = filters.school;
+                if (filters.startDate) params.from = filters.startDate;
+                if (filters.endDate) params.to = filters.endDate;
+                if (activeSearchTerm) params.search = activeSearchTerm;
+                if (filters.sessionId) params.sessionId = filters.sessionId;
 
-              // Use backend export endpoint so we export ALL sessions (not limited to 1000)
-              return exportSessionsCSV(params);
-            }}
-            filename={filters.sessionId ? `session-${filters.sessionId}.csv` : 'sessions.csv'}
-          />
+                // Use backend export endpoint so we export ALL sessions (not limited to 1000)
+                return exportSessionsCSV(params);
+              }}
+              filename={filters.sessionId ? `session-${filters.sessionId}.csv` : 'sessions.csv'}
+            />
+          )}
         </div>
       </div>
 
