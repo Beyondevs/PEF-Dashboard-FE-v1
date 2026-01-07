@@ -160,11 +160,35 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
           {renderPhaseSection('mid', 'Mid-Assessment')}
           {renderPhaseSection('post', 'Post-Assessment')}
 
-          {/* Notes */}
-          {assessment.notes && (
+          {/* Notes (phase-wise) */}
+          {(assessment.preNotes || assessment.midNotes || assessment.postNotes || assessment.notes) && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Notes</h3>
-              <p className="text-gray-600">{assessment.notes}</p>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Notes</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">Pre-Assessment Notes</h4>
+                  <p className="text-gray-600 whitespace-pre-wrap">{assessment.preNotes || '-'}</p>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">Mid-Assessment Notes</h4>
+                  <p className="text-gray-600 whitespace-pre-wrap">{assessment.midNotes || '-'}</p>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">Post-Assessment Notes</h4>
+                  <p className="text-gray-600 whitespace-pre-wrap">{assessment.postNotes || '-'}</p>
+                </div>
+
+                {/* Legacy fallback */}
+                {assessment.notes && !(assessment.preNotes || assessment.midNotes || assessment.postNotes) && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1">General Notes (Legacy)</h4>
+                    <p className="text-gray-600 whitespace-pre-wrap">{assessment.notes}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

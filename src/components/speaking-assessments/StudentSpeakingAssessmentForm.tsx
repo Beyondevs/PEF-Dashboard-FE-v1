@@ -69,7 +69,8 @@ const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps
       });
 
       setFormData(initialData);
-      setNotes(assessment.notes || '');
+      // Phase-specific notes first, then fallback to legacy `notes`
+      setNotes(assessment?.[`${prefix}Notes`] || assessment.notes || '');
     } else {
       // For new fill, ensure form is empty
       setFormData({});
