@@ -28,6 +28,7 @@ import { useFilters } from '@/contexts/FilterContext';
 import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
+import { SearchTag } from '@/components/SearchTag';
 
 export default function Teachers() {
   const isMobile = useIsMobile();
@@ -66,7 +67,10 @@ export default function Teachers() {
   });
 
   const handleSearch = () => {
-    setActiveSearchTerm(searchTerm.trim());
+    const term = searchTerm.trim();
+    setActiveSearchTerm(term);
+    // Clear input after applying search so UX is driven by the applied filter chip
+    setSearchTerm('');
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -242,6 +246,19 @@ export default function Teachers() {
             </Button>
           </div>
         </div>
+
+        {activeSearchTerm && (
+          <div className="w-full sm:w-auto">
+            <SearchTag
+              value={activeSearchTerm}
+              onClear={() => {
+                setActiveSearchTerm('');
+                setSearchTerm('');
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+            />
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2 justify-end">
           {/* Export Button */}

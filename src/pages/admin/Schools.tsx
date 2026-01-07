@@ -24,6 +24,7 @@ import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { useFilters } from '@/contexts/FilterContext';
+import { SearchTag } from '@/components/SearchTag';
 
 export default function Schools() {
   const [schools, setSchools] = useState([]);
@@ -63,7 +64,10 @@ export default function Schools() {
   });
 
   const handleSearch = () => {
-    setActiveSearchTerm(searchTerm.trim());
+    const term = searchTerm.trim();
+    setActiveSearchTerm(term);
+    // Clear input after applying search so UX is driven by the applied filter chip
+    setSearchTerm('');
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
   };
 
@@ -270,6 +274,18 @@ export default function Schools() {
             <Search className="h-4 w-4" />
           </Button>
         </div>
+        {activeSearchTerm && (
+          <div className="w-full sm:w-auto">
+            <SearchTag
+              value={activeSearchTerm}
+              onClear={() => {
+                setActiveSearchTerm('');
+                setSearchTerm('');
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+            />
+          </div>
+        )}
 
         {/* RIGHT SIDE ACTIONS (TOP-RIGHT AREA) */}
         <div className="flex gap-2">

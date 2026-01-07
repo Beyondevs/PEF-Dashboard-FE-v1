@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { useFilters } from '@/contexts/FilterContext';
 import { getSchools } from '@/lib/api';
 import PaginationControls from '@/components/PaginationControls';
+import { SearchTag } from '@/components/SearchTag';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -67,7 +68,10 @@ const Schools = () => {
   }, [currentPage, filters.school, filters.division, filters.district, filters.tehsil, activeSearchQuery]);
 
   const handleSearch = () => {
-    setActiveSearchQuery(searchQuery.trim());
+    const term = searchQuery.trim();
+    setActiveSearchQuery(term);
+    // Clear input after applying search so UX is driven by the applied filter chip
+    setSearchQuery('');
     setCurrentPage(1);
   };
 
@@ -108,6 +112,19 @@ const Schools = () => {
                 <Search className="h-4 w-4" />
               </Button>
             </div>
+
+            {activeSearchQuery && (
+              <div className="w-full sm:w-auto">
+                <SearchTag
+                  value={activeSearchQuery}
+                  onClear={() => {
+                    setActiveSearchQuery('');
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+            )}
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <School className="h-4 w-4" />

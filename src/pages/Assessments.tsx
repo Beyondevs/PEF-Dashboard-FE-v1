@@ -26,6 +26,7 @@ import {
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { SearchTag } from '@/components/SearchTag';
 
 const Assessments = () => {
   const { filters } = useFilters();
@@ -68,7 +69,10 @@ const Assessments = () => {
   });
 
   const handleSearch = () => {
-    setActiveSearchTerm(searchTerm.trim());
+    const term = searchTerm.trim();
+    setActiveSearchTerm(term);
+    // Clear input after applying search so UX is driven by the applied filter chip
+    setSearchTerm('');
     setStudentPage(1);
     setTeacherPage(1);
   };
@@ -363,6 +367,19 @@ const Assessments = () => {
               <Search className="h-4 w-4" />
             </Button>
           </div>
+          {activeSearchTerm && (
+            <div className="w-full">
+              <SearchTag
+                value={activeSearchTerm}
+                onClear={() => {
+                  setActiveSearchTerm('');
+                  setSearchTerm('');
+                  setStudentPage(1);
+                  setTeacherPage(1);
+                }}
+              />
+            </div>
+          )}
           {(showDataTransferButtons || canManageAssessments) && (
             <>
               {showDataTransferButtons && (

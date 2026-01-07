@@ -45,6 +45,7 @@ import {
   StudentAssessmentDetail,
   TeacherAssessmentDetail,
 } from '@/components/speaking-assessments';
+import { SearchTag } from '@/components/SearchTag';
 import {
   getStudentSpeakingAssessments,
   getTeacherSpeakingAssessments,
@@ -94,7 +95,10 @@ const SpeakingAssessments = () => {
   const pageSize = 100;
 
   const handleSearch = () => {
-    setActiveSearchTerm(searchTerm.trim());
+    const term = searchTerm.trim();
+    setActiveSearchTerm(term);
+    // Clear input after applying search so UX is driven by the applied filter chip
+    setSearchTerm('');
     setStudentPage(1);
     setTeacherPage(1);
   };
@@ -379,6 +383,20 @@ const SpeakingAssessments = () => {
               <Search className="h-4 w-4" />
             </Button>
           </div>
+
+          {activeSearchTerm && (
+            <div className="w-full">
+              <SearchTag
+                value={activeSearchTerm}
+                onClear={() => {
+                  setActiveSearchTerm('');
+                  setSearchTerm('');
+                  setStudentPage(1);
+                  setTeacherPage(1);
+                }}
+              />
+            </div>
+          )}
 
           {/* Status Filter */}
           <Select

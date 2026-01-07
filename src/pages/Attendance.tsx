@@ -22,6 +22,7 @@ import PaginationControls from '@/components/PaginationControls';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
+import { SearchTag } from '@/components/SearchTag';
 import {
   getAttendanceList,
   toggleAttendance,
@@ -83,7 +84,10 @@ const Attendance = () => {
   };
 
   const handleSearch = () => {
-    setActiveSearchTerm(searchTerm.trim());
+    const term = searchTerm.trim();
+    setActiveSearchTerm(term);
+    // Clear input after applying search so UX is driven by the applied filter chip
+    setSearchTerm('');
     setTeacherPage(1);
     setStudentPage(1);
   };
@@ -431,6 +435,20 @@ return (
       <Search className="h-4 w-4" />
     </Button>
   </div>
+
+  {activeSearchTerm && (
+    <div className="w-full sm:w-auto">
+      <SearchTag
+        value={activeSearchTerm}
+        onClear={() => {
+          setActiveSearchTerm('');
+          setSearchTerm('');
+          setTeacherPage(1);
+          setStudentPage(1);
+        }}
+      />
+    </div>
+  )}
 
   {/* Admin-only Template / Import */}
   {showDataTransferButtons && (

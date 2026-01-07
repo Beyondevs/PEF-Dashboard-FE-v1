@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
+import { SearchTag } from '@/components/SearchTag';
 
 export default function Trainers() {
   const [trainers, setTrainers] = useState([]);
@@ -89,7 +90,10 @@ export default function Trainers() {
   }, []);
 
   const handleSearch = () => {
-    setActiveSearchTerm(searchTerm.trim());
+    const term = searchTerm.trim();
+    setActiveSearchTerm(term);
+    // Clear input after applying search so UX is driven by the applied filter chip
+    setSearchTerm('');
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when search changes
   };
 
@@ -297,6 +301,18 @@ export default function Trainers() {
             <Search className="h-4 w-4" />
           </Button>
         </div>
+        {activeSearchTerm && (
+          <div className="w-full sm:w-auto">
+            <SearchTag
+              value={activeSearchTerm}
+              onClear={() => {
+                setActiveSearchTerm('');
+                setSearchTerm('');
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+            />
+          </div>
+        )}
 
         <div className="flex gap-2 flex-wrap mt-2 sm:mt-0">
           {isAdmin() && (

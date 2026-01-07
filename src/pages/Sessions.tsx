@@ -39,6 +39,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { getSessions, createSession, updateSession, deleteSession, getSchools, getDivisions, getDistricts, getTehsils, getTrainers, exportSessionsCSV, importSessionsCSV, downloadSessionsTemplate } from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
+import { SearchTag } from '@/components/SearchTag';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -162,6 +163,8 @@ const Sessions = () => {
       setActiveSearchTerm(newSearchTerm);
       setCurrentPage(1);
     }
+    // Clear input after applying search so UX is driven by the applied filter chip
+    setSearchTerm('');
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -394,6 +397,17 @@ const Sessions = () => {
           </Button>
         </div>
       </div>
+
+      {activeSearchTerm && (
+        <SearchTag
+          value={activeSearchTerm}
+          onClear={() => {
+            setActiveSearchTerm('');
+            setSearchTerm('');
+            setCurrentPage(1);
+          }}
+        />
+      )}
 
       <Card>
         <CardHeader>
