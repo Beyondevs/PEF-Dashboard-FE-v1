@@ -192,9 +192,13 @@ export default function Students() {
       setFormData({ name: '', rollNo: '', grade: '', gender: 'male', schoolId: '' });
       fetchStudents();
     } catch (error) {
+      const apiMessage = (error as any)?.response?.data?.message;
+      const message = Array.isArray(apiMessage)
+        ? apiMessage.join(', ')
+        : apiMessage || (error as any)?.message || 'Operation failed';
       toast({
         title: 'Error',
-        description: 'Operation failed',
+        description: message,
         variant: 'destructive',
       });
     }
