@@ -75,12 +75,13 @@ const Attendance = () => {
   const SYSTEM_NOT_MARKED = 'system:not-marked';
 
   const isRecordPresent = (record?: { present?: boolean; markedBy?: string }) => {
-    if (!record) return true;
-    if (record.markedBy === SYSTEM_NOT_MARKED) return true;
+    if (!record) return false;
+    // "Not marked" should NOT be treated as present
+    if (record.markedBy === SYSTEM_NOT_MARKED) return false;
     if (typeof record.present === 'boolean') {
       return record.present;
     }
-    return true;
+    return false;
   };
 
   const handleSearch = () => {
