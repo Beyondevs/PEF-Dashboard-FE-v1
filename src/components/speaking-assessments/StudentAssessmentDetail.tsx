@@ -181,13 +181,7 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
                   <p className="text-gray-600 whitespace-pre-wrap">{assessment.postNotes || '-'}</p>
                 </div>
 
-                {/* Legacy fallback */}
-                {assessment.notes && !(assessment.preNotes || assessment.midNotes || assessment.postNotes) && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-1">General Notes (Legacy)</h4>
-                    <p className="text-gray-600 whitespace-pre-wrap">{assessment.notes}</p>
-                  </div>
-                )}
+                {/* General Notes (Legacy) intentionally removed */}
               </div>
             </div>
           )}
