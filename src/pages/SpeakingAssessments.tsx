@@ -10,6 +10,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +44,7 @@ import {
   Clock,
   AlertCircle,
   Loader2,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
@@ -53,6 +64,8 @@ import {
   getTeacherSpeakingAssessmentById,
   exportStudentSpeakingAssessmentsCSV,
   exportTeacherSpeakingAssessmentsCSV,
+  resetStudentSpeakingAssessment,
+  resetTeacherSpeakingAssessment,
   type SpeakingAssessmentStatus,
 } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
@@ -79,6 +92,13 @@ const SpeakingAssessments = () => {
   const [showStudentDetail, setShowStudentDetail] = useState(false);
   const [showTeacherDetail, setShowTeacherDetail] = useState(false);
   const [editingPhase, setEditingPhase] = useState<'pre' | 'mid' | 'post' | null>(null);
+
+  // Reset confirmation modal
+  const [resetTarget, setResetTarget] = useState<
+    | { type: 'students' | 'teachers'; assessment: any }
+    | null
+  >(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Student assessments state
   const [studentAssessments, setStudentAssessments] = useState<any[]>([]);
@@ -294,6 +314,44 @@ const SpeakingAssessments = () => {
     } catch (error) {
       console.error('Failed to fetch assessment details:', error);
       toast.error('Failed to load assessment details');
+    }
+  };
+
+  const openResetConfirm = (type: 'students' | 'teachers', assessment: any) => {
+    setResetTarget({ type, assessment });
+  };
+
+  const handleConfirmReset = async () => {
+    if (!resetTarget) return;
+
+    try {
+      setIsResetting(true);
+      const { type, assessment } = resetTarget;
+
+      if (type === 'students') {
+        await resetStudentSpeakingAssessment(assessment.id);
+        await fetchStudentAssessments();
+      } else {
+        await resetTeacherSpeakingAssessment(assessment.id);
+        await fetchTeacherAssessments();
+      }
+
+      // Close any open modals that might show stale data
+      setShowStudentForm(false);
+      setShowTeacherForm(false);
+      setShowStudentDetail(false);
+      setShowTeacherDetail(false);
+      setSelectedStudentAssessment(null);
+      setSelectedTeacherAssessment(null);
+      setEditingPhase(null);
+
+      toast.success('Assessment reset successfully');
+    } catch (error) {
+      console.error('Failed to reset assessment:', error);
+      toast.error('Failed to reset assessment');
+    } finally {
+      setIsResetting(false);
+      setResetTarget(null);
     }
   };
 
@@ -583,6 +641,21 @@ const SpeakingAssessments = () => {
                                 <Eye className="h-3 w-3" />
                                 View
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => openResetConfirm('students', assessment)}
+                                className="gap-1"
+                                disabled={!canEditAssessments}
+                                title={
+                                  canEditAssessments
+                                    ? 'Reset this speaking assessment'
+                                    : 'Only admin/trainer can reset assessments'
+                                }
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Reset
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -726,6 +799,21 @@ const SpeakingAssessments = () => {
                                 <Eye className="h-3 w-3" />
                                 View
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => openResetConfirm('teachers', assessment)}
+                                className="gap-1"
+                                disabled={!canEditAssessments}
+                                title={
+                                  canEditAssessments
+                                    ? 'Reset this speaking assessment'
+                                    : 'Only admin/trainer can reset assessments'
+                                }
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Reset
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -806,6 +894,36 @@ const SpeakingAssessments = () => {
           onEditPhase={canEditAssessments ? handleTeacherEditPhase : undefined}
         />
       )}
+
+      <AlertDialog open={!!resetTarget} onOpenChange={(open) => !open && setResetTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset speaking assessment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all filled phases (Pre, Mid, and Post) for{' '}
+              <span className="font-medium">
+                {resetTarget?.type === 'students'
+                  ? resetTarget?.assessment?.studentName
+                  : resetTarget?.assessment?.teacherName}
+              </span>
+              . You will need to fill the assessment again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isResetting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmReset();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isResetting}
+            >
+              {isResetting ? 'Resetting...' : 'Yes, reset'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

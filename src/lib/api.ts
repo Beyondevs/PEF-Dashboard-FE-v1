@@ -601,6 +601,9 @@ export const getStudentSpeakingAssessmentById = (id: string) =>
 export const fillStudentSpeakingAssessment = (id: string, data: FillStudentSpeakingAssessmentPayload) =>
   apiClient.patch(`/speaking-assessments/students/${id}/fill`, data);
 
+export const resetStudentSpeakingAssessment = (id: string) =>
+  apiClient.patch(`/speaking-assessments/students/${id}/reset`, {});
+
 // Teacher Speaking Assessments
 export const getTeacherSpeakingAssessments = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
@@ -614,6 +617,9 @@ export const getTeacherSpeakingAssessmentById = (id: string) =>
 
 export const fillTeacherSpeakingAssessment = (id: string, data: FillTeacherSpeakingAssessmentPayload) =>
   apiClient.patch(`/speaking-assessments/teachers/${id}/fill`, data);
+
+export const resetTeacherSpeakingAssessment = (id: string) =>
+  apiClient.patch(`/speaking-assessments/teachers/${id}/reset`, {});
 
 // Speaking Assessment Reports
 export const getStudentSpeakingAssessmentReport = (params: Record<string, string | number | boolean> = {}) => {
