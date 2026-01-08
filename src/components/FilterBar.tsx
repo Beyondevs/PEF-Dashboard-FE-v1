@@ -456,31 +456,31 @@ export const FilterBar = () => {
         </Select>
 
         {!disableDateFilters && (
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs md:text-sm text-muted-foreground">From:</span>
-            <DatePicker
-              date={parseISODate(filters.startDate)}
-              onDateChange={(date) => {
-                const dateStr = formatDateToISO(date);
-                setFilters(prev => ({ ...prev, startDate: dateStr }));
-              }}
-              placeholder="Start date"
-            />
-          </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs md:text-sm text-muted-foreground">From:</span>
+          <DatePicker
+            date={parseISODate(filters.startDate)}
+            onDateChange={(date) => {
+              const dateStr = formatDateToISO(date);
+              setFilters(prev => ({ ...prev, startDate: dateStr }));
+            }}
+            placeholder="Start date"
+          />
+        </div>
         )}
 
         {!disableDateFilters && (
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs md:text-sm text-muted-foreground">To:</span>
-            <DatePicker
-              date={parseISODate(filters.endDate)}
-              onDateChange={(date) => {
-                const dateStr = formatDateToISO(date);
-                setFilters(prev => ({ ...prev, endDate: dateStr }));
-              }}
-              placeholder="End date"
-            />
-          </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs md:text-sm text-muted-foreground">To:</span>
+          <DatePicker
+            date={parseISODate(filters.endDate)}
+            onDateChange={(date) => {
+              const dateStr = formatDateToISO(date);
+              setFilters(prev => ({ ...prev, endDate: dateStr }));
+            }}
+            placeholder="End date"
+          />
+        </div>
         )}
 
         <Button

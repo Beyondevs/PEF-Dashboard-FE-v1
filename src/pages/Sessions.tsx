@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -226,6 +226,14 @@ const Sessions = () => {
     const trainer = apiTrainers.find(t => t.id === trainerId);
     return trainer ? (trainer.trainerProfile?.name || trainer.email) : 'Select trainer';
   };
+
+  const filteredTrainersForSelectedSchool = useMemo(() => {
+    if (!formData.schoolId) return [];
+    return apiTrainers.filter((trainer) =>
+      Array.isArray(trainer?.trainerProfile?.assignedSchools) &&
+      trainer.trainerProfile.assignedSchools.includes(formData.schoolId)
+    );
+  }, [apiTrainers, formData.schoolId]);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -647,7 +655,8 @@ const Sessions = () => {
                             key={school.id}
                             value={`${school.name} ${school.emisCode || ''}`}
                             onSelect={() => {
-                              setFormData({ ...formData, schoolId: school.id });
+                              setFormData({ ...formData, schoolId: school.id, trainerId: '' });
+                              setTrainerSearchOpen(false);
                               setSchoolSearchOpen(false);
                             }}
                           >
@@ -681,6 +690,7 @@ const Sessions = () => {
                     role="combobox"
                     aria-expanded={trainerSearchOpen}
                     className="w-full justify-between"
+                    disabled={!formData.schoolId}
                   >
                     {formData.trainerId ? getTrainerName(formData.trainerId) : 'Select trainer...'}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -690,9 +700,11 @@ const Sessions = () => {
                   <Command>
                     <CommandInput placeholder="Search trainers..." />
                     <CommandList>
-                      <CommandEmpty>No trainer found.</CommandEmpty>
+                      <CommandEmpty>
+                        {formData.schoolId ? 'No trainer linked to this school.' : 'Select a school first.'}
+                      </CommandEmpty>
                       <CommandGroup>
-                        {apiTrainers.map((trainer) => (
+                        {filteredTrainersForSelectedSchool.map((trainer) => (
                           <CommandItem
                             key={trainer.id}
                             value={trainer.trainerProfile?.name || trainer.email}
@@ -795,7 +807,8 @@ const Sessions = () => {
                             key={school.id}
                             value={`${school.name} ${school.emisCode || ''}`}
                             onSelect={() => {
-                              setFormData({ ...formData, schoolId: school.id });
+                              setFormData({ ...formData, schoolId: school.id, trainerId: '' });
+                              setTrainerSearchOpen(false);
                               setSchoolSearchOpen(false);
                             }}
                           >
@@ -829,6 +842,7 @@ const Sessions = () => {
                     role="combobox"
                     aria-expanded={trainerSearchOpen}
                     className="w-full justify-between"
+                    disabled={!formData.schoolId}
                   >
                     {formData.trainerId ? getTrainerName(formData.trainerId) : 'Select trainer...'}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -838,9 +852,11 @@ const Sessions = () => {
                   <Command>
                     <CommandInput placeholder="Search trainers..." />
                     <CommandList>
-                      <CommandEmpty>No trainer found.</CommandEmpty>
+                      <CommandEmpty>
+                        {formData.schoolId ? 'No trainer linked to this school.' : 'Select a school first.'}
+                      </CommandEmpty>
                       <CommandGroup>
-                        {apiTrainers.map((trainer) => (
+                        {filteredTrainersForSelectedSchool.map((trainer) => (
                           <CommandItem
                             key={trainer.id}
                             value={trainer.trainerProfile?.name || trainer.email}
