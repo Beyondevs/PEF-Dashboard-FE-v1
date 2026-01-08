@@ -48,7 +48,7 @@ import { cn } from '@/lib/utils';
 
 const Sessions = () => {
   const { role, isAdmin, canEdit } = useAuth();
-  const canManageSessions = () => role === 'admin' || role === 'division_role';
+  const canManageSessions = () => role === 'admin';
   const canViewDataTransfer = () => role === 'admin' || role === 'division_role' || role === 'client';
   const { filters } = useFilters();
   const navigate = useNavigate();

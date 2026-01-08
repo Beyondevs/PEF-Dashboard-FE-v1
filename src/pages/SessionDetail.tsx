@@ -201,7 +201,7 @@ const SessionDetail = () => {
 
   // Check if trainer can mark attendance (trainers can mark for past and present dates, not future)
   const canTrainerMarkAttendance = useMemo(() => {
-    if (role === 'admin' || role === 'division_role') return true;
+    if (role === 'admin') return true;
     if (role === 'trainer') {
       // Trainers can mark attendance for past and present dates, but not future dates
       return isSessionPastOrPresent;
