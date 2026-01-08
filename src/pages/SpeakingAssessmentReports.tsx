@@ -225,7 +225,13 @@ const SpeakingAssessmentReports = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-yellow-600">
-                      {(studentReport.statusBreakdown?.pre_completed || 0) + (studentReport.statusBreakdown?.mid_completed || 0)}
+                      {studentReport.summary?.inProgress ??
+                        Math.max(
+                          0,
+                          (studentReport.totalAssessments || 0) -
+                            (studentReport.statusBreakdown?.pending || 0) -
+                            (studentReport.statusBreakdown?.completed || 0),
+                        )}
                     </div>
                     <p className="text-xs text-muted-foreground">Pre or Mid completed</p>
                   </CardContent>
@@ -364,7 +370,13 @@ const SpeakingAssessmentReports = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-yellow-600">
-                      {(teacherReport.statusBreakdown?.pre_completed || 0) + (teacherReport.statusBreakdown?.mid_completed || 0)}
+                      {teacherReport.summary?.inProgress ??
+                        Math.max(
+                          0,
+                          (teacherReport.totalAssessments || 0) -
+                            (teacherReport.statusBreakdown?.pending || 0) -
+                            (teacherReport.statusBreakdown?.completed || 0),
+                        )}
                     </div>
                     <p className="text-xs text-muted-foreground">Pre or Mid completed</p>
                   </CardContent>
