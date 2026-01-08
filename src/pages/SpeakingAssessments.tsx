@@ -122,8 +122,6 @@ const SpeakingAssessments = () => {
       if (filters.division) apiFilters.divisionId = filters.division;
       if (filters.district) apiFilters.districtId = filters.district;
       if (filters.school) apiFilters.schoolId = filters.school;
-      if (filters.startDate) apiFilters.from = filters.startDate;
-      if (filters.endDate) apiFilters.to = filters.endDate;
       if (activeSearchTerm) apiFilters.search = activeSearchTerm;
 
       const response = await getStudentSpeakingAssessments(apiFilters);
@@ -139,7 +137,7 @@ const SpeakingAssessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [studentPage, pageSize, selectedStatus, filters.division, filters.district, filters.school, filters.startDate, filters.endDate, activeSearchTerm]);
+  }, [studentPage, pageSize, selectedStatus, filters.division, filters.district, filters.school, activeSearchTerm]);
 
   const fetchTeacherAssessments = useCallback(async () => {
     try {
@@ -153,8 +151,6 @@ const SpeakingAssessments = () => {
       if (filters.division) apiFilters.divisionId = filters.division;
       if (filters.district) apiFilters.districtId = filters.district;
       if (filters.school) apiFilters.schoolId = filters.school;
-      if (filters.startDate) apiFilters.from = filters.startDate;
-      if (filters.endDate) apiFilters.to = filters.endDate;
       if (activeSearchTerm) apiFilters.search = activeSearchTerm;
 
       const response = await getTeacherSpeakingAssessments(apiFilters);
@@ -170,13 +166,13 @@ const SpeakingAssessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [teacherPage, pageSize, selectedStatus, filters.division, filters.district, filters.school, filters.startDate, filters.endDate, activeSearchTerm]);
+  }, [teacherPage, pageSize, selectedStatus, filters.division, filters.district, filters.school, activeSearchTerm]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setStudentPage(1);
     setTeacherPage(1);
-  }, [filters.division, filters.district, filters.school, filters.startDate, filters.endDate, selectedStatus]);
+  }, [filters.division, filters.district, filters.school, selectedStatus]);
 
   useEffect(() => {
     if (activeTab === 'students') {
@@ -444,8 +440,6 @@ const SpeakingAssessments = () => {
                 if (filters.division) params.divisionId = filters.division;
                 if (filters.district) params.districtId = filters.district;
                 if (filters.school) params.schoolId = filters.school;
-                if (filters.startDate) params.from = filters.startDate;
-                if (filters.endDate) params.to = filters.endDate;
                 if (activeSearchTerm) params.search = activeSearchTerm;
 
                 if (activeTab === 'students') {

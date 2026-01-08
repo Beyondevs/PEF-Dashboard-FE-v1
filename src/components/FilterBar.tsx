@@ -15,13 +15,17 @@ import { getSessions, getDivisions, getDistricts, getTehsils, getSchools } from 
 import { formatDateDDMMYYYY } from '@/lib/date';
 import { useState, useEffect } from 'react';
 import type { Session, Division, District, Tehsil, School } from '@/types';
+import { useLocation } from 'react-router-dom';
 
 export const FilterBar = () => {
   const { filters, setFilters, resetFilters, isDivisionLocked } = useFilters();
   const { role, divisionName } = useAuth();
+  const location = useLocation();
   const isTrainer = role === 'trainer';
   const isClient = role === 'client';
   const isDivisionRole = role === 'division_role';
+  const disableDateFilters =
+    location.pathname === '/speaking-assessments' || location.pathname === '/speaking-assessments/';
 
   // Helper functions for date parsing
   const parseISODate = (value?: string) => {
@@ -66,6 +70,14 @@ export const FilterBar = () => {
 
     fetchDivisions();
   }, []);
+
+  // On Speaking Assessments page, date filters should be disabled for all roles.
+  // Also clear any persisted start/end dates so the page cannot be silently filtered.
+  useEffect(() => {
+    if (!disableDateFilters) return;
+    if (!filters.startDate && !filters.endDate) return;
+    setFilters((prev) => ({ ...prev, startDate: undefined, endDate: undefined }));
+  }, [disableDateFilters, filters.startDate, filters.endDate, setFilters]);
 
   // Fetch districts when division changes
   useEffect(() => {
@@ -443,29 +455,33 @@ export const FilterBar = () => {
           </SelectContent>
         </Select>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs md:text-sm text-muted-foreground">From:</span>
-          <DatePicker
-            date={parseISODate(filters.startDate)}
-            onDateChange={(date) => {
-              const dateStr = formatDateToISO(date);
-              setFilters(prev => ({ ...prev, startDate: dateStr }));
-            }}
-            placeholder="Start date"
-          />
-        </div>
+        {!disableDateFilters && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs md:text-sm text-muted-foreground">From:</span>
+            <DatePicker
+              date={parseISODate(filters.startDate)}
+              onDateChange={(date) => {
+                const dateStr = formatDateToISO(date);
+                setFilters(prev => ({ ...prev, startDate: dateStr }));
+              }}
+              placeholder="Start date"
+            />
+          </div>
+        )}
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs md:text-sm text-muted-foreground">To:</span>
-          <DatePicker
-            date={parseISODate(filters.endDate)}
-            onDateChange={(date) => {
-              const dateStr = formatDateToISO(date);
-              setFilters(prev => ({ ...prev, endDate: dateStr }));
-            }}
-            placeholder="End date"
-          />
-        </div>
+        {!disableDateFilters && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs md:text-sm text-muted-foreground">To:</span>
+            <DatePicker
+              date={parseISODate(filters.endDate)}
+              onDateChange={(date) => {
+                const dateStr = formatDateToISO(date);
+                setFilters(prev => ({ ...prev, endDate: dateStr }));
+              }}
+              placeholder="End date"
+            />
+          </div>
+        )}
 
         <Button
           variant="ghost"
