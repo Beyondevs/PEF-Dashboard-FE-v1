@@ -35,7 +35,7 @@ export default function Students() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'missing'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -136,7 +136,10 @@ export default function Students() {
         params.isActive = 'false';
       }
 
-      const response = await api.getStudents(params);
+      const response =
+        statusFilter === 'missing'
+          ? await api.getStudentsMissingSpeakingAssessments(params)
+          : await api.getStudents(params);
       setStudents(response.data.data);
       setPagination(prev => ({
         ...prev,
@@ -468,13 +471,14 @@ export default function Students() {
       {/* Status Tabs */}
       <div className="mb-4">
         <Tabs value={statusFilter} onValueChange={(value) => {
-          setStatusFilter(value as 'all' | 'active' | 'inactive');
+          setStatusFilter(value as 'all' | 'active' | 'inactive' | 'missing');
           setPagination(prev => ({ ...prev, page: 1 }));
         }}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="inactive">Inactive</TabsTrigger>
+            <TabsTrigger value="missing">Missing Speaking Assessment</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -499,7 +503,11 @@ export default function Students() {
               </TableRow>
             ) : students.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">No students found</TableCell>
+                <TableCell colSpan={7} className="text-center">
+                  {statusFilter === 'missing'
+                    ? 'No students are missing a speaking assessment record'
+                    : 'No students found'}
+                </TableCell>
               </TableRow>
             ) : (
               students.map((student: any) => {

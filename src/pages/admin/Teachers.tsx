@@ -38,7 +38,7 @@ export default function Teachers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'missing'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -113,7 +113,10 @@ export default function Teachers() {
       if (statusFilter === 'active') params.isActive = 'true';
       else if (statusFilter === 'inactive') params.isActive = 'false';
 
-      const response = await api.getTeachers(params);
+      const response =
+        statusFilter === 'missing'
+          ? await api.getTeachersMissingSpeakingAssessments(params)
+          : await api.getTeachers(params);
       setTeachers(response.data.data);
       setPagination(prev => ({
         ...prev,
@@ -368,13 +371,14 @@ export default function Teachers() {
       {/* Status Tabs */}
       <div className="mb-4">
         <Tabs value={statusFilter} onValueChange={(v) => {
-          setStatusFilter(v as 'all' | 'active' | 'inactive');
+          setStatusFilter(v as 'all' | 'active' | 'inactive' | 'missing');
           setPagination(p => ({ ...p, page: 1 }));
         }}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="inactive">Inactive</TabsTrigger>
+            <TabsTrigger value="missing">Missing Speaking Assessment</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -385,7 +389,11 @@ export default function Teachers() {
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Loading...</div>
           ) : teachers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No teachers found</div>
+            <div className="text-center py-8 text-muted-foreground">
+              {statusFilter === 'missing'
+                ? 'No teachers are missing a speaking assessment record'
+                : 'No teachers found'}
+            </div>
           ) : (
             teachers.map((t: any) => {
               const status = getTeacherStatus(t);
@@ -482,7 +490,11 @@ export default function Teachers() {
                 </TableRow>
               ) : teachers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">No teachers found</TableCell>
+                <TableCell colSpan={7} className="text-center">
+                  {statusFilter === 'missing'
+                    ? 'No teachers are missing a speaking assessment record'
+                    : 'No teachers found'}
+                </TableCell>
                 </TableRow>
               ) : (
                 teachers.map((t: any) => {

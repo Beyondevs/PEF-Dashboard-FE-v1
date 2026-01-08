@@ -311,6 +311,12 @@ export const getTeachers = (params: Record<string, string | number | boolean> = 
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<{ data: any[]; page: number; pageSize: number; total: number }>(`/teachers${qs ? `?${qs}` : ''}`);
 };
+export const getTeachersMissingSpeakingAssessments = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: any[]; page: number; pageSize: number; total: number }>(
+    `/teachers/missing-speaking-assessments${qs ? `?${qs}` : ''}`,
+  );
+};
 export const createTeacher = (data: any) => apiClient.post('/teachers', data);
 export const updateTeacher = (id: string, data: any) => apiClient.patch(`/teachers/${id}`, data);
 export const deleteTeacher = (id: string) => apiClient.delete(`/teachers/${id}`);
@@ -319,6 +325,12 @@ export const deleteTeacher = (id: string) => apiClient.delete(`/teachers/${id}`)
 export const getStudents = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<{ data: any[]; page: number; pageSize: number; total: number }>(`/students${qs ? `?${qs}` : ''}`);
+};
+export const getStudentsMissingSpeakingAssessments = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: any[]; page: number; pageSize: number; total: number }>(
+    `/students/missing-speaking-assessments${qs ? `?${qs}` : ''}`,
+  );
 };
 export const createStudent = (data: any) => apiClient.post('/students', data);
 export const updateStudent = (id: string, data: any) => apiClient.patch(`/students/${id}`, data);
