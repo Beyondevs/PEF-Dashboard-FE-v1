@@ -142,6 +142,11 @@ export const getSchoolHoursReport = (params: Record<string, string | number | bo
   return apiClient.get<any>(`/reports/school-hours${qs ? `?${qs}` : ''}`);
 };
 
+export const getSchoolHoursConsolidatedReport = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/reports/school-hours/consolidated${qs ? `?${qs}` : ''}`);
+};
+
 export const exportDistrictComparisonCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
   const qs = new URLSearchParams(params as any).toString();
   const response = await apiClient.getBlob(`/data-transfer/reports/district-comparison/export${qs ? `?${qs}` : ''}`);
