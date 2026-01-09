@@ -75,8 +75,8 @@ const SpeakingAssessments = () => {
   const { role, isAdmin } = useAuth();
   const navigate = useNavigate();
   const isAdminUser = isAdmin();
-  const canFillAssessment = isAdminUser || role === 'trainer';
-  const canEditAssessments = isAdminUser || role === 'trainer';
+  const canFillAssessment = isAdminUser || role === 'trainer' || role === 'division_role';
+  const canEditAssessments = isAdminUser || role === 'trainer' || role === 'division_role';
   const canExportAssessments = role === 'admin' || role === 'client' || role === 'division_role';
 
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
