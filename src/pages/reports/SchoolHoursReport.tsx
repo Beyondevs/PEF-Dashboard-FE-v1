@@ -72,8 +72,11 @@ const SchoolHoursReport = () => {
       const response = await getSchoolHoursConsolidatedReport(buildParams());
       setReportData(response.data);
     } catch (e) {
-      console.error('Failed to fetch school hours report:', e);
-      toast.error('Failed to load school hours report');
+      const err = e as any;
+      const status = err?.response?.status || err?.response?.statusCode;
+      const message = err?.message || 'Failed to load school hours report';
+      console.error('Failed to fetch school hours report:', { status, message, err });
+      toast.error(status ? `Failed to load school hours report (HTTP ${status})` : message);
     } finally {
       setIsLoading(false);
     }
