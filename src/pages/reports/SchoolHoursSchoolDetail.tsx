@@ -235,6 +235,8 @@ const SchoolHoursSchoolDetail = () => {
                         <TableCell className="text-xs text-right">{r.totalHours}</TableCell>
                         {days.map((d) => {
                           const v = r.days?.[d] || '';
+                          const minsForDay = m.dayDurationsMinutes?.[d] || 0;
+                          const isNoSessionDay = minsForDay === 0;
                           const cls =
                             v === 'P'
                               ? 'bg-green-50 text-green-700'
@@ -243,7 +245,7 @@ const SchoolHoursSchoolDetail = () => {
                               : '';
                           return (
                             <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
-                              {v === 'P' ? 'P' : v === 'A' ? 'A' : ''}
+                              {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : ''}
                             </TableCell>
                           );
                         })}
