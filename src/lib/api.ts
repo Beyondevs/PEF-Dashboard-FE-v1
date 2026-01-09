@@ -137,6 +137,11 @@ export const getAttendanceMarkingStatus = (params: Record<string, string | numbe
   return apiClient.get<any>(`/reports/attendance-marking-status${qs ? `?${qs}` : ''}`);
 };
 
+export const getSchoolHoursReport = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/reports/school-hours${qs ? `?${qs}` : ''}`);
+};
+
 export const exportDistrictComparisonCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
   const qs = new URLSearchParams(params as any).toString();
   const response = await apiClient.getBlob(`/data-transfer/reports/district-comparison/export${qs ? `?${qs}` : ''}`);
@@ -152,6 +157,12 @@ export const exportDrilldownCSV = async (params: Record<string, string | number 
 export const exportAttendanceMarkingCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
   const qs = new URLSearchParams(params as any).toString();
   const response = await apiClient.getBlob(`/reports/export/attendance-marking${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
+export const exportSchoolHoursCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/reports/school-hours/export${qs ? `?${qs}` : ''}`);
   return response.data;
 };
 

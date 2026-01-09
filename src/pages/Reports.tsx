@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle, Mic, Calendar } from 'lucide-react';
+import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle, Mic, Calendar, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -60,6 +60,15 @@ const Reports = () => {
       color: 'text-blue-600',
       path: '/reports/monthly-attendance-calendar',
       restrictedRoles: ['trainer'], // Hide from trainers - admin only
+    },
+    {
+      id: 7,
+      title: 'School Hours Report',
+      description: 'Calculate training hours per day and consolidated total hours per school',
+      icon: Clock,
+      color: 'text-emerald-600',
+      path: '/reports/school-hours',
+      restrictedRoles: ['teacher', 'student'], // Hide from teacher/student roles
     },
   ];
 

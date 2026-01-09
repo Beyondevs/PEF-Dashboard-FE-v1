@@ -22,6 +22,7 @@ import DrilldownReport from "./pages/reports/DrilldownReport";
 import DistrictCompareReport from "./pages/reports/DistrictCompareReport";
 import AttendanceMarkingReport from "./pages/reports/AttendanceMarkingReport";
 import MonthlyAttendanceCalendar from "./pages/reports/MonthlyAttendanceCalendar";
+import SchoolHoursReport from "./pages/reports/SchoolHoursReport";
 import Schools from "./pages/Schools";
 import Repository from "./pages/Repository";
 import WeeklySummaries from "./pages/WeeklySummaries";
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/reports/district-compare" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><DistrictCompareReport /></PrivateRoute></ProtectedLayout>} />
               <Route path="/reports/attendance-marking" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><AttendanceMarkingReport /></PrivateRoute></ProtectedLayout>} />
               <Route path="/reports/monthly-attendance-calendar" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><MonthlyAttendanceCalendar /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/school-hours" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><SchoolHoursReport /></PrivateRoute></ProtectedLayout>} />
               <Route path="/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Schools /></PrivateRoute></ProtectedLayout>} />
               <Route path="/repository" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Repository /></PrivateRoute></ProtectedLayout>} />
               <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />
