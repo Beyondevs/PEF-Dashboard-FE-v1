@@ -3,10 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, Printer } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
-import { getSchoolHoursConsolidatedReport } from '@/lib/api';
+import { exportSchoolHoursConsolidatedCSV, getSchoolHoursConsolidatedReport } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ConsolidatedRow = {
   personId: string;
@@ -50,9 +51,11 @@ const SchoolHoursSchoolDetail = () => {
   const { schoolId } = useParams<{ schoolId: string }>();
   const navigate = useNavigate();
   const { filters } = useFilters();
+  const { role } = useAuth();
 
   const [reportData, setReportData] = useState<ConsolidatedReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {};
@@ -84,6 +87,37 @@ const SchoolHoursSchoolDetail = () => {
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  const handleExport = async () => {
+    if (!schoolId) return;
+    setIsExporting(true);
+    try {
+      const params = buildParams();
+      const blob = await exportSchoolHoursConsolidatedCSV(params);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      const dateRange =
+        filters.startDate && filters.endDate
+          ? `-${filters.startDate}-to-${filters.endDate}`
+          : filters.startDate
+          ? `-from-${filters.startDate}`
+          : '';
+      link.download = `school-hours-${schoolId}${dateRange}.csv`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Exported consolidated school hours');
+    } catch (e) {
+      console.error('Failed to export consolidated school hours:', e);
+      toast.error('Failed to export consolidated school hours');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const school = reportData?.schools?.[0];
   const days = useMemo(() => Array.from({ length: 31 }, (_, i) => i + 1), []);
@@ -134,6 +168,16 @@ const SchoolHoursSchoolDetail = () => {
             <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
+          {role !== 'bnu' && (
+            <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              {isExporting ? 'Exporting…' : 'Export'}
+            </Button>
+          )}
           <Button variant="outline" onClick={fetchReport}>
             Refresh
           </Button>
