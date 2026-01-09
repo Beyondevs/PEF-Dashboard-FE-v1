@@ -366,7 +366,7 @@ const Sessions = () => {
             </>
           )}
 
-          {canViewDataTransfer() && (
+          {(canViewDataTransfer() || role === 'trainer') && (
             <ExportButton
               label="Export"
               exportFn={async () => {
