@@ -295,12 +295,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   // Permission helper functions
-  // division_role is view-only across the app
+  // Permission helper functions (UI gating). Backend still enforces security.
   const isAdmin = () => role === 'admin';
   const isDivisionRole = () => role === 'division_role';
   const canEdit = () => role === 'admin';
   const canDelete = () => role === 'admin';
-  const canMarkAttendance = () => role === 'admin' || role === 'trainer';
+  const canMarkAttendance = () => role === 'admin' || role === 'trainer' || role === 'division_role';
 
   return (
     <AuthContext.Provider value={{ 
