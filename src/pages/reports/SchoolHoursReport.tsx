@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, Loader2, ArrowLeft, Printer } from 'lucide-react';
 import { toast } from 'sonner';
@@ -54,6 +55,7 @@ const SchoolHoursReport = () => {
 
   const [reportData, setReportData] = useState<ConsolidatedReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [openSchoolIds, setOpenSchoolIds] = useState<string[]>([]);
 
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {};
@@ -87,7 +89,10 @@ const SchoolHoursReport = () => {
   }, [fetchReport]);
 
   const handlePrint = () => {
-    window.print();
+    // Print should include all schools expanded
+    const all = (reportData?.schools || []).map((s) => s.schoolId);
+    setOpenSchoolIds(all);
+    setTimeout(() => window.print(), 50);
   };
 
   const summary = useMemo(
@@ -113,6 +118,83 @@ const SchoolHoursReport = () => {
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const schools = reportData?.schools || [];
   const studentSummary = reportData?.studentSummary || [];
+
+  const renderSchoolDetails = (s: ConsolidatedSchool) => (
+    <div className="space-y-4">
+      {s.months.map((m) => (
+        <Card key={m.monthKey}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{m.label}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table className="table-fixed">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[90px]">Role</TableHead>
+                    <TableHead className="w-[220px]">Name</TableHead>
+                    <TableHead className="w-[90px] text-right">Days</TableHead>
+                    <TableHead className="w-[110px] text-right">Hours</TableHead>
+                    {days.map((d) => (
+                      <TableHead key={d} className="w-[32px] text-center p-1">
+                        {d}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                  <TableRow>
+                    <TableHead colSpan={4} className="text-xs text-muted-foreground">
+                      Session duration (hours) per day
+                    </TableHead>
+                    {days.map((d) => {
+                      const mins = m.dayDurationsMinutes?.[d] || 0;
+                      const hrs = mins ? Math.round((mins / 60) * 100) / 100 : 0;
+                      return (
+                        <TableHead key={`dur-${d}`} className="text-[10px] text-center p-1 text-muted-foreground">
+                          {hrs ? hrs : ''}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {m.rows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4 + days.length} className="text-center text-muted-foreground py-6">
+                        No attendance records for this month.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    m.rows.map((r) => (
+                      <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
+                        <TableCell className="text-xs">{r.role}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.name}</TableCell>
+                        <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
+                        <TableCell className="text-xs text-right">{r.totalHours}</TableCell>
+                        {days.map((d) => {
+                          const v = r.days?.[d] || '';
+                          const cls =
+                            v === 'P'
+                              ? 'bg-green-50 text-green-700'
+                              : v === 'A'
+                              ? 'bg-red-50 text-red-700'
+                              : '';
+                          return (
+                            <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
+                              {v === 'P' ? 'P' : v === 'A' ? 'A' : ''}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6 print:space-y-4">
@@ -186,7 +268,29 @@ const SchoolHoursReport = () => {
       </div>
 
       {/* School-wise printable sections */}
-      <div className="space-y-8 print:space-y-6">
+      <div className="space-y-4 print:hidden">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Schools</h2>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpenSchoolIds(schools.map((s) => s.schoolId))}
+              disabled={schools.length === 0}
+            >
+              Expand all
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpenSchoolIds([])}
+              disabled={schools.length === 0}
+            >
+              Collapse all
+            </Button>
+          </div>
+        </div>
+
         {schools.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
@@ -194,98 +298,43 @@ const SchoolHoursReport = () => {
             </CardContent>
           </Card>
         ) : (
-          schools.map((s, idx) => (
-            <div
-              key={s.schoolId}
-              style={idx === 0 ? undefined : ({ breakBefore: 'page' } as any)}
-              className="space-y-4"
-            >
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">
-                    {s.schoolName} <span className="text-muted-foreground font-normal">({s.emisCode || '-'})</span>
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {[s.tehsil, s.district, s.division].filter(Boolean).join(', ') || '—'}
-                  </p>
-                </CardHeader>
-              </Card>
-
-              {s.months.map((m) => (
-                <Card key={m.monthKey}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">{m.label}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      <Table className="table-fixed">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[90px]">Role</TableHead>
-                            <TableHead className="w-[220px]">Name</TableHead>
-                            <TableHead className="w-[90px] text-right">Days</TableHead>
-                            <TableHead className="w-[110px] text-right">Hours</TableHead>
-                            {days.map((d) => (
-                              <TableHead key={d} className="w-[32px] text-center p-1">
-                                {d}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                          <TableRow>
-                            <TableHead colSpan={4} className="text-xs text-muted-foreground">
-                              Session duration (hours) per day
-                            </TableHead>
-                            {days.map((d) => {
-                              const mins = m.dayDurationsMinutes?.[d] || 0;
-                              const hrs = mins ? Math.round((mins / 60) * 100) / 100 : 0;
-                              return (
-                                <TableHead key={`dur-${d}`} className="text-[10px] text-center p-1 text-muted-foreground">
-                                  {hrs ? hrs : ''}
-                                </TableHead>
-                              );
-                            })}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {m.rows.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={4 + days.length} className="text-center text-muted-foreground py-6">
-                                No attendance records for this month.
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            m.rows.map((r) => (
-                              <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
-                                <TableCell className="text-xs">{r.role}</TableCell>
-                                <TableCell className="text-xs font-medium">{r.name}</TableCell>
-                                <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
-                                <TableCell className="text-xs text-right">{r.totalHours}</TableCell>
-                                {days.map((d) => {
-                                  const v = r.days?.[d] || '';
-                                  const cls =
-                                    v === 'P'
-                                      ? 'bg-green-50 text-green-700'
-                                      : v === 'A'
-                                      ? 'bg-red-50 text-red-700'
-                                      : '';
-                                  return (
-                                    <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
-                                      {v === 'P' ? 'P' : v === 'A' ? 'A' : ''}
-                                    </TableCell>
-                                  );
-                                })}
-                              </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ))
+          <Accordion type="multiple" value={openSchoolIds} onValueChange={(v) => setOpenSchoolIds(v as string[])}>
+            {schools.map((s) => (
+              <AccordionItem key={s.schoolId} value={s.schoolId}>
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex flex-col text-left">
+                    <span className="font-semibold">{s.schoolName} <span className="text-muted-foreground font-normal">({s.emisCode || '-'})</span></span>
+                    <span className="text-xs text-muted-foreground">
+                      {[s.tehsil, s.district, s.division].filter(Boolean).join(', ') || '—'}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-2">
+                  {renderSchoolDetails(s)}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         )}
+      </div>
+
+      {/* Print-only: always render all schools expanded */}
+      <div className="hidden print:block space-y-6">
+        {schools.map((s, idx) => (
+          <div key={`print-${s.schoolId}`} style={idx === 0 ? undefined : ({ breakBefore: 'page' } as any)} className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">
+                  {s.schoolName} <span className="text-muted-foreground font-normal">({s.emisCode || '-'})</span>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {[s.tehsil, s.district, s.division].filter(Boolean).join(', ') || '—'}
+                </p>
+              </CardHeader>
+            </Card>
+            {renderSchoolDetails(s)}
+          </div>
+        ))}
       </div>
 
       {/* Student-wise consolidated hours summary */}
