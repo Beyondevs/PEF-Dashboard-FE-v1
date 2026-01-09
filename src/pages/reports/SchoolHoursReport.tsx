@@ -141,8 +141,11 @@ const SchoolHoursReport = () => {
 
   // Reset pagination when switching tabs
   useEffect(() => {
-    setSchoolPage(1);
-    setDailyPage(1);
+    if (activeTab === 'schools') {
+      setSchoolPage(1);
+    } else {
+      setDailyPage(1);
+    }
   }, [activeTab, setSchoolPage, setDailyPage]);
 
   const summary = useMemo(
