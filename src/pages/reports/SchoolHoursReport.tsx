@@ -16,6 +16,7 @@ type SchoolListRow = {
   district: string | null;
   tehsil: string | null;
   totalHours: number;
+  totalDays: number;
   presentPeopleCount: number;
   presentTeacherCount?: number;
   presentStudentCount?: number;
@@ -145,6 +146,7 @@ const SchoolHoursReport = () => {
                   <TableHead>School</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead className="text-right">Total Hours</TableHead>
+                  <TableHead className="text-right">Total Days</TableHead>
                   <TableHead className="text-right">Present People</TableHead>
                   <TableHead className="text-right">Detail</TableHead>
                 </TableRow>
@@ -152,7 +154,7 @@ const SchoolHoursReport = () => {
               <TableBody>
                 {schools.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       No schools found for selected filters.
                     </TableCell>
                   </TableRow>
@@ -169,6 +171,7 @@ const SchoolHoursReport = () => {
                         {[s.tehsil, s.district, s.division].filter(Boolean).join(', ') || '-'}
                       </TableCell>
                       <TableCell className="text-right">{s.totalHours}</TableCell>
+                      <TableCell className="text-right">{s.totalDays}</TableCell>
                       <TableCell className="text-right">
                         {s.presentPeopleCount}
                         {(s.presentTeacherCount !== undefined || s.presentStudentCount !== undefined) && (
