@@ -6,7 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, ArrowLeft, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
-import { exportSchoolHoursConsolidatedCSV, getSchoolHoursConsolidatedReport, getSchoolHoursSchoolsList } from '@/lib/api';
+import {
+  exportSchoolHoursConsolidatedCSV,
+  exportSchoolHoursConsolidatedAllSchoolsZip,
+  getSchoolHoursConsolidatedReport,
+  getSchoolHoursSchoolsList,
+} from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 type ConsolidatedRow = {
@@ -64,6 +69,22 @@ function safeFilenamePart(input: string) {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 150);
+}
+
+function formatMinutesAsHHMM(mins: number): string {
+  const m = Math.max(0, Math.round(mins || 0));
+  if (!m) return '';
+  const hh = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+function formatHoursAsHHMM(hours: number): string {
+  if (!Number.isFinite(hours)) return '00:00';
+  const mins = Math.max(0, Math.round(hours * 60));
+  const hh = Math.floor(mins / 60);
+  const mm = mins % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
 const SchoolHoursSchoolDetail = () => {
@@ -151,63 +172,37 @@ const SchoolHoursSchoolDetail = () => {
     if (isExportingAll) return;
 
     const ok = window.confirm(
-      'This will download a separate CSV file for every school (could be 180+ downloads). Continue?',
+      'This will download ONE ZIP containing one CSV file per school (could be 180+ files inside). Continue?',
     );
     if (!ok) return;
 
     setIsExportingAll(true);
     try {
+      // quick pre-check for count so user knows what they are downloading
       const listRes = await getSchoolHoursSchoolsList(buildListParams());
       const schools: SchoolListRow[] = Array.isArray(listRes?.data?.schools) ? listRes.data.schools : [];
-
-      if (schools.length === 0) {
+      const count = schools.length;
+      if (count === 0) {
         toast.error('No schools found for selected filters');
         return;
       }
 
-      toast.message(`Starting export for ${schools.length} schools…`);
+      toast.message(`Generating ZIP for ${count} schools… (this may take a while)`);
 
-      let success = 0;
-      let failed = 0;
+      const zipBlob = await exportSchoolHoursConsolidatedAllSchoolsZip(buildListParams());
+      const url = window.URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `school-hours-all-schools.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-      for (let i = 0; i < schools.length; i++) {
-        const s = schools[i];
-        try {
-          const blob = await exportSchoolHoursConsolidatedCSV({
-            ...buildListParams(),
-            schoolId: s.schoolId,
-          });
-
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-
-          const namePart = safeFilenamePart(s.schoolName || `school-${s.schoolId}`);
-          const emisPart = safeFilenamePart(s.emisCode || s.schoolId);
-          link.download = `${namePart}_${emisPart}.csv`;
-
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-
-          success++;
-          if ((i + 1) % 10 === 0 || i === schools.length - 1) {
-            toast.message(`Export progress: ${i + 1}/${schools.length} (ok=${success}, failed=${failed})`);
-          }
-        } catch (e) {
-          failed++;
-          console.error('Failed to export school hours for school:', s, e);
-        }
-
-        // Small delay helps browsers process sequential downloads and avoids hammering the API
-        await sleep(150);
-      }
-
-      toast.success(`Export finished. Downloaded ${success} file(s). Failed ${failed}.`);
+      toast.success(`Downloaded ZIP for ${count} schools`);
     } catch (e) {
       console.error('Failed to export all schools:', e);
-      toast.error('Failed to export all schools');
+      toast.error('Failed to export all schools ZIP');
     } finally {
       setIsExportingAll(false);
     }
@@ -278,7 +273,7 @@ const SchoolHoursSchoolDetail = () => {
                 ) : (
                   <Download className="h-4 w-4 mr-2" />
                 )}
-                {isExportingAll ? 'Exporting All…' : 'Export All Schools'}
+                {isExportingAll ? 'Exporting ZIP…' : 'Export All (ZIP)'}
               </Button>
             </>
           )}
@@ -301,7 +296,7 @@ const SchoolHoursSchoolDetail = () => {
                     <TableHead className="w-[90px]">Role</TableHead>
                     <TableHead className="w-[220px]">Name</TableHead>
                     <TableHead className="w-[90px] text-right">Days</TableHead>
-                    <TableHead className="w-[110px] text-right">Hours</TableHead>
+                    <TableHead className="w-[110px] text-right">Hours (HH:MM)</TableHead>
                     {days.map((d) => (
                       <TableHead key={d} className="w-[32px] text-center p-1">
                         {d}
@@ -310,14 +305,16 @@ const SchoolHoursSchoolDetail = () => {
                   </TableRow>
                   <TableRow>
                     <TableHead colSpan={4} className="text-xs text-muted-foreground">
-                      Session duration (hours) per day
+                      Session duration (HH:MM) per day
                     </TableHead>
                     {days.map((d) => {
                       const mins = m.dayDurationsMinutes?.[d] || 0;
-                      const hrs = mins ? Math.round((mins / 60) * 100) / 100 : 0;
                       return (
-                        <TableHead key={`dur-${d}`} className="text-[10px] text-center p-1 text-muted-foreground">
-                          {hrs ? hrs : ''}
+                        <TableHead
+                          key={`dur-${d}`}
+                          className="text-[9px] text-center p-1 text-muted-foreground whitespace-nowrap"
+                        >
+                          {formatMinutesAsHHMM(mins)}
                         </TableHead>
                       );
                     })}
@@ -336,7 +333,9 @@ const SchoolHoursSchoolDetail = () => {
                         <TableCell className="text-xs">{r.role}</TableCell>
                         <TableCell className="text-xs font-medium">{r.name}</TableCell>
                         <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
-                        <TableCell className="text-xs text-right">{r.totalHours}</TableCell>
+                        <TableCell className="text-xs text-right whitespace-nowrap">
+                          {formatHoursAsHHMM(r.totalHours)}
+                        </TableCell>
                         {days.map((d) => {
                           const v = r.days?.[d] || '';
                           const minsForDay = m.dayDurationsMinutes?.[d] || 0;

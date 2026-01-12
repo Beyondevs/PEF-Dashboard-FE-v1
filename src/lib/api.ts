@@ -182,6 +182,14 @@ export const exportSchoolHoursConsolidatedCSV = async (params: Record<string, st
   return response.data;
 };
 
+export const exportSchoolHoursConsolidatedAllSchoolsZip = async (
+  params: Record<string, string | number | boolean> = {},
+): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/reports/school-hours/consolidated/export-all-zip${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
 export const getMonthlyAttendanceCalendar = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<{
