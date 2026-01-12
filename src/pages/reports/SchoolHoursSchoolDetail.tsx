@@ -2,6 +2,16 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, ArrowLeft, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
@@ -58,10 +68,6 @@ type SchoolListRow = {
   emisCode: string | null;
 };
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function safeFilenamePart(input: string) {
   // Windows/macOS safe-ish filename (avoid reserved chars)
   return input
@@ -97,6 +103,9 @@ const SchoolHoursSchoolDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingAll, setIsExportingAll] = useState(false);
+  const [isExportAllDialogOpen, setIsExportAllDialogOpen] = useState(false);
+  const [exportAllSchools, setExportAllSchools] = useState<SchoolListRow[] | null>(null);
+  const [isLoadingExportAllSchools, setIsLoadingExportAllSchools] = useState(false);
 
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {};
@@ -140,6 +149,29 @@ const SchoolHoursSchoolDetail = () => {
     fetchReport();
   }, [fetchReport]);
 
+  useEffect(() => {
+    if (!isExportAllDialogOpen) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setIsLoadingExportAllSchools(true);
+        const listRes = await getSchoolHoursSchoolsList(buildListParams());
+        const schools: SchoolListRow[] = Array.isArray(listRes?.data?.schools) ? listRes.data.schools : [];
+        if (!cancelled) setExportAllSchools(schools);
+      } catch (e) {
+        console.error('Failed to load schools list for export-all modal:', e);
+        if (!cancelled) setExportAllSchools([]);
+      } finally {
+        if (!cancelled) setIsLoadingExportAllSchools(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isExportAllDialogOpen, buildListParams]);
+
   const handleExport = async () => {
     if (!schoolId) return;
     setIsExporting(true);
@@ -167,20 +199,13 @@ const SchoolHoursSchoolDetail = () => {
     }
   };
 
-  const handleExportAllSchools = async () => {
+  const handleExportAllSchoolsZip = async () => {
     if (role === 'bnu') return;
     if (isExportingAll) return;
 
-    const ok = window.confirm(
-      'This will download ONE ZIP containing one CSV file per school (could be 180+ files inside). Continue?',
-    );
-    if (!ok) return;
-
     setIsExportingAll(true);
     try {
-      // quick pre-check for count so user knows what they are downloading
-      const listRes = await getSchoolHoursSchoolsList(buildListParams());
-      const schools: SchoolListRow[] = Array.isArray(listRes?.data?.schools) ? listRes.data.schools : [];
+      const schools = exportAllSchools ?? [];
       const count = schools.length;
       if (count === 0) {
         toast.error('No schools found for selected filters');
@@ -267,13 +292,17 @@ const SchoolHoursSchoolDetail = () => {
                 )}
                 {isExporting ? 'Exporting…' : 'Export'}
               </Button>
-              <Button variant="outline" onClick={handleExportAllSchools} disabled={isExporting || isExportingAll}>
+              <Button
+                variant="outline"
+                onClick={() => setIsExportAllDialogOpen(true)}
+                disabled={isExporting || isExportingAll}
+              >
                 {isExportingAll ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <Download className="h-4 w-4 mr-2" />
                 )}
-                {isExportingAll ? 'Exporting ZIP…' : 'Export All (ZIP)'}
+                {isExportingAll ? 'Exporting ZIP…' : 'Export All Schools (ZIP)'}
               </Button>
             </>
           )}
@@ -282,6 +311,43 @@ const SchoolHoursSchoolDetail = () => {
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={isExportAllDialogOpen} onOpenChange={setIsExportAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Export All Schools (ZIP)</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will download <b>one ZIP file</b> that contains <b>one CSV per school</b> (month-wise) for the current
+              filters.
+              <br />
+              <br />
+              {isLoadingExportAllSchools ? (
+                <span>Calculating number of schools…</span>
+              ) : (
+                <span>
+                  Total schools to export: <b>{exportAllSchools?.length ?? 0}</b>
+                </span>
+              )}
+              <br />
+              <br />
+              If there are many schools, this may take some time to generate.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isExportingAll}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                await handleExportAllSchoolsZip();
+                setIsExportAllDialogOpen(false);
+              }}
+              disabled={isExportingAll || isLoadingExportAllSchools || (exportAllSchools?.length ?? 0) === 0}
+            >
+              {isExportingAll ? 'Exporting…' : 'Download ZIP'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {school.months.map((m) => (
         <Card key={m.monthKey}>
