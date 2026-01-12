@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, ArrowLeft, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
-import { exportSchoolHoursConsolidatedCSV, getSchoolHoursConsolidatedReport } from '@/lib/api';
+import { exportSchoolHoursConsolidatedCSV, getSchoolHoursConsolidatedReport, getSchoolHoursSchoolsList } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 type ConsolidatedRow = {
@@ -47,6 +47,25 @@ type ConsolidatedReportData = {
   studentSummary: Array<{ studentId: string; name: string; totalHours: number }>;
 };
 
+type SchoolListRow = {
+  schoolId: string;
+  schoolName: string;
+  emisCode: string | null;
+};
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function safeFilenamePart(input: string) {
+  // Windows/macOS safe-ish filename (avoid reserved chars)
+  return input
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 150);
+}
+
 const SchoolHoursSchoolDetail = () => {
   const { schoolId } = useParams<{ schoolId: string }>();
   const navigate = useNavigate();
@@ -56,6 +75,7 @@ const SchoolHoursSchoolDetail = () => {
   const [reportData, setReportData] = useState<ConsolidatedReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingAll, setIsExportingAll] = useState(false);
 
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {};
@@ -67,6 +87,17 @@ const SchoolHoursSchoolDetail = () => {
     if (schoolId) params.schoolId = schoolId;
     return params;
   }, [filters, schoolId]);
+
+  const buildListParams = useCallback(() => {
+    // same filters as detail, but WITHOUT schoolId, so we get all matching schools
+    const params: Record<string, string> = {};
+    if (filters.division) params.divisionId = filters.division;
+    if (filters.district) params.districtId = filters.district;
+    if (filters.tehsil) params.tehsilId = filters.tehsil;
+    if (filters.startDate) params.from = filters.startDate;
+    if (filters.endDate) params.to = filters.endDate;
+    return params;
+  }, [filters]);
 
   const fetchReport = useCallback(async () => {
     try {
@@ -98,13 +129,9 @@ const SchoolHoursSchoolDetail = () => {
       const link = document.createElement('a');
       link.href = url;
 
-      const dateRange =
-        filters.startDate && filters.endDate
-          ? `-${filters.startDate}-to-${filters.endDate}`
-          : filters.startDate
-          ? `-from-${filters.startDate}`
-          : '';
-      link.download = `school-hours-${schoolId}${dateRange}.csv`;
+      const namePart = safeFilenamePart(reportData?.schools?.[0]?.schoolName || `school-${schoolId}`);
+      const emisPart = safeFilenamePart(reportData?.schools?.[0]?.emisCode || schoolId);
+      link.download = `${namePart}_${emisPart}.csv`;
 
       document.body.appendChild(link);
       link.click();
@@ -116,6 +143,73 @@ const SchoolHoursSchoolDetail = () => {
       toast.error('Failed to export consolidated school hours');
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExportAllSchools = async () => {
+    if (role === 'bnu') return;
+    if (isExportingAll) return;
+
+    const ok = window.confirm(
+      'This will download a separate CSV file for every school (could be 180+ downloads). Continue?',
+    );
+    if (!ok) return;
+
+    setIsExportingAll(true);
+    try {
+      const listRes = await getSchoolHoursSchoolsList(buildListParams());
+      const schools: SchoolListRow[] = Array.isArray(listRes?.data?.schools) ? listRes.data.schools : [];
+
+      if (schools.length === 0) {
+        toast.error('No schools found for selected filters');
+        return;
+      }
+
+      toast.message(`Starting export for ${schools.length} schools…`);
+
+      let success = 0;
+      let failed = 0;
+
+      for (let i = 0; i < schools.length; i++) {
+        const s = schools[i];
+        try {
+          const blob = await exportSchoolHoursConsolidatedCSV({
+            ...buildListParams(),
+            schoolId: s.schoolId,
+          });
+
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+
+          const namePart = safeFilenamePart(s.schoolName || `school-${s.schoolId}`);
+          const emisPart = safeFilenamePart(s.emisCode || s.schoolId);
+          link.download = `${namePart}_${emisPart}.csv`;
+
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          success++;
+          if ((i + 1) % 10 === 0 || i === schools.length - 1) {
+            toast.message(`Export progress: ${i + 1}/${schools.length} (ok=${success}, failed=${failed})`);
+          }
+        } catch (e) {
+          failed++;
+          console.error('Failed to export school hours for school:', s, e);
+        }
+
+        // Small delay helps browsers process sequential downloads and avoids hammering the API
+        await sleep(150);
+      }
+
+      toast.success(`Export finished. Downloaded ${success} file(s). Failed ${failed}.`);
+    } catch (e) {
+      console.error('Failed to export all schools:', e);
+      toast.error('Failed to export all schools');
+    } finally {
+      setIsExportingAll(false);
     }
   };
 
@@ -169,14 +263,24 @@ const SchoolHoursSchoolDetail = () => {
             Print
           </Button>
           {role !== 'bnu' && (
-            <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-              {isExporting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-2" />
-              )}
-              {isExporting ? 'Exporting…' : 'Export'}
-            </Button>
+            <>
+              <Button variant="outline" onClick={handleExport} disabled={isExporting || isExportingAll}>
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                {isExporting ? 'Exporting…' : 'Export'}
+              </Button>
+              <Button variant="outline" onClick={handleExportAllSchools} disabled={isExporting || isExportingAll}>
+                {isExportingAll ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                {isExportingAll ? 'Exporting All…' : 'Export All Schools'}
+              </Button>
+            </>
           )}
           <Button variant="outline" onClick={fetchReport}>
             Refresh
