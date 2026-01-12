@@ -31,6 +31,14 @@ type SchoolListData = {
   schools: SchoolListRow[];
 };
 
+function formatHoursAsHHhMMm(hours: number): string {
+  if (!Number.isFinite(hours)) return '00h 00m';
+  const mins = Math.max(0, Math.round(hours * 60));
+  const hh = Math.floor(mins / 60);
+  const mm = mins % 60;
+  return `${String(hh).padStart(2, '0')}h ${String(mm).padStart(2, '0')}m`;
+}
+
 const SchoolHoursReport = () => {
   const { filters } = useFilters();
   const navigate = useNavigate();
@@ -170,7 +178,7 @@ const SchoolHoursReport = () => {
                       <TableCell className="text-sm text-muted-foreground">
                         {[s.tehsil, s.district, s.division].filter(Boolean).join(', ') || '-'}
                       </TableCell>
-                      <TableCell className="text-right">{s.totalHours}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">{formatHoursAsHHhMMm(s.totalHours)}</TableCell>
                       <TableCell className="text-right">{s.totalDays}</TableCell>
                       <TableCell className="text-right">
                         {s.presentPeopleCount}
