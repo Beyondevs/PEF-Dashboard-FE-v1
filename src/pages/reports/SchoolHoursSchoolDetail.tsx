@@ -28,6 +28,7 @@ type ConsolidatedRow = {
   personId: string;
   name: string;
   role: 'Teacher' | 'Student';
+  rollNoOrCnic?: string;
   days: Record<number, '' | 'P' | 'A'>;
   presentDays: number;
   totalHours: number;
@@ -361,6 +362,7 @@ const SchoolHoursSchoolDetail = () => {
                   <TableRow>
                     <TableHead className="w-[90px]">Role</TableHead>
                     <TableHead className="w-[220px]">Name</TableHead>
+                    <TableHead className="w-[140px]">RollNo/CNIC</TableHead>
                     <TableHead className="w-[90px] text-right">Days</TableHead>
                     <TableHead className="w-[110px] text-right">Hours (HH:MM)</TableHead>
                     {days.map((d) => (
@@ -370,7 +372,7 @@ const SchoolHoursSchoolDetail = () => {
                     ))}
                   </TableRow>
                   <TableRow>
-                    <TableHead colSpan={4} className="text-xs text-muted-foreground">
+                    <TableHead colSpan={5} className="text-xs text-muted-foreground">
                       Session duration (HH:MM) per day
                     </TableHead>
                     {days.map((d) => {
@@ -389,7 +391,7 @@ const SchoolHoursSchoolDetail = () => {
                 <TableBody>
                   {m.rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4 + days.length} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={5 + days.length} className="text-center text-muted-foreground py-6">
                         No attendance records for this month.
                       </TableCell>
                     </TableRow>
@@ -398,6 +400,7 @@ const SchoolHoursSchoolDetail = () => {
                       <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
                         <TableCell className="text-xs">{r.role}</TableCell>
                         <TableCell className="text-xs font-medium">{r.name}</TableCell>
+                        <TableCell className="text-xs">{r.rollNoOrCnic || '-'}</TableCell>
                         <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
                         <TableCell className="text-xs text-right whitespace-nowrap">
                           {formatHoursAsHHMM(r.totalHours)}
