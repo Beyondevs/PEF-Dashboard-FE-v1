@@ -81,8 +81,8 @@ const SessionDetail = () => {
 
   const isAttendancePresent = (att?: { present?: boolean; markedBy?: string }) => {
     if (!att) return false;
-    // "Not marked" should NOT be treated as present
-    if (isSystemNotMarked(att)) return false;
+    // Legacy behavior: "Not marked" is shown as Present on UI (until user marks absences).
+    if (isSystemNotMarked(att)) return true;
     if (typeof att.present === 'boolean') return att.present;
     return false;
   };
@@ -90,7 +90,7 @@ const SessionDetail = () => {
   // Function for counting present attendance (treats "not marked" as not present)
   const isAttendanceCountedAsPresent = (att?: { present?: boolean; markedBy?: string }) => {
     if (!att) return false;
-    if (isSystemNotMarked(att)) return false; // Not marked = not present for counting
+    if (isSystemNotMarked(att)) return true; // Legacy: count not-marked as present
     if (typeof att.present === 'boolean') return att.present;
     return false;
   };

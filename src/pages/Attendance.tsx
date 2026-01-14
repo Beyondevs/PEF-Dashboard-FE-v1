@@ -76,8 +76,8 @@ const Attendance = () => {
 
   const isRecordPresent = (record?: { present?: boolean; markedBy?: string }) => {
     if (!record) return false;
-    // "Not marked" should NOT be treated as present
-    if (record.markedBy === SYSTEM_NOT_MARKED) return false;
+    // Legacy behavior: "Not marked" is shown as Present on UI (until user marks absences).
+    if (record.markedBy === SYSTEM_NOT_MARKED) return true;
     if (typeof record.present === 'boolean') {
       return record.present;
     }
