@@ -29,7 +29,7 @@ type ConsolidatedRow = {
   name: string;
   role: 'Teacher' | 'Student';
   rollNoOrCnic?: string;
-  days: Record<number, '' | 'P' | 'A'>;
+  days: Record<number, '' | 'P' | 'A' | 'NM'>;
   presentDays: number;
   totalHours: number;
 };
@@ -414,10 +414,12 @@ const SchoolHoursSchoolDetail = () => {
                               ? 'bg-green-50 text-green-700'
                               : v === 'A'
                               ? 'bg-red-50 text-red-700'
+                              : v === 'NM'
+                              ? 'bg-amber-50 text-amber-800'
                               : '';
                           return (
                             <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
-                              {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : ''}
+                              {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : v === 'NM' ? 'NM' : ''}
                             </TableCell>
                           );
                         })}
