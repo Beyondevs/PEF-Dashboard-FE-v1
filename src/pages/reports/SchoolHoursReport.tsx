@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
-import { getSchoolHoursSchoolsList } from '@/lib/api';
+import { getSchoolHoursSchoolsList, exportSchoolHoursSchoolsListCSV } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 
 type SchoolListRow = {
@@ -45,6 +45,7 @@ const SchoolHoursReport = () => {
 
   const [reportData, setReportData] = useState<SchoolListData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {};
@@ -76,6 +77,34 @@ const SchoolHoursReport = () => {
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  const handleExport = useCallback(async () => {
+    try {
+      setIsExporting(true);
+      const params = buildParams();
+      const blob = await exportSchoolHoursSchoolsListCSV(params);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateRange =
+        params.from && params.to
+          ? `-${params.from}-to-${params.to}`
+          : params.from
+          ? `-from-${params.from}`
+          : '';
+      link.download = `school-hours-schools-list${dateRange}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('School hours report exported successfully');
+    } catch (error) {
+      console.error('Failed to export school hours report:', error);
+      toast.error('Failed to export school hours report');
+    } finally {
+      setIsExporting(false);
+    }
+  }, [buildParams]);
 
   const summary = useMemo(
     () =>
@@ -114,6 +143,10 @@ const SchoolHoursReport = () => {
         </div>
 
         <div className="flex gap-2 print:hidden">
+          <Button onClick={handleExport} variant="outline" disabled={isExporting || schools.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? 'Exporting...' : 'Export CSV'}
+          </Button>
           <Button onClick={fetchReport} variant="outline">
             Refresh
           </Button>

@@ -176,6 +176,12 @@ export const exportSchoolHoursCSV = async (params: Record<string, string | numbe
   return response.data;
 };
 
+export const exportSchoolHoursSchoolsListCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/reports/school-hours/schools/export${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
 export const exportSchoolHoursConsolidatedCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
   const qs = new URLSearchParams(params as any).toString();
   const response = await apiClient.getBlob(`/reports/school-hours/consolidated/export${qs ? `?${qs}` : ''}`);
