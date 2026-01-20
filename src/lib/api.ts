@@ -472,12 +472,6 @@ export const exportTrainers = async (params: Record<string, string | number | bo
   return response.data;
 };
 
-export const exportClientsToTrainer = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
-  const qs = new URLSearchParams(params as any).toString();
-  const response = await apiClient.getBlob(`/data-transfer/clients-to-trainer/export${qs ? `?${qs}` : ''}`);
-  return response.data;
-};
-
 export const importTrainersCSV = async (file: File) => {
   const formData = createFormData(file);
   return apiClient.post('/data-transfer/trainers/import', formData, {

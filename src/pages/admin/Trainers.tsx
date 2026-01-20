@@ -345,20 +345,23 @@ export default function Trainers() {
                   onSuccess={() => fetchTrainers()}
                 />
               )}
-              <ExportButton
-                label="Export"
-                exportFn={async () => {
-                  const params: Record<string, string | number> = {};
-                  if (filters.division) params.divisionId = filters.division;
-                  if (filters.district) params.districtId = filters.district;
-                  if (filters.tehsil) params.tehsilId = filters.tehsil;
-                  if (filters.school) params.schoolId = filters.school;
-                  if (activeSearchTerm) params.search = activeSearchTerm;
-                  return api.exportTrainers(params);
-                }}
-                filename="trainers.csv"
-              />
             </>
+          )}
+          {/* Export: admin and client (view-only for client) */}
+          {(isAdmin() || role === 'client') && (
+            <ExportButton
+              label="Export"
+              exportFn={async () => {
+                const params: Record<string, string | number> = {};
+                if (filters.division) params.divisionId = filters.division;
+                if (filters.district) params.districtId = filters.district;
+                if (filters.tehsil) params.tehsilId = filters.tehsil;
+                if (filters.school) params.schoolId = filters.school;
+                if (activeSearchTerm) params.search = activeSearchTerm;
+                return api.exportTrainers(params);
+              }}
+              filename="trainers.csv"
+            />
           )}
         {canEdit() && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

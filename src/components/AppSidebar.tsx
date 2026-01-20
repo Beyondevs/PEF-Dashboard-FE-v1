@@ -10,7 +10,6 @@ import {
   Settings,
   HelpCircle,
   UserCog,
-  UserCheck,
   GraduationCap,
   MapPin,
   Mic2,
@@ -61,7 +60,6 @@ const adminClientItems = [
 
 const userManagementItems = [
   { title: 'Trainers', url: '/admin/trainers', icon: UserCog },
-  { title: 'Clients to Trainer', url: '/admin/clients-to-trainer', icon: UserCheck },
   { title: 'Teachers', url: '/admin/teachers', icon: GraduationCap },
   { title: 'Students', url: '/admin/students', icon: Users },
 ];
@@ -149,7 +147,6 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
                 {userManagementItems
-                  .filter((item) => (role !== 'client') || item.url !== '/admin/trainers')
                   .map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild className="group">

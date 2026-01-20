@@ -30,7 +30,6 @@ import WeeklySummaries from "./pages/WeeklySummaries";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import Trainers from "./pages/admin/Trainers";
-import ClientsToTrainer from "./pages/admin/ClientsToTrainer";
 import Teachers from "./pages/admin/Teachers";
 import Students from "./pages/admin/Students";
 import AdminSchools from "./pages/admin/Schools";
@@ -86,8 +85,7 @@ const App = () => (
               <Route path="/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Schools /></PrivateRoute></ProtectedLayout>} />
               <Route path="/repository" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Repository /></PrivateRoute></ProtectedLayout>} />
               <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/trainers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'division_role', 'bnu']}><Trainers /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/clients-to-trainer" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><ClientsToTrainer /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/trainers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Trainers /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/teachers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Teachers /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/students" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Students /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><AdminSchools /></PrivateRoute></ProtectedLayout>} />
