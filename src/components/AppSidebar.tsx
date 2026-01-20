@@ -10,6 +10,7 @@ import {
   Settings,
   HelpCircle,
   UserCog,
+  UserCheck,
   GraduationCap,
   MapPin,
   Mic2,
@@ -60,6 +61,7 @@ const adminClientItems = [
 
 const userManagementItems = [
   { title: 'Trainers', url: '/admin/trainers', icon: UserCog },
+  { title: 'Clients to Trainer', url: '/admin/clients-to-trainer', icon: UserCheck },
   { title: 'Teachers', url: '/admin/teachers', icon: GraduationCap },
   { title: 'Students', url: '/admin/students', icon: Users },
 ];
