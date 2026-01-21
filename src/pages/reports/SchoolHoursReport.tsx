@@ -69,9 +69,10 @@ const SchoolHoursReport = () => {
   const fetchReport = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await getSchoolHoursSchoolsList(buildParams());
+      const params: Record<string, string | number | boolean> = { ...buildParams(), page: currentPage, pageSize: ITEMS_PER_PAGE };
+      if (activeSearchQuery.trim()) params.search = activeSearchQuery.trim();
+      const response = await getSchoolHoursSchoolsList(params);
       setReportData(response.data);
-      setCurrentPage(1);
     } catch (e) {
       const err = e as any;
       const status = err?.response?.status || err?.response?.statusCode;
@@ -81,11 +82,15 @@ const SchoolHoursReport = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [buildParams]);
+  }, [buildParams, currentPage, activeSearchQuery]);
 
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
 
   const handleSearch = () => {
     const term = searchQuery.trim();
@@ -100,29 +105,11 @@ const SchoolHoursReport = () => {
     }
   };
 
-  const allSchools = reportData?.schools || [];
-
-  const filteredSchools = useMemo(() => {
-    if (!activeSearchQuery.trim()) return allSchools;
-    const q = activeSearchQuery.toLowerCase().trim();
-    return allSchools.filter(
-      (s) =>
-        (s.schoolName || '').toLowerCase().includes(q) ||
-        (s.emisCode || '').toLowerCase().includes(q) ||
-        (s.tehsil || '').toLowerCase().includes(q) ||
-        (s.district || '').toLowerCase().includes(q) ||
-        (s.division || '').toLowerCase().includes(q),
-    );
-  }, [allSchools, activeSearchQuery]);
-
-  const totalFiltered = filteredSchools.length;
+  const pageSchools = reportData?.schools || [];
+  const totalFiltered = reportData?.summary?.totalSchools ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / ITEMS_PER_PAGE));
   const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, totalFiltered);
-  const paginatedSchools = useMemo(
-    () => filteredSchools.slice(startIdx, endIdx),
-    [filteredSchools, startIdx, endIdx],
-  );
+  const endIdx = totalFiltered === 0 ? 0 : Math.min(startIdx + ITEMS_PER_PAGE, totalFiltered);
 
   const handleExport = useCallback(async () => {
     try {
@@ -187,7 +174,7 @@ const SchoolHoursReport = () => {
         </div>
 
         <div className="flex gap-2 print:hidden">
-          <Button onClick={handleExport} variant="outline" disabled={isExporting || allSchools.length === 0}>
+          <Button onClick={handleExport} variant="outline" disabled={isExporting || totalFiltered === 0}>
             <Download className="h-4 w-4 mr-2" />
             {isExporting ? 'Exporting...' : 'Export CSV'}
           </Button>
@@ -283,16 +270,14 @@ const SchoolHoursReport = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedSchools.length === 0 ? (
+                {pageSchools.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      {allSchools.length === 0
-                        ? 'No schools found for selected filters.'
-                        : 'No schools match your search.'}
+                      No schools found for selected filters.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedSchools.map((s) => (
+                  pageSchools.map((s) => (
                     <TableRow key={s.schoolId}>
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
