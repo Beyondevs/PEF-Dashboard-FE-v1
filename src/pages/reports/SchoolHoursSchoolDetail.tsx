@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,29 +24,21 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Person info for column headers
-type PersonInfo = {
+type ConsolidatedRow = {
   personId: string;
   name: string;
   role: 'Teacher' | 'Student';
-  rollNoOrCnic: string;
-};
-
-// Session row - each session is a row with attendance per person
-type SessionRow = {
-  sessionId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  durationMinutes: number;
-  attendance: Record<string, 'P' | 'A' | 'NM'>; // personId -> status
+  rollNoOrCnic?: string;
+  days: Record<number, '' | 'P' | 'A' | 'NM'>;
+  presentDays: number;
+  totalHours: number;
 };
 
 type ConsolidatedMonth = {
   monthKey: string;
   label: string;
-  persons: PersonInfo[];
-  sessions: SessionRow[];
+  dayDurationsMinutes: Record<number, number>;
+  rows: ConsolidatedRow[];
 };
 
 type ConsolidatedSchool = {
@@ -91,6 +83,14 @@ function formatMinutesAsHHMM(mins: number): string {
   if (!m) return '';
   const hh = Math.floor(m / 60);
   const mm = m % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+function formatHoursAsHHMM(hours: number): string {
+  if (!Number.isFinite(hours)) return '00:00';
+  const mins = Math.max(0, Math.round(hours * 60));
+  const hh = Math.floor(mins / 60);
+  const mm = mins % 60;
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
@@ -235,6 +235,7 @@ const SchoolHoursSchoolDetail = () => {
   };
 
   const school = reportData?.schools?.[0];
+  const days = useMemo(() => Array.from({ length: 31 }, (_, i) => i + 1), []);
 
   if (isLoading) {
     return (
@@ -349,94 +350,88 @@ const SchoolHoursSchoolDetail = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {school.months.map((m) => {
-        const persons = m.persons || [];
-        const sessions = m.sessions || [];
-
-        return (
-          <Card key={m.monthKey}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">
-                {m.label}
-                <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  ({sessions.length} session{sessions.length !== 1 ? 's' : ''}, {persons.length} person{persons.length !== 1 ? 's' : ''})
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    {/* Main header row */}
-                    <TableRow>
-                      <TableHead className="w-[110px] sticky left-0 bg-background z-10">Date</TableHead>
-                      <TableHead className="w-[140px] sticky left-[110px] bg-background z-10">Time</TableHead>
-                      <TableHead className="w-[90px] sticky left-[250px] bg-background z-10 text-right">Duration</TableHead>
-                      {persons.map((p) => (
+      {school.months.map((m) => (
+        <Card key={m.monthKey}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{m.label}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table className="table-fixed">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[90px]">Role</TableHead>
+                    <TableHead className="w-[220px]">Name</TableHead>
+                    <TableHead className="w-[140px]">RollNo/CNIC</TableHead>
+                    <TableHead className="w-[90px] text-right">Days</TableHead>
+                    <TableHead className="w-[110px] text-right">Hours (HH:MM)</TableHead>
+                    {days.map((d) => (
+                      <TableHead key={d} className="w-[32px] text-center p-1">
+                        {d}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                  <TableRow>
+                    <TableHead colSpan={5} className="text-xs text-muted-foreground">
+                      Session duration (HH:MM) per day
+                    </TableHead>
+                    {days.map((d) => {
+                      const mins = m.dayDurationsMinutes?.[d] || 0;
+                      return (
                         <TableHead
-                          key={p.personId}
-                          className="w-[100px] text-center p-1 text-xs"
-                          title={`${p.role}: ${p.name}${p.rollNoOrCnic ? ` (${p.rollNoOrCnic})` : ''}`}
+                          key={`dur-${d}`}
+                          className="text-[9px] text-center p-1 text-muted-foreground whitespace-nowrap"
                         >
-                          <div className="flex flex-col items-center">
-                            <span className={`text-[10px] px-1 rounded ${p.role === 'Teacher' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                              {p.role.charAt(0)}
-                            </span>
-                            <span className="truncate max-w-[90px] text-xs font-medium">{p.name}</span>
-                            {p.rollNoOrCnic && (
-                              <span className="text-[9px] text-muted-foreground truncate max-w-[90px]">{p.rollNoOrCnic}</span>
-                            )}
-                          </div>
+                          {formatMinutesAsHHMM(mins)}
                         </TableHead>
-                      ))}
+                      );
+                    })}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {m.rows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5 + days.length} className="text-center text-muted-foreground py-6">
+                        No attendance records for this month.
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sessions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3 + persons.length} className="text-center text-muted-foreground py-6">
-                          No sessions for this month.
+                  ) : (
+                    m.rows.map((r) => (
+                      <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
+                        <TableCell className="text-xs">{r.role}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.name}</TableCell>
+                        <TableCell className="text-xs">{r.rollNoOrCnic || '-'}</TableCell>
+                        <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
+                        <TableCell className="text-xs text-right whitespace-nowrap">
+                          {formatHoursAsHHMM(r.totalHours)}
                         </TableCell>
+                        {days.map((d) => {
+                          const v = r.days?.[d] || '';
+                          const minsForDay = m.dayDurationsMinutes?.[d] || 0;
+                          const isNoSessionDay = minsForDay === 0;
+                          const cls =
+                            v === 'P'
+                              ? 'bg-green-50 text-green-700'
+                              : v === 'A'
+                              ? 'bg-red-50 text-red-700'
+                              : v === 'NM'
+                              ? 'bg-amber-50 text-amber-800'
+                              : '';
+                          return (
+                            <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
+                              {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : v === 'NM' ? 'NM' : ''}
+                            </TableCell>
+                          );
+                        })}
                       </TableRow>
-                    ) : (
-                      sessions.map((sess) => (
-                        <TableRow key={sess.sessionId}>
-                          <TableCell className="text-xs sticky left-0 bg-background">{sess.date}</TableCell>
-                          <TableCell className="text-xs sticky left-[110px] bg-background whitespace-nowrap">
-                            {sess.startTime || '-'} - {sess.endTime || '-'}
-                          </TableCell>
-                          <TableCell className="text-xs sticky left-[250px] bg-background text-right whitespace-nowrap">
-                            {formatMinutesAsHHMM(sess.durationMinutes)}
-                          </TableCell>
-                          {persons.map((p) => {
-                            const status = sess.attendance?.[p.personId] || '';
-                            const cls =
-                              status === 'P'
-                                ? 'bg-green-50 text-green-700'
-                                : status === 'A'
-                                ? 'bg-red-50 text-red-700'
-                                : status === 'NM'
-                                ? 'bg-amber-50 text-amber-800'
-                                : 'text-muted-foreground';
-                            return (
-                              <TableCell
-                                key={`${sess.sessionId}-${p.personId}`}
-                                className={`text-xs text-center p-1 ${cls}`}
-                              >
-                                {status || '-'}
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };
