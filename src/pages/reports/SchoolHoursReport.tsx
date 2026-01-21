@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { SearchTag } from '@/components/SearchTag';
 import PaginationControls from '@/components/PaginationControls';
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 type SchoolListRow = {
   schoolId: string;
