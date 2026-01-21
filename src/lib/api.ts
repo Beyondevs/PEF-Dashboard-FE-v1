@@ -241,7 +241,11 @@ export const getSchoolHoursConsolidatedReport = (params: Record<string, string |
 };
 
 export const getSchoolHoursSchoolsList = (params: Record<string, string | number | boolean> = {}) => {
-  const qs = new URLSearchParams(params as any).toString();
+  const p = params || {};
+  const parts = Object.entries(p)
+    .filter(([, v]) => v != null && v !== '')
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
+  const qs = parts.length ? parts.join('&') : '';
   return apiClient.get<any>(`/reports/school-hours/schools${qs ? `?${qs}` : ''}`);
 };
 

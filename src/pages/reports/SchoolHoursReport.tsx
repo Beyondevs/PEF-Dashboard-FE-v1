@@ -69,8 +69,13 @@ const SchoolHoursReport = () => {
   const fetchReport = useCallback(async () => {
     try {
       setIsLoading(true);
-      const params: Record<string, string | number | boolean> = { ...buildParams(), page: currentPage, pageSize: ITEMS_PER_PAGE };
-      if (activeSearchQuery.trim()) params.search = activeSearchQuery.trim();
+      const params: Record<string, string | number | boolean> = {
+        ...buildParams(),
+        page: currentPage,
+        pageSize: ITEMS_PER_PAGE,
+      };
+      const search = activeSearchQuery.trim();
+      if (search) params.search = search;
       const response = await getSchoolHoursSchoolsList(params);
       setReportData(response.data);
     } catch (e) {
