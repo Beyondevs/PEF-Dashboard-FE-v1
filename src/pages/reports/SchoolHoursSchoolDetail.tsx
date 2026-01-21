@@ -24,21 +24,12 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
-type SessionStatus = '' | 'P' | 'A' | 'NM';
-
-type DaySessionData = {
-  durationMinutes: number;
-  startTime: string | null;
-  endTime: string | null;
-};
-
 type ConsolidatedRow = {
   personId: string;
   name: string;
   role: 'Teacher' | 'Student';
   rollNoOrCnic?: string;
-  // Changed: days now contains array of session statuses per day
-  days: Record<number, SessionStatus[]>;
+  days: Record<number, '' | 'P' | 'A' | 'NM'>;
   presentDays: number;
   totalHours: number;
 };
@@ -46,9 +37,7 @@ type ConsolidatedRow = {
 type ConsolidatedMonth = {
   monthKey: string;
   label: string;
-  // Changed: daySessions contains array of session data per day
-  daySessions: Record<number, DaySessionData[]>;
-  maxSessionsPerDay: number;
+  dayDurationsMinutes: Record<number, number>;
   rows: ConsolidatedRow[];
 };
 
@@ -69,7 +58,6 @@ type ConsolidatedReportData = {
     months: Array<{ key: string; label: string }>;
     totalSchools: number;
     totalPeople: number;
-    maxSessionsPerDay: number;
   };
   schools: ConsolidatedSchool[];
   studentSummary: Array<{ studentId: string; name: string; totalHours: number }>;
@@ -362,118 +350,88 @@ const SchoolHoursSchoolDetail = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {school.months.map((m) => {
-        // Build column structure for this month based on sessions per day
-        const dayColumns: Array<{ day: number; sessionIndex: number; isMultiSession: boolean; totalSessions: number }> = [];
-        days.forEach((d) => {
-          const daySessions = m.daySessions?.[d] || [];
-          const numSessions = daySessions.length;
-          if (numSessions === 0) {
-            // No session day - single column
-            dayColumns.push({ day: d, sessionIndex: 0, isMultiSession: false, totalSessions: 0 });
-          } else if (numSessions === 1) {
-            // Single session day - single column
-            dayColumns.push({ day: d, sessionIndex: 0, isMultiSession: false, totalSessions: 1 });
-          } else {
-            // Multiple sessions - add column for each session
-            for (let s = 0; s < numSessions; s++) {
-              dayColumns.push({ day: d, sessionIndex: s, isMultiSession: true, totalSessions: numSessions });
-            }
-          }
-        });
-
-        return (
-          <Card key={m.monthKey}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">{m.label}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table className="table-fixed">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[90px]">Role</TableHead>
-                      <TableHead className="w-[220px]">Name</TableHead>
-                      <TableHead className="w-[140px]">RollNo/CNIC</TableHead>
-                      <TableHead className="w-[90px] text-right">Days</TableHead>
-                      <TableHead className="w-[110px] text-right">Hours (HH:MM)</TableHead>
-                      {dayColumns.map((col, idx) => (
-                        <TableHead 
-                          key={`hdr-${col.day}-${col.sessionIndex}`} 
-                          className="w-[32px] text-center p-1 text-[10px]"
-                        >
-                          {col.isMultiSession ? `${col.day}-S${col.sessionIndex + 1}` : col.day}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableHead colSpan={5} className="text-xs text-muted-foreground">
-                        Session duration (HH:MM) per session
+      {school.months.map((m) => (
+        <Card key={m.monthKey}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{m.label}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table className="table-fixed">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[90px]">Role</TableHead>
+                    <TableHead className="w-[220px]">Name</TableHead>
+                    <TableHead className="w-[140px]">RollNo/CNIC</TableHead>
+                    <TableHead className="w-[90px] text-right">Days</TableHead>
+                    <TableHead className="w-[110px] text-right">Hours (HH:MM)</TableHead>
+                    {days.map((d) => (
+                      <TableHead key={d} className="w-[32px] text-center p-1">
+                        {d}
                       </TableHead>
-                      {dayColumns.map((col, idx) => {
-                        const daySessions = m.daySessions?.[col.day] || [];
-                        const session = daySessions[col.sessionIndex];
-                        const mins = session?.durationMinutes || 0;
-                        return (
-                          <TableHead
-                            key={`dur-${col.day}-${col.sessionIndex}`}
-                            className="text-[9px] text-center p-1 text-muted-foreground whitespace-nowrap"
-                          >
-                            {daySessions.length === 0 ? '' : formatMinutesAsHHMM(mins)}
-                          </TableHead>
-                        );
-                      })}
+                    ))}
+                  </TableRow>
+                  <TableRow>
+                    <TableHead colSpan={5} className="text-xs text-muted-foreground">
+                      Session duration (HH:MM) per day
+                    </TableHead>
+                    {days.map((d) => {
+                      const mins = m.dayDurationsMinutes?.[d] || 0;
+                      return (
+                        <TableHead
+                          key={`dur-${d}`}
+                          className="text-[9px] text-center p-1 text-muted-foreground whitespace-nowrap"
+                        >
+                          {formatMinutesAsHHMM(mins)}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {m.rows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5 + days.length} className="text-center text-muted-foreground py-6">
+                        No attendance records for this month.
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {m.rows.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5 + dayColumns.length} className="text-center text-muted-foreground py-6">
-                          No attendance records for this month.
+                  ) : (
+                    m.rows.map((r) => (
+                      <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
+                        <TableCell className="text-xs">{r.role}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.name}</TableCell>
+                        <TableCell className="text-xs">{r.rollNoOrCnic || '-'}</TableCell>
+                        <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
+                        <TableCell className="text-xs text-right whitespace-nowrap">
+                          {formatHoursAsHHMM(r.totalHours)}
                         </TableCell>
+                        {days.map((d) => {
+                          const v = r.days?.[d] || '';
+                          const minsForDay = m.dayDurationsMinutes?.[d] || 0;
+                          const isNoSessionDay = minsForDay === 0;
+                          const cls =
+                            v === 'P'
+                              ? 'bg-green-50 text-green-700'
+                              : v === 'A'
+                              ? 'bg-red-50 text-red-700'
+                              : v === 'NM'
+                              ? 'bg-amber-50 text-amber-800'
+                              : '';
+                          return (
+                            <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
+                              {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : v === 'NM' ? 'NM' : ''}
+                            </TableCell>
+                          );
+                        })}
                       </TableRow>
-                    ) : (
-                      m.rows.map((r) => (
-                        <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
-                          <TableCell className="text-xs">{r.role}</TableCell>
-                          <TableCell className="text-xs font-medium">{r.name}</TableCell>
-                          <TableCell className="text-xs">{r.rollNoOrCnic || '-'}</TableCell>
-                          <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
-                          <TableCell className="text-xs text-right whitespace-nowrap">
-                            {formatHoursAsHHMM(r.totalHours)}
-                          </TableCell>
-                          {dayColumns.map((col, idx) => {
-                            const daySessions = m.daySessions?.[col.day] || [];
-                            const isNoSessionDay = daySessions.length === 0;
-                            const personDaySessions = r.days?.[col.day] || [];
-                            const v = personDaySessions[col.sessionIndex] || '';
-                            const cls =
-                              v === 'P'
-                                ? 'bg-green-50 text-green-700'
-                                : v === 'A'
-                                ? 'bg-red-50 text-red-700'
-                                : v === 'NM'
-                                ? 'bg-amber-50 text-amber-800'
-                                : '';
-                            return (
-                              <TableCell 
-                                key={`${r.personId}-${col.day}-${col.sessionIndex}`} 
-                                className={`text-[10px] text-center p-1 ${cls}`}
-                              >
-                                {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : v === 'NM' ? 'NM' : ''}
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };
