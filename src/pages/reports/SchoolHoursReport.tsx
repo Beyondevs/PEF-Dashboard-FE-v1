@@ -11,8 +11,6 @@ import { useNavigate } from 'react-router-dom';
 import { SearchTag } from '@/components/SearchTag';
 import PaginationControls from '@/components/PaginationControls';
 
-const ITEMS_PER_PAGE = 10;
-
 type SchoolListRow = {
   schoolId: string;
   schoolName: string;
@@ -72,7 +70,7 @@ const SchoolHoursReport = () => {
       const params: Record<string, string | number | boolean> = {
         ...buildParams(),
         page: currentPage,
-        pageSize: ITEMS_PER_PAGE,
+        pageSize: 10,
       };
       const search = activeSearchQuery.trim();
       if (search) params.search = search;
@@ -110,11 +108,11 @@ const SchoolHoursReport = () => {
     }
   };
 
-  const pageSchools = reportData?.schools || [];
+  const pageSchools = (reportData?.schools || []).slice(0, 10);
   const totalFiltered = reportData?.summary?.totalSchools ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalFiltered / ITEMS_PER_PAGE));
-  const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIdx = totalFiltered === 0 ? 0 : Math.min(startIdx + ITEMS_PER_PAGE, totalFiltered);
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / 10));
+  const startIdx = (currentPage - 1) * 10;
+  const endIdx = totalFiltered === 0 ? 0 : Math.min(startIdx + 10, totalFiltered);
 
   const handleExport = useCallback(async () => {
     try {
