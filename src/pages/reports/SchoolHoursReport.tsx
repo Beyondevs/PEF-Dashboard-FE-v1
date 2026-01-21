@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, Download } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, Search, School } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
 import { getSchoolHoursSchoolsList, exportSchoolHoursSchoolsListCSV } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
+import { SearchTag } from '@/components/SearchTag';
+import PaginationControls from '@/components/PaginationControls';
+
+const ITEMS_PER_PAGE = 20;
 
 type SchoolListRow = {
   schoolId: string;
@@ -46,6 +51,9 @@ const SchoolHoursReport = () => {
   const [reportData, setReportData] = useState<SchoolListData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSearchQuery, setActiveSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {};
@@ -63,6 +71,7 @@ const SchoolHoursReport = () => {
       setIsLoading(true);
       const response = await getSchoolHoursSchoolsList(buildParams());
       setReportData(response.data);
+      setCurrentPage(1);
     } catch (e) {
       const err = e as any;
       const status = err?.response?.status || err?.response?.statusCode;
@@ -77,6 +86,43 @@ const SchoolHoursReport = () => {
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  const handleSearch = () => {
+    const term = searchQuery.trim();
+    setActiveSearchQuery(term);
+    setSearchQuery('');
+    setCurrentPage(1);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const allSchools = reportData?.schools || [];
+
+  const filteredSchools = useMemo(() => {
+    if (!activeSearchQuery.trim()) return allSchools;
+    const q = activeSearchQuery.toLowerCase().trim();
+    return allSchools.filter(
+      (s) =>
+        (s.schoolName || '').toLowerCase().includes(q) ||
+        (s.emisCode || '').toLowerCase().includes(q) ||
+        (s.tehsil || '').toLowerCase().includes(q) ||
+        (s.district || '').toLowerCase().includes(q) ||
+        (s.division || '').toLowerCase().includes(q),
+    );
+  }, [allSchools, activeSearchQuery]);
+
+  const totalFiltered = filteredSchools.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / ITEMS_PER_PAGE));
+  const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, totalFiltered);
+  const paginatedSchools = useMemo(
+    () => filteredSchools.slice(startIdx, endIdx),
+    [filteredSchools, startIdx, endIdx],
+  );
 
   const handleExport = useCallback(async () => {
     try {
@@ -124,8 +170,6 @@ const SchoolHoursReport = () => {
     );
   }
 
-  const schools = reportData?.schools || [];
-
   return (
     <div className="space-y-6 print:space-y-4">
       <div className="flex items-center justify-between">
@@ -143,7 +187,7 @@ const SchoolHoursReport = () => {
         </div>
 
         <div className="flex gap-2 print:hidden">
-          <Button onClick={handleExport} variant="outline" disabled={isExporting || schools.length === 0}>
+          <Button onClick={handleExport} variant="outline" disabled={isExporting || allSchools.length === 0}>
             <Download className="h-4 w-4 mr-2" />
             {isExporting ? 'Exporting...' : 'Export CSV'}
           </Button>
@@ -175,6 +219,52 @@ const SchoolHoursReport = () => {
         <div className="hidden md:block" />
       </div>
 
+      {/* Search */}
+      <Card className="print:hidden">
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">Search</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-96">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by school name, EMIS code, tehsil, district, or division..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyPress}
+                  className="pl-10"
+                />
+              </div>
+              <Button onClick={handleSearch} size="default" className="shrink-0">
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {activeSearchQuery ? (
+              <div className="w-full sm:w-auto">
+                <SearchTag
+                  value={activeSearchQuery}
+                  onClear={() => {
+                    setActiveSearchQuery('');
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+            ) : null}
+
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <School className="h-4 w-4" />
+              <span>
+                Showing {totalFiltered === 0 ? 0 : `${startIdx + 1}-${endIdx}`} of {totalFiltered} schools
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">Schools</CardTitle>
@@ -193,14 +283,16 @@ const SchoolHoursReport = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {schools.length === 0 ? (
+                {paginatedSchools.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      No schools found for selected filters.
+                      {allSchools.length === 0
+                        ? 'No schools found for selected filters.'
+                        : 'No schools match your search.'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  schools.map((s) => (
+                  paginatedSchools.map((s) => (
                     <TableRow key={s.schoolId}>
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
@@ -236,6 +328,13 @@ const SchoolHoursReport = () => {
               </TableBody>
             </Table>
           </div>
+
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            className="mt-6"
+          />
         </CardContent>
       </Card>
     </div>
