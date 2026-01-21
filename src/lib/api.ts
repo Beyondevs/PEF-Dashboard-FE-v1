@@ -95,12 +95,105 @@ export const bulkUpsertStudentAssessments = (sessionId: string, body: any) => ap
 export const bulkUpsertTeacherAssessments = (sessionId: string, body: any) => apiClient.put(`/assessments/sessions/${sessionId}/teachers`, body);
 export const updateAssessment = (id: string, body: any) => apiClient.patch(`/assessments/${id}`, body);
 
-// Leaderboard
+// Leaderboard - Speaking Assessments Based
 export const getTeacherLeaderboard = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
-  return apiClient.get<Array<{ teacher: any; metrics: TeacherKPI; rank: number }>>(`/leaderboard/teachers${qs ? `?${qs}` : ''}`);
+  return apiClient.get<{
+    summary: {
+      totalTeachers: number;
+      averageLatestScore: number;
+      averageImprovement: number;
+      completedAllPhases: number;
+      maxPossibleScore: number;
+    };
+    leaderboard: Array<{
+      rank: number;
+      teacher: {
+        id: string;
+        name: string;
+        schoolId: string;
+        school: string;
+        district: string;
+        division: string;
+      };
+      assessmentId: string;
+      status: string;
+      scores: {
+        pre: number;
+        mid: number;
+        post: number;
+        latest: number;
+        latestPercentage: number;
+        average: number;
+        maxPossible: number;
+      };
+      improvement: {
+        points: number;
+        percentage: number;
+      };
+      phasesCompleted: number;
+    }>;
+  }>(`/leaderboard/teachers${qs ? `?${qs}` : ''}`);
 };
-export const getTeacherKPI = (id: string) => apiClient.get<TeacherKPI[]>(`/leaderboard/teachers/${id}/kpi`);
+
+export const getStudentLeaderboard = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{
+    summary: {
+      totalStudents: number;
+      averageLatestScore: number;
+      averageImprovement: number;
+      completedAllPhases: number;
+      maxPossibleScore: number;
+    };
+    leaderboard: Array<{
+      rank: number;
+      student: {
+        id: string;
+        name: string;
+        rollNo: string | null;
+        grade: string | null;
+        schoolId: string;
+        school: string;
+        district: string;
+        division: string;
+      };
+      assessmentId: string;
+      status: string;
+      scores: {
+        pre: number;
+        mid: number;
+        post: number;
+        latest: number;
+        latestPercentage: number;
+        average: number;
+        maxPossible: number;
+      };
+      improvement: {
+        points: number;
+        percentage: number;
+      };
+      phasesCompleted: number;
+    }>;
+  }>(`/leaderboard/students${qs ? `?${qs}` : ''}`);
+};
+
+export const getTeacherImprovers = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/leaderboard/teachers/improvers${qs ? `?${qs}` : ''}`);
+};
+
+export const getStudentImprovers = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/leaderboard/students/improvers${qs ? `?${qs}` : ''}`);
+};
+
+export const getSchoolRankings = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/leaderboard/schools${qs ? `?${qs}` : ''}`);
+};
+
+export const getTeacherKPI = (id: string) => apiClient.get<any>(`/leaderboard/teachers/${id}/kpi`);
 
 // Resources
 export const getResources = (params: Record<string, string | number | boolean> = {}) => {
