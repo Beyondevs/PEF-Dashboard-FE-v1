@@ -126,13 +126,19 @@ const Dashboard = () => {
       try {
         setIsLoading(true);
         
-        // Build API params with geography filters
+        // Build API params with geography and date filters
         const params: Record<string, string> = {};
         
         if (filters.division) params.divisionId = filters.division;
         if (filters.district) params.districtId = filters.district;
         if (filters.tehsil) params.tehsilId = filters.tehsil;
         if (filters.school) params.schoolId = filters.school;
+        
+        // Add date filters - convert to YYYY-MM-DD format if they exist
+        const fromDate = toDateOnly(filters.startDate);
+        const toDate = toDateOnly(filters.endDate);
+        if (fromDate) params.fromDate = fromDate;
+        if (toDate) params.toDate = toDate;
 
         // Fetch all data in parallel using individual endpoints
         const [
