@@ -254,6 +254,7 @@ const Dashboard = () => {
     filters.district,
     filters.tehsil,
     filters.school,
+    filters.sessionId,
     filters.startDate,
     filters.endDate,
     isClient,
