@@ -371,7 +371,6 @@ const SchoolHoursSchoolDetail = () => {
                     <TableHead className="w-[110px] text-right">Hours (HH:MM)</TableHead>
                     <TableHead className="w-[130px] text-right">All-Time Total Hours</TableHead>
                     <TableHead className="w-[130px] text-right">All-Time Total Sessions</TableHead>
-                    <TableHead className="w-[150px] text-right">Total Sessions (Current Period)</TableHead>
                     {days.map((d) => (
                       <TableHead key={d} className="w-[32px] text-center p-1">
                         {d}
@@ -424,9 +423,6 @@ const SchoolHoursSchoolDetail = () => {
                           </TableCell>
                           <TableCell className="text-xs text-right">
                             {r.allTimeTotalSessions ?? 0}
-                          </TableCell>
-                          <TableCell className="text-xs text-right">
-                            {r.totalSessionsCurrentPeriod ?? 0}
                           </TableCell>
                           {days.map((d) => {
                             const v = r.days?.[d] || '';
