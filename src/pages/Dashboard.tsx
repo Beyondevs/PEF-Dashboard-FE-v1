@@ -248,6 +248,8 @@ const Dashboard = () => {
     filters.district,
     filters.tehsil,
     filters.school,
+    filters.startDate,
+    filters.endDate,
     isClient,
     isTrainer,
   ]);
