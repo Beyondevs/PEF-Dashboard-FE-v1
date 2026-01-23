@@ -29,15 +29,17 @@ type ConsolidatedRow = {
   name: string;
   role: 'Teacher' | 'Student';
   rollNoOrCnic?: string;
-  days: Record<number, '' | 'P' | 'A' | 'NM'>;
+  grade?: number | null;
   presentDays: number;
   totalHours: number;
+  totalSessions: number;
+  allTimeTotalHours: number;
+  allTimeTotalSessions: number;
 };
 
-type ConsolidatedMonth = {
-  monthKey: string;
+type ConsolidatedGradeGroup = {
+  grade: number | null;
   label: string;
-  dayDurationsMinutes: Record<number, number>;
   rows: ConsolidatedRow[];
 };
 
@@ -48,7 +50,7 @@ type ConsolidatedSchool = {
   division: string | null;
   district: string | null;
   tehsil: string | null;
-  months: ConsolidatedMonth[];
+  gradeGroups: ConsolidatedGradeGroup[];
 };
 
 type ConsolidatedReportData = {
@@ -60,7 +62,7 @@ type ConsolidatedReportData = {
     totalPeople: number;
   };
   schools: ConsolidatedSchool[];
-  studentSummary: Array<{ studentId: string; name: string; totalHours: number }>;
+  studentSummary?: Array<{ studentId: string; name: string; totalHours: number }>;
 };
 
 type SchoolListRow = {
@@ -235,7 +237,6 @@ const SchoolHoursSchoolDetail = () => {
   };
 
   const school = reportData?.schools?.[0];
-  const days = useMemo(() => Array.from({ length: 31 }, (_, i) => i + 1), []);
 
   if (isLoading) {
     return (
@@ -350,10 +351,10 @@ const SchoolHoursSchoolDetail = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {school.months.map((m) => (
-        <Card key={m.monthKey}>
+      {school.gradeGroups?.map((gradeGroup) => (
+        <Card key={gradeGroup.grade ?? 'teachers'}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">{m.label}</CardTitle>
+            <CardTitle className="text-base">{gradeGroup.label}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -365,39 +366,21 @@ const SchoolHoursSchoolDetail = () => {
                     <TableHead className="w-[140px]">RollNo/CNIC</TableHead>
                     <TableHead className="w-[90px] text-right">Days</TableHead>
                     <TableHead className="w-[110px] text-right">Hours (HH:MM)</TableHead>
-                    {days.map((d) => (
-                      <TableHead key={d} className="w-[32px] text-center p-1">
-                        {d}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                    <TableHead colSpan={5} className="text-xs text-muted-foreground">
-                      Session duration (HH:MM) per day
-                    </TableHead>
-                    {days.map((d) => {
-                      const mins = m.dayDurationsMinutes?.[d] || 0;
-                      return (
-                        <TableHead
-                          key={`dur-${d}`}
-                          className="text-[9px] text-center p-1 text-muted-foreground whitespace-nowrap"
-                        >
-                          {formatMinutesAsHHMM(mins)}
-                        </TableHead>
-                      );
-                    })}
+                    <TableHead className="w-[100px] text-right">Total Sessions</TableHead>
+                    <TableHead className="w-[130px] text-right">All-Time Total Hours</TableHead>
+                    <TableHead className="w-[130px] text-right">All-Time Total Sessions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {m.rows.length === 0 ? (
+                  {gradeGroup.rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5 + days.length} className="text-center text-muted-foreground py-6">
-                        No attendance records for this month.
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                        No attendance records for this grade group.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    m.rows.map((r) => (
-                      <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
+                    gradeGroup.rows.map((r) => (
+                      <TableRow key={`${gradeGroup.grade ?? 'teachers'}-${r.role}-${r.personId}`}>
                         <TableCell className="text-xs">{r.role}</TableCell>
                         <TableCell className="text-xs font-medium">{r.name}</TableCell>
                         <TableCell className="text-xs">{r.rollNoOrCnic || '-'}</TableCell>
@@ -405,24 +388,11 @@ const SchoolHoursSchoolDetail = () => {
                         <TableCell className="text-xs text-right whitespace-nowrap">
                           {formatHoursAsHHMM(r.totalHours)}
                         </TableCell>
-                        {days.map((d) => {
-                          const v = r.days?.[d] || '';
-                          const minsForDay = m.dayDurationsMinutes?.[d] || 0;
-                          const isNoSessionDay = minsForDay === 0;
-                          const cls =
-                            v === 'P'
-                              ? 'bg-green-50 text-green-700'
-                              : v === 'A'
-                              ? 'bg-red-50 text-red-700'
-                              : v === 'NM'
-                              ? 'bg-amber-50 text-amber-800'
-                              : '';
-                          return (
-                            <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
-                              {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : v === 'NM' ? 'NM' : ''}
-                            </TableCell>
-                          );
-                        })}
+                        <TableCell className="text-xs text-right">{r.totalSessions}</TableCell>
+                        <TableCell className="text-xs text-right whitespace-nowrap">
+                          {formatHoursAsHHMM(r.allTimeTotalHours)}
+                        </TableCell>
+                        <TableCell className="text-xs text-right">{r.allTimeTotalSessions}</TableCell>
                       </TableRow>
                     ))
                   )}
