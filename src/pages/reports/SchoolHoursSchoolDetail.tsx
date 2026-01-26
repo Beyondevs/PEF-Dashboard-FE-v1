@@ -29,13 +29,9 @@ type ConsolidatedRow = {
   name: string;
   role: 'Teacher' | 'Student';
   rollNoOrCnic?: string;
-  grade?: number | null;
   days: Record<number, '' | 'P' | 'A' | 'NM'>;
   presentDays: number;
   totalHours: number;
-  allTimeTotalHours?: number;
-  allTimeTotalSessions?: number;
-  totalSessionsCurrentPeriod?: number;
 };
 
 type ConsolidatedMonth = {
@@ -369,8 +365,6 @@ const SchoolHoursSchoolDetail = () => {
                     <TableHead className="w-[140px]">RollNo/CNIC</TableHead>
                     <TableHead className="w-[90px] text-right">Days</TableHead>
                     <TableHead className="w-[110px] text-right">Hours (HH:MM)</TableHead>
-                    <TableHead className="w-[130px] text-right">All-Time Total Hours</TableHead>
-                    <TableHead className="w-[130px] text-right">All-Time Total Sessions</TableHead>
                     {days.map((d) => (
                       <TableHead key={d} className="w-[32px] text-center p-1">
                         {d}
@@ -378,7 +372,7 @@ const SchoolHoursSchoolDetail = () => {
                     ))}
                   </TableRow>
                   <TableRow>
-                    <TableHead colSpan={8} className="text-xs text-muted-foreground">
+                    <TableHead colSpan={5} className="text-xs text-muted-foreground">
                       Session duration (HH:MM) per day
                     </TableHead>
                     {days.map((d) => {
@@ -397,103 +391,40 @@ const SchoolHoursSchoolDetail = () => {
                 <TableBody>
                   {m.rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8 + days.length} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={5 + days.length} className="text-center text-muted-foreground py-6">
                         No attendance records for this month.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    (() => {
-                      // Group rows by grade for display (Grade 9, Grade 10, Teachers)
-                      const grade9Rows = m.rows.filter((r) => r.role === 'Student' && r.grade === 9);
-                      const grade10Rows = m.rows.filter((r) => r.role === 'Student' && r.grade === 10);
-                      const otherStudentRows = m.rows.filter((r) => r.role === 'Student' && r.grade !== 9 && r.grade !== 10);
-                      const teacherRows = m.rows.filter((r) => r.role === 'Teacher');
-
-                      const renderRow = (r: ConsolidatedRow) => (
-                        <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
-                          <TableCell className="text-xs">{r.role}</TableCell>
-                          <TableCell className="text-xs font-medium">{r.name}</TableCell>
-                          <TableCell className="text-xs">{r.rollNoOrCnic || '-'}</TableCell>
-                          <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
-                          <TableCell className="text-xs text-right whitespace-nowrap">
-                            {formatHoursAsHHMM(r.totalHours)}
-                          </TableCell>
-                          <TableCell className="text-xs text-right whitespace-nowrap">
-                            {formatHoursAsHHMM(r.allTimeTotalHours ?? 0)}
-                          </TableCell>
-                          <TableCell className="text-xs text-right">
-                            {r.allTimeTotalSessions ?? 0}
-                          </TableCell>
-                          {days.map((d) => {
-                            const v = r.days?.[d] || '';
-                            const minsForDay = m.dayDurationsMinutes?.[d] || 0;
-                            const isNoSessionDay = minsForDay === 0;
-                            const cls =
-                              v === 'P'
-                                ? 'bg-green-50 text-green-700'
-                                : v === 'A'
-                                ? 'bg-red-50 text-red-700'
-                                : v === 'NM'
-                                ? 'bg-amber-50 text-amber-800'
-                                : '';
-                            return (
-                              <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
-                                {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : v === 'NM' ? 'NM' : ''}
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      );
-
-                      return (
-                        <>
-                          {/* Grade 9 Students */}
-                          {grade9Rows.length > 0 && (
-                            <>
-                              <TableRow className="bg-muted/50">
-                                <TableCell colSpan={8 + days.length} className="text-xs font-semibold py-2">
-                                  Grade 9 Students
-                                </TableCell>
-                              </TableRow>
-                              {grade9Rows.map(renderRow)}
-                            </>
-                          )}
-                          {/* Grade 10 Students */}
-                          {grade10Rows.length > 0 && (
-                            <>
-                              <TableRow className="bg-muted/50">
-                                <TableCell colSpan={8 + days.length} className="text-xs font-semibold py-2">
-                                  Grade 10 Students
-                                </TableCell>
-                              </TableRow>
-                              {grade10Rows.map(renderRow)}
-                            </>
-                          )}
-                          {/* Other Students (if any) */}
-                          {otherStudentRows.length > 0 && (
-                            <>
-                              <TableRow className="bg-muted/50">
-                                <TableCell colSpan={8 + days.length} className="text-xs font-semibold py-2">
-                                  Other Students
-                                </TableCell>
-                              </TableRow>
-                              {otherStudentRows.map(renderRow)}
-                            </>
-                          )}
-                          {/* Teachers */}
-                          {teacherRows.length > 0 && (
-                            <>
-                              <TableRow className="bg-muted/50">
-                                <TableCell colSpan={8 + days.length} className="text-xs font-semibold py-2">
-                                  Teachers
-                                </TableCell>
-                              </TableRow>
-                              {teacherRows.map(renderRow)}
-                            </>
-                          )}
-                        </>
-                      );
-                    })()
+                    m.rows.map((r) => (
+                      <TableRow key={`${m.monthKey}-${r.role}-${r.personId}`}>
+                        <TableCell className="text-xs">{r.role}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.name}</TableCell>
+                        <TableCell className="text-xs">{r.rollNoOrCnic || '-'}</TableCell>
+                        <TableCell className="text-xs text-right">{r.presentDays}</TableCell>
+                        <TableCell className="text-xs text-right whitespace-nowrap">
+                          {formatHoursAsHHMM(r.totalHours)}
+                        </TableCell>
+                        {days.map((d) => {
+                          const v = r.days?.[d] || '';
+                          const minsForDay = m.dayDurationsMinutes?.[d] || 0;
+                          const isNoSessionDay = minsForDay === 0;
+                          const cls =
+                            v === 'P'
+                              ? 'bg-green-50 text-green-700'
+                              : v === 'A'
+                              ? 'bg-red-50 text-red-700'
+                              : v === 'NM'
+                              ? 'bg-amber-50 text-amber-800'
+                              : '';
+                          return (
+                            <TableCell key={`${r.personId}-${d}`} className={`text-[10px] text-center p-1 ${cls}`}>
+                              {isNoSessionDay ? 'NS' : v === 'P' ? 'P' : v === 'A' ? 'A' : v === 'NM' ? 'NM' : ''}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))
                   )}
                 </TableBody>
               </Table>
