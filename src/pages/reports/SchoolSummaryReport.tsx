@@ -38,6 +38,9 @@ type TeacherSummary = {
   teacherId: string;
   name: string;
   cnic: string | null;
+  totalDays: number;
+  sessionsAttended: number;
+  totalHours: number;
 };
 
 type ClassSummary = {
@@ -530,6 +533,9 @@ const SchoolSummaryReport = () => {
                         <TableRow>
                           <TableHead>Name</TableHead>
                           <TableHead>CNIC</TableHead>
+                          <TableHead className="text-right">Total Days</TableHead>
+                          <TableHead className="text-right">Sessions Attended</TableHead>
+                          <TableHead className="text-right">Total Hours</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -537,6 +543,11 @@ const SchoolSummaryReport = () => {
                           <TableRow key={teacher.teacherId}>
                             <TableCell className="font-medium">{teacher.name}</TableCell>
                             <TableCell>{teacher.cnic || '-'}</TableCell>
+                            <TableCell className="text-right">{teacher.totalDays}</TableCell>
+                            <TableCell className="text-right">{teacher.sessionsAttended}</TableCell>
+                            <TableCell className="text-right whitespace-nowrap">
+                              {formatHoursAsHHMM(teacher.totalHours)}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
