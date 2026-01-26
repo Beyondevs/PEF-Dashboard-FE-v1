@@ -293,6 +293,25 @@ export const exportSchoolHoursConsolidatedAllSchoolsZip = async (
   return response.data;
 };
 
+export const getSchoolSummaryReport = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/reports/school-summary${qs ? `?${qs}` : ''}`);
+};
+
+export const exportSchoolSummaryCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/reports/school-summary/export${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
+export const exportSchoolSummaryAllSchoolsZip = async (
+  params: Record<string, string | number | boolean> = {},
+): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/reports/school-summary/export-all-zip${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
 export const getMonthlyAttendanceCalendar = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<{

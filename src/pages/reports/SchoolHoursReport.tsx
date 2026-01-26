@@ -7,7 +7,7 @@ import { Loader2, ArrowLeft, Download, Search, School } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
 import { getSchoolHoursSchoolsList, exportSchoolHoursSchoolsListCSV } from '@/lib/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { SearchTag } from '@/components/SearchTag';
 import PaginationControls from '@/components/PaginationControls';
 
@@ -302,13 +302,20 @@ const SchoolHoursReport = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/reports/school-hours/${s.schoolId}`)}
-                        >
-                          Detail
-                        </Button>
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/reports/school-hours/${s.schoolId}`)}
+                          >
+                            Detail
+                          </Button>
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/reports/school-summary/${s.schoolId}`}>
+                              Summary Detail
+                            </Link>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
