@@ -477,7 +477,7 @@ export default function Teachers() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>CNIC</TableHead>
+                <TableHead className="max-w-[150px]">CNIC</TableHead>
                 <TableHead>School</TableHead>
                 <TableHead>Status</TableHead>
                 {(canEdit() || canDelete() || isAdmin()) && <TableHead>Actions</TableHead>}
@@ -505,7 +505,12 @@ export default function Teachers() {
                       <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.teacherProfile?.name || 'N/A'}</TableCell>
                       <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.email}</TableCell>
                       <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.phone || 'N/A'}</TableCell>
-                      <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.teacherProfile?.cnic || 'N/A'}</TableCell>
+                      <TableCell 
+                        className={`max-w-[150px] truncate ${isDisabled ? 'text-muted-foreground' : ''}`}
+                        title={t.teacherProfile?.cnic || 'N/A'}
+                      >
+                        <span className="block truncate">{t.teacherProfile?.cnic || 'N/A'}</span>
+                      </TableCell>
                       <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.teacherProfile?.school?.name || 'N/A'}</TableCell>
                       <TableCell><Badge variant={status.variant}>{status.label}</Badge></TableCell>
                       {(canEdit() || canDelete() || isAdmin()) && (

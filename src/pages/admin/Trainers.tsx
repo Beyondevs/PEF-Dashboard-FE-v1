@@ -484,7 +484,7 @@ export default function Trainers() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
-              <TableHead>CNIC</TableHead>
+              <TableHead className="max-w-[150px]">CNIC</TableHead>
               <TableHead>Schools</TableHead>
               {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
             </TableRow>
@@ -513,7 +513,12 @@ export default function Trainers() {
                   <TableCell>{trainer.trainerProfile?.name || 'N/A'}</TableCell>
                   <TableCell>{trainer.email}</TableCell>
                   <TableCell>{trainer.phone || 'N/A'}</TableCell>
-                  <TableCell>{trainer.trainerProfile?.cnic || 'N/A'}</TableCell>
+                  <TableCell 
+                    className="max-w-[150px] truncate" 
+                    title={trainer.trainerProfile?.cnic || 'N/A'}
+                  >
+                    <span className="block truncate">{trainer.trainerProfile?.cnic || 'N/A'}</span>
+                  </TableCell>
                   <TableCell>
                     {schoolNames.length > 0 ? (
                       <div className="flex flex-wrap gap-1 max-w-md">
