@@ -32,6 +32,8 @@ type StudentSummary = {
   totalDays: number;
   sessionsAttended: number;
   totalHours: number;
+  totalDaysAcrossMonths: number;
+  totalHoursAcrossMonths: number;
 };
 
 type TeacherSummary = {
@@ -41,6 +43,8 @@ type TeacherSummary = {
   totalDays: number;
   sessionsAttended: number;
   totalHours: number;
+  totalDaysAcrossMonths: number;
+  totalHoursAcrossMonths: number;
 };
 
 type ClassSummary = {
@@ -396,12 +400,14 @@ const SchoolSummaryReport = () => {
                               <TableHead className="text-right">Total Days</TableHead>
                               <TableHead className="text-right">Sessions Attended</TableHead>
                               <TableHead className="text-right">Total Hours</TableHead>
+                              <TableHead className="text-right">Total Days (All Months)</TableHead>
+                              <TableHead className="text-right">Total Hours (All Months)</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {classData.students.length === 0 ? (
                               <TableRow>
-                                <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
                                   No students found for this class.
                                 </TableCell>
                               </TableRow>
@@ -414,6 +420,12 @@ const SchoolSummaryReport = () => {
                                   <TableCell className="text-right">{student.sessionsAttended}</TableCell>
                                   <TableCell className="text-right whitespace-nowrap">
                                     {formatHoursAsHHMM(student.totalHours)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-semibold">
+                                    {student.totalDaysAcrossMonths ?? 0}
+                                  </TableCell>
+                                  <TableCell className="text-right whitespace-nowrap font-semibold">
+                                    {formatHoursAsHHMM(student.totalHoursAcrossMonths ?? 0)}
                                   </TableCell>
                                 </TableRow>
                               ))
@@ -444,12 +456,14 @@ const SchoolSummaryReport = () => {
                               <TableHead className="text-right">Total Days</TableHead>
                               <TableHead className="text-right">Sessions Attended</TableHead>
                               <TableHead className="text-right">Total Hours</TableHead>
+                              <TableHead className="text-right">Total Days (All Months)</TableHead>
+                              <TableHead className="text-right">Total Hours (All Months)</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {classData.students.length === 0 ? (
                               <TableRow>
-                                <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                                <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
                                   No students found for this class.
                                 </TableCell>
                               </TableRow>
@@ -462,6 +476,12 @@ const SchoolSummaryReport = () => {
                                   <TableCell className="text-right">{student.sessionsAttended}</TableCell>
                                   <TableCell className="text-right whitespace-nowrap">
                                     {formatHoursAsHHMM(student.totalHours)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-semibold">
+                                    {student.totalDaysAcrossMonths ?? 0}
+                                  </TableCell>
+                                  <TableCell className="text-right whitespace-nowrap font-semibold">
+                                    {formatHoursAsHHMM(student.totalHoursAcrossMonths ?? 0)}
                                   </TableCell>
                                 </TableRow>
                               ))
@@ -536,6 +556,8 @@ const SchoolSummaryReport = () => {
                           <TableHead className="text-right">Total Days</TableHead>
                           <TableHead className="text-right">Sessions Attended</TableHead>
                           <TableHead className="text-right">Total Hours</TableHead>
+                          <TableHead className="text-right">Total Days (All Months)</TableHead>
+                          <TableHead className="text-right">Total Hours (All Months)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -547,6 +569,12 @@ const SchoolSummaryReport = () => {
                             <TableCell className="text-right">{teacher.sessionsAttended}</TableCell>
                             <TableCell className="text-right whitespace-nowrap">
                               {formatHoursAsHHMM(teacher.totalHours)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {teacher.totalDaysAcrossMonths ?? 0}
+                            </TableCell>
+                            <TableCell className="text-right whitespace-nowrap font-semibold">
+                              {formatHoursAsHHMM(teacher.totalHoursAcrossMonths ?? 0)}
                             </TableCell>
                           </TableRow>
                         ))}
