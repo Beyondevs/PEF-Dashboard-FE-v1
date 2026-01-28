@@ -32,6 +32,15 @@ export async function forgotPassword(body: { mobileNumber: string; oldPassword: 
   return apiClient.post<{ message: string }>('/auth/forgot-password', body);
 }
 
+// Backup (Admin-only)
+export const createDatabaseBackup = () => apiClient.post<{ success: boolean; message: string; filename: string }>(`/backup/create`, {});
+export const listDatabaseBackups = () => apiClient.get<{ success: boolean; backups: Array<{ filename: string; size: number; sizeMB: string; createdAt: string }> }>(`/backup/list`);
+export const deleteDatabaseBackup = (filename: string) => apiClient.delete<{ success: boolean; message: string }>(`/backup/${encodeURIComponent(filename)}`);
+export const downloadDatabaseBackup = async (filename: string): Promise<Blob> => {
+  const response = await apiClient.getBlob(`/backup/download/${encodeURIComponent(filename)}`);
+  return response.data;
+};
+
 // Geography
 export const getDivisions = () => apiClient.get<Division[]>('/divisions');
 export const createDivision = (data: Partial<Division>) => apiClient.post<Division>('/divisions', data);

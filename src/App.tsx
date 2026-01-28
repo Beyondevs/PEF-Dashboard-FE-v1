@@ -35,6 +35,7 @@ import Teachers from "./pages/admin/Teachers";
 import Students from "./pages/admin/Students";
 import AdminSchools from "./pages/admin/Schools";
 import Geography from "./pages/admin/Geography";
+import DatabaseBackups from "./pages/admin/DatabaseBackups";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +93,7 @@ const App = () => (
               <Route path="/admin/students" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Students /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><AdminSchools /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/geography" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Geography /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/database-backups" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin']}><DatabaseBackups /></PrivateRoute></ProtectedLayout>} />
               <Route path="/help" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'teacher', 'division_role', 'bnu']}><Help /></PrivateRoute></ProtectedLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

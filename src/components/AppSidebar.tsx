@@ -13,6 +13,7 @@ import {
   GraduationCap,
   MapPin,
   Mic2,
+  Database,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -69,6 +70,10 @@ const systemManagementItems = [
   { title: 'Geography', url: '/admin/geography', icon: MapPin },
 ];
 
+const adminOnlyItems = [
+  { title: 'Backup', url: '/admin/database-backups', icon: Database },
+];
+
 const hybridMonitoringItems = [
   { title: 'Weekly Summaries', url: '/hybrid/weekly-summaries', icon: Settings },
 ];
@@ -83,6 +88,7 @@ export function AppSidebar() {
   
   const showUserManagement = role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu';
   const showSystemManagement = role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu';
+  const showAdminOnly = role === 'admin';
   const showHybridMonitoring = false; // Hidden for now
 
   return (
@@ -188,6 +194,46 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
                 {systemManagementItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild className="group">
+                      <NavLink 
+                        to={item.url} 
+                        className={({ isActive }) =>
+                          cn(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden",
+                            "before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary/10 before:to-secondary/10 before:opacity-0 before:transition-opacity before:duration-300",
+                            "hover:before:opacity-100 hover:translate-x-1",
+                            isActive 
+                              ? "bg-gradient-to-r from-sidebar-accent to-sidebar-accent/80 text-sidebar-accent-foreground font-semibold shadow-md shadow-sidebar-accent/20" 
+                              : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
+                          )
+                        }
+                      >
+                        <div className={cn(
+                          "p-1.5 rounded-lg transition-all duration-300",
+                          "group-hover:scale-110 group-hover:rotate-3"
+                        )}>
+                          <item.icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-medium">{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {showAdminOnly && (
+          <SidebarGroup className="px-4 py-3 mt-2">
+            <div className="h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent mb-4" />
+            <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/50 px-2 mb-2">
+              Admin Only
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {adminOnlyItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild className="group">
                       <NavLink 
