@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Download, RefreshCw, Trash2, Database } from 'lucide-react';
 import { toast } from 'sonner';
-import { createDatabaseBackup, deleteDatabaseBackup, downloadDatabaseBackup, listDatabaseBackups } from '@/lib/api';
+import { createDatabaseBackup, deleteDatabaseBackup, downloadDatabaseBackup, listDatabaseBackups, testWeeklyCleanup } from '@/lib/api';
 
 type BackupRow = {
   filename: string;
@@ -17,6 +17,7 @@ export default function DatabaseBackups() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isTestingCleanup, setIsTestingCleanup] = useState(false);
   const [backups, setBackups] = useState<BackupRow[]>([]);
 
   const latest = useMemo(() => backups[0], [backups]);
@@ -85,6 +86,24 @@ export default function DatabaseBackups() {
     }
   };
 
+  const handleTestWeeklyCleanup = async () => {
+    if (!confirm('This will delete all backups except the most recent one. This simulates the Sunday cleanup. Continue?')) {
+      return;
+    }
+    try {
+      setIsTestingCleanup(true);
+      const res = await testWeeklyCleanup();
+      const remaining = res?.data?.remainingBackups || 0;
+      toast.success(`Weekly cleanup completed. ${remaining} backup(s) remaining.`);
+      await fetchBackups();
+    } catch (e: any) {
+      console.error('Weekly cleanup test failed:', e);
+      toast.error(e?.response?.data?.message || 'Weekly cleanup test failed');
+    } finally {
+      setIsTestingCleanup(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -100,6 +119,19 @@ export default function DatabaseBackups() {
           <Button onClick={handleCreate} disabled={isCreating}>
             {isCreating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Create Backup Now
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleTestWeeklyCleanup} 
+            disabled={isTestingCleanup || backups.length <= 1}
+            title={backups.length <= 1 ? 'Need at least 2 backups to test cleanup' : 'Test weekly cleanup (keeps only most recent)'}
+          >
+            {isTestingCleanup ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Test Weekly Cleanup
           </Button>
           {latest ? (
             <Button variant="secondary" onClick={() => handleDownload(latest.filename)}>

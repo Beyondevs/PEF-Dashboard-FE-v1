@@ -40,6 +40,7 @@ export const downloadDatabaseBackup = async (filename: string): Promise<Blob> =>
   const response = await apiClient.getBlob(`/backup/download/${encodeURIComponent(filename)}`);
   return response.data;
 };
+export const testWeeklyCleanup = () => apiClient.post<{ success: boolean; message: string; remainingBackups: number; backups: Array<{ filename: string; sizeMB: string; createdAt: string }> }>(`/backup/test/weekly-cleanup`, {});
 
 // Geography
 export const getDivisions = () => apiClient.get<Division[]>('/divisions');
