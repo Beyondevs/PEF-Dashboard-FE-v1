@@ -53,16 +53,31 @@ const SchoolHoursReport = () => {
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Normalize date to YYYY-MM-DD so backend always gets consistent date strings (avoids locale/format drift)
+  const toDateOnly = useCallback((value: string | undefined) => {
+    if (!value || typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    const d = new Date(trimmed);
+    if (Number.isNaN(d.getTime())) return undefined;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }, []);
+
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {};
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
     if (filters.school) params.schoolId = filters.school;
-    if (filters.startDate) params.from = filters.startDate;
-    if (filters.endDate) params.to = filters.endDate;
+    const from = toDateOnly(filters.startDate);
+    const to = toDateOnly(filters.endDate);
+    if (from) params.from = from;
+    if (to) params.to = to;
     return params;
-  }, [filters]);
+  }, [filters, toDateOnly]);
 
   const fetchReport = useCallback(async () => {
     try {
