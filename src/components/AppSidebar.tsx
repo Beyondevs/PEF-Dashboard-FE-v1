@@ -14,6 +14,7 @@ import {
   MapPin,
   Mic2,
   Database,
+  UserCircle,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -60,6 +61,7 @@ const adminClientItems = [
 ];
 
 const userManagementItems = [
+  { title: 'Portal Users', url: '/admin/users', icon: UserCircle },
   { title: 'Trainers', url: '/admin/trainers', icon: UserCog },
   { title: 'Teachers', url: '/admin/teachers', icon: GraduationCap },
   { title: 'Students', url: '/admin/students', icon: Users },

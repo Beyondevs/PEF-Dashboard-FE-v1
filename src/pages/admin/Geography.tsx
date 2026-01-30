@@ -18,6 +18,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +65,10 @@ export default function Geography() {
   const [editingDivision, setEditingDivision] = useState<any>(null);
   const [editingDistrict, setEditingDistrict] = useState<any>(null);
   const [editingTehsil, setEditingTehsil] = useState<any>(null);
+
+  /* division delete confirmation */
+  const [divisionToDelete, setDivisionToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isDeletingDivision, setIsDeletingDivision] = useState(false);
 
   /* forms */
   const [divisionForm, setDivisionForm] = useState({ name: '', code: '' });
@@ -115,14 +129,22 @@ export default function Geography() {
     }
   };
 
-  const handleDeleteDivision = async (id: string) => {
-    if (!confirm('Are you sure? This will delete all related districts and schools.')) return;
+  const handleDeleteDivisionClick = (div: { id: string; name: string }) => {
+    setDivisionToDelete(div);
+  };
+
+  const handleDeleteDivisionConfirm = async () => {
+    if (!divisionToDelete) return;
     try {
-      await api.deleteDivision(id);
+      setIsDeletingDivision(true);
+      await api.deleteDivision(divisionToDelete.id);
       toast({ title: 'Success', description: 'Division deleted successfully' });
+      setDivisionToDelete(null);
       fetchAll();
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to delete division', variant: 'destructive' });
+    } finally {
+      setIsDeletingDivision(false);
     }
   };
 
@@ -222,6 +244,30 @@ export default function Geography() {
   /* ----------  UI  ---------- */
   return (
     <div className="p-6">
+      <AlertDialog open={!!divisionToDelete} onOpenChange={(open) => !open && setDivisionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete division{divisionToDelete ? ` "${divisionToDelete.name}"` : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this division? All related data (schools, sessions, students, teachers, assessments, etc.) will be permanently deleted. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingDivision}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteDivisionConfirm();
+              }}
+              disabled={isDeletingDivision}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingDivision ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Geography Management</h1>
         <p className="text-muted-foreground mt-1">Manage divisions, districts, and tehsils</p>
@@ -364,7 +410,7 @@ export default function Geography() {
                               </Button>
                             )}
                             {canDelete() && (
-                              <Button size="sm" variant="destructive" onClick={() => handleDeleteDivision(div.id)}>
+                              <Button size="sm" variant="destructive" onClick={() => handleDeleteDivisionClick(div)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             )}

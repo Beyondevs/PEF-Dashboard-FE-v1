@@ -464,6 +464,14 @@ export const getWeeklySummaries = (params: Record<string, string | number | bool
 };
 export const createWeeklySummary = (body: Partial<WeeklySummary>) => apiClient.post<WeeklySummary>('/weekly-summaries', body);
 
+// Users - Admin portal users (admin, client, bnu, division_role only)
+export const getAdminPortalUsers = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<{ data: any[]; page: number; pageSize: number; totalItems?: number; total?: number }>(
+    `/admin-portal-users${qs ? `?${qs}` : ''}`,
+  );
+};
+
 // Users - Trainers
 export const getTrainers = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
