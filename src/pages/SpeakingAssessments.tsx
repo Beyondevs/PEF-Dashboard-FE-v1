@@ -547,7 +547,7 @@ const SpeakingAssessments = () => {
                     <TableRow>
                       <TableHead>Student</TableHead>
                       <TableHead>School</TableHead>
-                      <TableHead>EMIS Code</TableHead>
+                      <TableHead>School EMIS Code</TableHead>
                       <TableHead>District</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-center">Pre</TableHead>
@@ -591,6 +591,7 @@ const SpeakingAssessments = () => {
                               {assessment.schoolName || 'N/A'}
                             </div>
                           </TableCell>
+                          <TableCell className="text-muted-foreground">{assessment.schoolEmisCode ?? assessment.emisCode ?? '—'}</TableCell>
                           <TableCell>{assessment.district || 'N/A'}</TableCell>
                           <TableCell>{getStatusBadge(assessment.status)}</TableCell>
                           <TableCell className="text-center">
@@ -707,7 +708,7 @@ const SpeakingAssessments = () => {
                     <TableRow>
                       <TableHead>Teacher</TableHead>
                       <TableHead>School</TableHead>
-                      <TableHead>EMIS Code</TableHead>
+                      <TableHead>School EMIS Code</TableHead>
                       <TableHead>District</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-center">Pre</TableHead>
@@ -751,7 +752,7 @@ const SpeakingAssessments = () => {
                               {assessment.schoolName || 'N/A'}
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{assessment.emisCode ?? '—'}</TableCell>
+                          <TableCell className="text-muted-foreground">{assessment.schoolEmisCode ?? assessment.emisCode ?? '—'}</TableCell>
                           <TableCell>{assessment.district || 'N/A'}</TableCell>
                           <TableCell>{getStatusBadge(assessment.status)}</TableCell>
                           <TableCell className="text-center">
