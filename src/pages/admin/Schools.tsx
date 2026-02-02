@@ -243,6 +243,22 @@ export default function Schools() {
 
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
 
+  // Format time for display (e.g. "09:30" or "09:30 AM" -> "09:30 AM")
+  const formatTimeSlot = (start: string, end: string) => {
+    const fmt = (t: string) => {
+      if (!t || typeof t !== 'string') return t;
+      const trimmed = t.trim();
+      if (/AM|PM/i.test(trimmed)) return trimmed;
+      const [h, m] = trimmed.split(':').map((x) => parseInt(x, 10));
+      if (Number.isNaN(h)) return trimmed;
+      const hour = h % 12 || 12;
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const min = Number.isNaN(m) ? 0 : m;
+      return `${hour}:${String(min).padStart(2, '0')} ${ampm}`;
+    };
+    return `${fmt(start)} – ${fmt(end)}`;
+  };
+
   const filteredDistricts = districts.filter((d: any) =>
     !formData.divisionId || d.divisionId === formData.divisionId
   );
@@ -473,17 +489,19 @@ export default function Schools() {
               <TableHead>District</TableHead>
               <TableHead>Tehsil</TableHead>
               <TableHead>Capacity</TableHead>
+              <TableHead className="text-center">Today&apos;s Sessions</TableHead>
+              <TableHead>Time Slots</TableHead>
               {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={9} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : schools.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">No schools found</TableCell>
+                <TableCell colSpan={9} className="text-center">No schools found</TableCell>
               </TableRow>
             ) : (
               schools.map((school: any) => (
@@ -494,6 +512,20 @@ export default function Schools() {
                   <TableCell>{school.district?.name || 'N/A'}</TableCell>
                   <TableCell>{school.tehsil?.name || 'N/A'}</TableCell>
                   <TableCell>{school.capacity || 'N/A'}</TableCell>
+                  <TableCell className="text-center whitespace-nowrap">
+                    {school.todaySessionCount != null && school.todaySessionCount > 0
+                      ? school.todaySessionCount === 1
+                        ? '1 Session'
+                        : `${school.todaySessionCount} Sessions`
+                      : 'No sessions today'}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground max-w-[200px]">
+                    {school.todayTimeSlots?.length
+                      ? school.todayTimeSlots.map((slot: { startTime: string; endTime: string }, i: number) => (
+                          <div key={i}>{formatTimeSlot(slot.startTime, slot.endTime)}</div>
+                        ))
+                      : '—'}
+                  </TableCell>
                   {(canEdit() || canDelete()) && (
                     <TableCell>
                       <div className="flex gap-2">
