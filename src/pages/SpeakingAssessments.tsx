@@ -542,19 +542,19 @@ const SpeakingAssessments = () => {
                     </div>
                   </div>
                 )}
-                <Table>
+                <Table className="min-w-[880px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>School</TableHead>
-                      <TableHead>School EMIS Code</TableHead>
-                      <TableHead>District</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-center">Pre</TableHead>
-                      <TableHead className="text-center">Mid</TableHead>
-                      <TableHead className="text-center">Post</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="whitespace-nowrap">Student</TableHead>
+                      <TableHead className="whitespace-nowrap">School</TableHead>
+                      <TableHead className="whitespace-nowrap">School EMIS Code</TableHead>
+                      <TableHead className="whitespace-nowrap">District</TableHead>
+                      <TableHead className="whitespace-nowrap">Status</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">Pre</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">Mid</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">Post</TableHead>
+                      <TableHead className="whitespace-nowrap">Created</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -584,47 +584,47 @@ const SpeakingAssessments = () => {
                     ) : (
                       studentAssessments.map((assessment) => (
                         <TableRow key={assessment.id}>
-                          <TableCell className="font-medium">{assessment.studentName}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <School className="h-3 w-3 text-muted-foreground" />
-                              {assessment.schoolName || 'N/A'}
+                          <TableCell className="font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]" title={assessment.studentName}>{assessment.studentName}</TableCell>
+                          <TableCell className="min-w-[140px] max-w-[220px]">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <School className="h-3 w-3 shrink-0 text-muted-foreground" />
+                              <span className="truncate block" title={assessment.schoolName || undefined}>{assessment.schoolName || 'N/A'}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{assessment.schoolEmisCode ?? assessment.emisCode ?? '—'}</TableCell>
-                          <TableCell>{assessment.district || 'N/A'}</TableCell>
-                          <TableCell>{getStatusBadge(assessment.status)}</TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-muted-foreground whitespace-nowrap">{assessment.schoolEmisCode ?? assessment.emisCode ?? '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{assessment.district || 'N/A'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{getStatusBadge(assessment.status)}</TableCell>
+                          <TableCell className="text-center whitespace-nowrap">
                             {assessment.preTotalScore > 0 ? (
                               <span className="font-semibold text-blue-600">{assessment.preTotalScore}/{studentMaxScore}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center whitespace-nowrap">
                             {assessment.midTotalScore > 0 ? (
                               <span className="font-semibold text-yellow-600">{assessment.midTotalScore}/{studentMaxScore}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center whitespace-nowrap">
                             {assessment.postTotalScore > 0 ? (
                               <span className="font-semibold text-green-600">{assessment.postTotalScore}/{studentMaxScore}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="whitespace-nowrap">
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
+                              <Calendar className="h-3 w-3 shrink-0" />
                               {assessment.createdAt
                                 ? new Date(assessment.createdAt).toLocaleDateString()
                                 : 'N/A'}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex gap-2 justify-end">
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="flex gap-2 justify-end shrink-0">
                               {canFillAssessment && assessment.nextPhase && (
                                 <Button
                                   size="sm"
@@ -703,19 +703,19 @@ const SpeakingAssessments = () => {
                     </div>
                   </div>
                 )}
-                <Table>
+                <Table className="min-w-[880px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Teacher</TableHead>
-                      <TableHead>School</TableHead>
-                      <TableHead>School EMIS Code</TableHead>
-                      <TableHead>District</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-center">Pre</TableHead>
-                      <TableHead className="text-center">Mid</TableHead>
-                      <TableHead className="text-center">Post</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="whitespace-nowrap">Teacher</TableHead>
+                      <TableHead className="whitespace-nowrap">School</TableHead>
+                      <TableHead className="whitespace-nowrap">School EMIS Code</TableHead>
+                      <TableHead className="whitespace-nowrap">District</TableHead>
+                      <TableHead className="whitespace-nowrap">Status</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">Pre</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">Mid</TableHead>
+                      <TableHead className="text-center whitespace-nowrap">Post</TableHead>
+                      <TableHead className="whitespace-nowrap">Created</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -745,47 +745,47 @@ const SpeakingAssessments = () => {
                     ) : (
                       teacherAssessments.map((assessment) => (
                         <TableRow key={assessment.id}>
-                          <TableCell className="font-medium">{assessment.teacherName}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <School className="h-3 w-3 text-muted-foreground" />
-                              {assessment.schoolName || 'N/A'}
+                          <TableCell className="font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]" title={assessment.teacherName}>{assessment.teacherName}</TableCell>
+                          <TableCell className="min-w-[140px] max-w-[220px]">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <School className="h-3 w-3 shrink-0 text-muted-foreground" />
+                              <span className="truncate block" title={assessment.schoolName || undefined}>{assessment.schoolName || 'N/A'}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{assessment.schoolEmisCode ?? assessment.emisCode ?? '—'}</TableCell>
-                          <TableCell>{assessment.district || 'N/A'}</TableCell>
-                          <TableCell>{getStatusBadge(assessment.status)}</TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-muted-foreground whitespace-nowrap">{assessment.schoolEmisCode ?? assessment.emisCode ?? '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{assessment.district || 'N/A'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{getStatusBadge(assessment.status)}</TableCell>
+                          <TableCell className="text-center whitespace-nowrap">
                             {assessment.preTotalScore > 0 ? (
                               <span className="font-semibold text-blue-600">{assessment.preTotalScore}/{teacherMaxScore}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center whitespace-nowrap">
                             {assessment.midTotalScore > 0 ? (
                               <span className="font-semibold text-yellow-600">{assessment.midTotalScore}/{teacherMaxScore}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center whitespace-nowrap">
                             {assessment.postTotalScore > 0 ? (
                               <span className="font-semibold text-green-600">{assessment.postTotalScore}/{teacherMaxScore}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="whitespace-nowrap">
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
+                              <Calendar className="h-3 w-3 shrink-0" />
                               {assessment.createdAt
                                 ? new Date(assessment.createdAt).toLocaleDateString()
                                 : 'N/A'}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex gap-2 justify-end">
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="flex gap-2 justify-end shrink-0">
                               {canFillAssessment && assessment.nextPhase && (
                                 <Button
                                   size="sm"
