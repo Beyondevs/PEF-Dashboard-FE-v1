@@ -20,6 +20,7 @@ type SchoolListRow = {
   tehsil: string | null;
   totalHours: number;
   totalDays: number;
+  totalSessions?: number;
   presentPeopleCount: number;
   presentTeacherCount?: number;
   presentStudentCount?: number;
@@ -284,13 +285,14 @@ const SchoolHoursReport = () => {
                   <TableHead className="text-right">Total Hours</TableHead>
                   <TableHead className="text-right">Total Days</TableHead>
                   <TableHead className="text-right">Present People</TableHead>
+                  <TableHead className="text-right">Total Sessions</TableHead>
                   <TableHead className="text-right">Detail</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pageSchools.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No schools found for selected filters.
                     </TableCell>
                   </TableRow>
@@ -316,6 +318,7 @@ const SchoolHoursReport = () => {
                           </div>
                         )}
                       </TableCell>
+                      <TableCell className="text-right">{s.totalSessions ?? 0}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
                           <Button
