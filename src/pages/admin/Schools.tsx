@@ -488,7 +488,6 @@ export default function Schools() {
               <TableHead>Division</TableHead>
               <TableHead>District</TableHead>
               <TableHead>Tehsil</TableHead>
-              <TableHead>Capacity</TableHead>
               <TableHead className="text-center">Today&apos;s Sessions</TableHead>
               <TableHead>Time Slots</TableHead>
               {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
@@ -497,11 +496,11 @@ export default function Schools() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={(canEdit() || canDelete()) ? 9 : 8} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : schools.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center">No schools found</TableCell>
+                <TableCell colSpan={(canEdit() || canDelete()) ? 9 : 8} className="text-center">No schools found</TableCell>
               </TableRow>
             ) : (
               schools.map((school: any) => (
@@ -511,7 +510,6 @@ export default function Schools() {
                   <TableCell>{school.division?.name || 'N/A'}</TableCell>
                   <TableCell>{school.district?.name || 'N/A'}</TableCell>
                   <TableCell>{school.tehsil?.name || 'N/A'}</TableCell>
-                  <TableCell>{school.capacity || 'N/A'}</TableCell>
                   <TableCell className="text-center whitespace-nowrap">
                     {school.todaySessionCount != null && school.todaySessionCount > 0
                       ? school.todaySessionCount === 1
