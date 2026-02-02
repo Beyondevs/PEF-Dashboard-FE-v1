@@ -547,6 +547,7 @@ const SpeakingAssessments = () => {
                     <TableRow>
                       <TableHead>Student</TableHead>
                       <TableHead>School</TableHead>
+                      <TableHead>EMIS Code</TableHead>
                       <TableHead>District</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-center">Pre</TableHead>
@@ -563,6 +564,7 @@ const SpeakingAssessments = () => {
                           <TableCell><div className="h-4 bg-muted rounded w-24 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-4 bg-muted rounded w-32 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-6 bg-muted rounded w-16 animate-pulse"></div></TableCell>
                           <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
                           <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
@@ -573,7 +575,7 @@ const SpeakingAssessments = () => {
                       ))
                     ) : studentAssessments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center text-muted-foreground py-12">
+                        <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
                           <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                           <p>No student speaking assessments found</p>
                           <p className="text-sm mt-2">Assessments are created automatically for session participants</p>
@@ -705,6 +707,7 @@ const SpeakingAssessments = () => {
                     <TableRow>
                       <TableHead>Teacher</TableHead>
                       <TableHead>School</TableHead>
+                      <TableHead>EMIS Code</TableHead>
                       <TableHead>District</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-center">Pre</TableHead>
@@ -721,6 +724,7 @@ const SpeakingAssessments = () => {
                           <TableCell><div className="h-4 bg-muted rounded w-24 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-4 bg-muted rounded w-32 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-6 bg-muted rounded w-16 animate-pulse"></div></TableCell>
                           <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
                           <TableCell className="text-center"><div className="h-4 bg-muted rounded w-12 mx-auto animate-pulse"></div></TableCell>
@@ -731,7 +735,7 @@ const SpeakingAssessments = () => {
                       ))
                     ) : teacherAssessments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center text-muted-foreground py-12">
+                        <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
                           <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                           <p>No teacher speaking assessments found</p>
                           <p className="text-sm mt-2">Assessments are created automatically for session participants</p>
@@ -747,6 +751,7 @@ const SpeakingAssessments = () => {
                               {assessment.schoolName || 'N/A'}
                             </div>
                           </TableCell>
+                          <TableCell className="text-muted-foreground">{assessment.emisCode ?? '—'}</TableCell>
                           <TableCell>{assessment.district || 'N/A'}</TableCell>
                           <TableCell>{getStatusBadge(assessment.status)}</TableCell>
                           <TableCell className="text-center">
