@@ -393,19 +393,19 @@ export default function Teachers() {
         </div>
       </div>
 
-      {/* Status Tabs */}
-      <div className="mb-4">
+      {/* Status Tabs - scrollable on mobile */}
+      <div className="mb-4 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
         <Tabs value={statusFilter} onValueChange={(v) => {
           setStatusFilter(v as 'all' | 'active' | 'inactive' | 'missing' | 'starred' | 'not_starred');
           setPagination(p => ({ ...p, page: 1 }));
         }}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="inactive">Inactive</TabsTrigger>
-            <TabsTrigger value="missing">Missing Speaking Assessment</TabsTrigger>
-            <TabsTrigger value="starred">Starred</TabsTrigger>
-            <TabsTrigger value="not_starred">Not starred</TabsTrigger>
+          <TabsList className="inline-flex w-max flex-nowrap h-10">
+            <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
+            <TabsTrigger value="active" className="whitespace-nowrap">Active</TabsTrigger>
+            <TabsTrigger value="inactive" className="whitespace-nowrap">Inactive</TabsTrigger>
+            <TabsTrigger value="missing" className="whitespace-nowrap">Missing SA</TabsTrigger>
+            <TabsTrigger value="starred" className="whitespace-nowrap">Starred</TabsTrigger>
+            <TabsTrigger value="not_starred" className="whitespace-nowrap">Not starred</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -510,7 +510,7 @@ export default function Teachers() {
         </div>
       ) : (
         /* DESKTOP TABLE */
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -618,12 +618,12 @@ export default function Teachers() {
 
       {/* Pagination */}
       {pagination.total > 0 && (
-        <div className="flex items-center justify-between flex-wrap mt-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} teachers
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+            Showing {((pagination.page - 1) * pagination.pageSize) + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total}
             {activeSearchTerm && ` (filtered)`}
           </div>
-          <div className="flex items-center flex-wrap gap-2">
+          <div className="flex items-center justify-center flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"

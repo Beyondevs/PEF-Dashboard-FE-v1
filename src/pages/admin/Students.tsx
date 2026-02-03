@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Ban, CheckCircle, FileText, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Ban, CheckCircle, FileText, Star, School } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -23,12 +23,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFilters } from '@/contexts/FilterContext';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileCard } from '@/components/MobileCard';
 import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { SearchTag } from '@/components/SearchTag';
 
 export default function Students() {
+  const isMobile = useIsMobile();
   const { filters } = useFilters();
   const [students, setStudents] = useState([]);
   const [schools, setSchools] = useState([]);
@@ -323,10 +326,10 @@ export default function Students() {
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
       <div className="mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Students Management</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Students Management</h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage student records and enrollments</p>
       </div>
 
@@ -489,24 +492,90 @@ export default function Students() {
         </div>
       </div>
 
-      {/* Status Tabs */}
-      <div className="mb-4">
+      {/* Status Tabs - scrollable on mobile */}
+      <div className="mb-4 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
         <Tabs value={statusFilter} onValueChange={(value) => {
           setStatusFilter(value as 'all' | 'active' | 'inactive' | 'missing' | 'starred' | 'not_starred');
           setPagination(prev => ({ ...prev, page: 1 }));
         }}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="inactive">Inactive</TabsTrigger>
-            <TabsTrigger value="missing">Missing Speaking Assessment</TabsTrigger>
-            <TabsTrigger value="starred">Starred</TabsTrigger>
-            <TabsTrigger value="not_starred">Not starred</TabsTrigger>
+          <TabsList className="inline-flex w-max flex-nowrap h-10">
+            <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
+            <TabsTrigger value="active" className="whitespace-nowrap">Active</TabsTrigger>
+            <TabsTrigger value="inactive" className="whitespace-nowrap">Inactive</TabsTrigger>
+            <TabsTrigger value="missing" className="whitespace-nowrap">Missing SA</TabsTrigger>
+            <TabsTrigger value="starred" className="whitespace-nowrap">Starred</TabsTrigger>
+            <TabsTrigger value="not_starred" className="whitespace-nowrap">Not starred</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      <div className="border rounded-lg">
+      {/* Mobile: card list */}
+      {isMobile ? (
+        <div className="space-y-3">
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading...</div>
+          ) : students.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {statusFilter === 'missing'
+                ? 'No students are missing a speaking assessment record'
+                : 'No students found'}
+            </div>
+          ) : (
+            students.map((student: any) => {
+              const status = getStudentStatus(student);
+              const isDisabled = student.userId && student.user && !student.user.isActive;
+              return (
+                <MobileCard
+                  key={student.id}
+                  title={`${student.name}${student.starred ? ' ★' : ''}`}
+                  subtitle={<Badge variant={status.variant}>{status.label}</Badge> as any}
+                  metadata={[
+                    { label: 'Roll No', value: student.rollNo || 'N/A' },
+                    { label: 'Grade', value: String(student.grade) },
+                    { label: 'Gender', value: student.gender },
+                    { label: 'School', value: student.school?.name || 'N/A', icon: <School className="h-3 w-3" /> },
+                  ]}
+                  actions={
+                    (canEdit() || canDelete() || isAdmin() || canStarStudentOrTeacher()) ? (
+                      <div className="flex gap-2 flex-wrap">
+                        {canStarStudentOrTeacher() && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleToggleStar(student)}
+                            title={student.starred ? 'Remove star' : 'Mark as outstanding'}
+                            className="p-2"
+                          >
+                            <Star className={`h-4 w-4 ${student.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground'}`} />
+                          </Button>
+                        )}
+                        {canEdit() && (
+                          <Button size="sm" variant="outline" onClick={() => openEditDialog(student)} disabled={isDisabled}>
+                            <Edit className="h-4 w-4 mr-2" /> Edit
+                          </Button>
+                        )}
+                        {isAdmin() && student.userId && (
+                          <>
+                            {student.user?.isActive ? (
+                              <Button size="sm" variant="outline" onClick={() => handleDisable(student)}><Ban className="h-4 w-4 mr-2" /> Disable</Button>
+                            ) : (
+                              <Button size="sm" variant="outline" onClick={() => handleEnable(student)}><CheckCircle className="h-4 w-4 mr-2" /> Enable</Button>
+                            )}
+                          </>
+                        )}
+                        {canDelete() && (
+                          <Button size="sm" variant="destructive" onClick={() => handleDelete(student.id)}><Trash2 className="h-4 w-4 mr-2" /> Delete</Button>
+                        )}
+                      </div>
+                    ) : undefined
+                  }
+                />
+              );
+            })
+          )}
+        </div>
+      ) : (
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -638,15 +707,16 @@ export default function Students() {
           </TableBody>
         </Table>
       </div>
+      )}
 
       {/* Pagination */}
       {pagination.total > 0 && (
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} students
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+            Showing {((pagination.page - 1) * pagination.pageSize) + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total}
             {activeSearchTerm && ` (filtered)`}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
