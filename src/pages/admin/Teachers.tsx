@@ -38,7 +38,7 @@ export default function Teachers() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'missing'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'missing' | 'starred' | 'not_starred'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -112,6 +112,8 @@ export default function Teachers() {
       params.includeDisabled = 'true';
       if (statusFilter === 'active') params.isActive = 'true';
       else if (statusFilter === 'inactive') params.isActive = 'false';
+      if (statusFilter === 'starred') params.starred = 'true';
+      else if (statusFilter === 'not_starred') params.starred = 'false';
 
       const response =
         statusFilter === 'missing'
@@ -296,6 +298,8 @@ export default function Teachers() {
               if (activeSearchTerm) params.search = activeSearchTerm;
               if (statusFilter === 'active') params.isActive = 'true';
               else if (statusFilter === 'inactive') params.isActive = 'false';
+              if (statusFilter === 'starred') params.starred = 'true';
+              else if (statusFilter === 'not_starred') params.starred = 'false';
               return api.exportTeachers(params);
             }}
             filename="teachers.csv"
@@ -392,7 +396,7 @@ export default function Teachers() {
       {/* Status Tabs */}
       <div className="mb-4">
         <Tabs value={statusFilter} onValueChange={(v) => {
-          setStatusFilter(v as 'all' | 'active' | 'inactive' | 'missing');
+          setStatusFilter(v as 'all' | 'active' | 'inactive' | 'missing' | 'starred' | 'not_starred');
           setPagination(p => ({ ...p, page: 1 }));
         }}>
           <TabsList>
@@ -400,6 +404,8 @@ export default function Teachers() {
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="inactive">Inactive</TabsTrigger>
             <TabsTrigger value="missing">Missing Speaking Assessment</TabsTrigger>
+            <TabsTrigger value="starred">Starred</TabsTrigger>
+            <TabsTrigger value="not_starred">Not starred</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

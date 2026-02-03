@@ -35,7 +35,7 @@ export default function Students() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'missing'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'missing' | 'starred' | 'not_starred'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -135,6 +135,8 @@ export default function Students() {
       } else if (statusFilter === 'inactive') {
         params.isActive = 'false';
       }
+      if (statusFilter === 'starred') params.starred = 'true';
+      else if (statusFilter === 'not_starred') params.starred = 'false';
 
       const response =
         statusFilter === 'missing'
@@ -490,7 +492,7 @@ export default function Students() {
       {/* Status Tabs */}
       <div className="mb-4">
         <Tabs value={statusFilter} onValueChange={(value) => {
-          setStatusFilter(value as 'all' | 'active' | 'inactive' | 'missing');
+          setStatusFilter(value as 'all' | 'active' | 'inactive' | 'missing' | 'starred' | 'not_starred');
           setPagination(prev => ({ ...prev, page: 1 }));
         }}>
           <TabsList>
@@ -498,6 +500,8 @@ export default function Students() {
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="inactive">Inactive</TabsTrigger>
             <TabsTrigger value="missing">Missing Speaking Assessment</TabsTrigger>
+            <TabsTrigger value="starred">Starred</TabsTrigger>
+            <TabsTrigger value="not_starred">Not starred</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
