@@ -50,7 +50,7 @@ export default function Students() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete, isAdmin, role } = useAuth();
+  const { canEdit, canDelete, isAdmin, role, canStarStudentOrTeacher } = useAuth();
   const { toast } = useToast();
 
   // Track previous filter values to detect changes and reset pagination
@@ -363,6 +363,7 @@ export default function Students() {
 
         <div className="flex flex-wrap gap-2 justify-end">
           {/* Export Button - Always visible */}
+          {role !== 'trainer' && (
           <ExportButton
             label="Export"
             exportFn={async () => {
@@ -378,6 +379,7 @@ export default function Students() {
             }}
             filename="students.csv"
           />
+          )}
 
           {isAdmin() && (
             <>
@@ -538,7 +540,7 @@ export default function Students() {
                     className={isDisabled ? 'opacity-60' : ''}
                   >
                     <TableCell className="w-10">
-                      {canEdit() ? (
+                      {canStarStudentOrTeacher() ? (
                         <Button
                           variant="ghost"
                           size="sm"

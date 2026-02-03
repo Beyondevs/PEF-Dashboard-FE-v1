@@ -91,8 +91,8 @@ const App = () => (
               <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/users" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Users /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/trainers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Trainers /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/teachers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Teachers /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/admin/students" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Students /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/teachers" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu', 'trainer']}><Teachers /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/admin/students" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu', 'trainer']}><Students /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><AdminSchools /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/geography" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'division_role', 'bnu']}><Geography /></PrivateRoute></ProtectedLayout>} />
               <Route path="/admin/database-backups" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin']}><DatabaseBackups /></PrivateRoute></ProtectedLayout>} />

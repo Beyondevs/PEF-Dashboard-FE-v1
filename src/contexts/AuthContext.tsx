@@ -21,6 +21,8 @@ interface AuthContextType {
   canEdit: () => boolean;
   canDelete: () => boolean;
   canMarkAttendance: () => boolean;
+  /** Trainer can only toggle star on students/teachers; admin can edit and star */
+  canStarStudentOrTeacher: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -301,6 +303,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const canEdit = () => role === 'admin';
   const canDelete = () => role === 'admin';
   const canMarkAttendance = () => role === 'admin' || role === 'trainer' || role === 'division_role';
+  const canStarStudentOrTeacher = () => role === 'admin' || role === 'trainer';
 
   return (
     <AuthContext.Provider value={{ 
@@ -319,7 +322,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isDivisionRole,
       canEdit,
       canDelete,
-      canMarkAttendance
+      canMarkAttendance,
+      canStarStudentOrTeacher
     }}>
       {children}
     </AuthContext.Provider>

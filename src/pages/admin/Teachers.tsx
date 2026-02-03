@@ -54,7 +54,7 @@ export default function Teachers() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete, isAdmin } = useAuth();
+  const { canEdit, canDelete, isAdmin, role, canStarStudentOrTeacher } = useAuth();
   const { toast } = useToast();
 
   const prevFiltersRef = useRef({
@@ -283,7 +283,8 @@ export default function Teachers() {
         )}
 
         <div className="flex flex-wrap gap-2 justify-end">
-          {/* Export Button */}
+          {/* Export Button - hidden for trainer (view only) */}
+          {role !== 'trainer' && (
           <ExportButton
             label="Export"
             exportFn={async () => {
@@ -299,6 +300,7 @@ export default function Teachers() {
             }}
             filename="teachers.csv"
           />
+          )}
 
           {/* Import Button - Only for admin */}
           {isAdmin() && (
@@ -429,8 +431,9 @@ export default function Teachers() {
                     { label: 'School', value: t.teacherProfile?.school?.name || 'N/A', icon: <School className="h-3 w-3" /> },
                   ]}
                   actions={
-                    (canEdit() || canDelete() || isAdmin()) ? (
+                    (canEdit() || canDelete() || isAdmin() || canStarStudentOrTeacher()) ? (
                       <div className="flex gap-2 flex-wrap">
+                        {canStarStudentOrTeacher() && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -442,6 +445,7 @@ export default function Teachers() {
                             className={`h-4 w-4 ${t.teacherProfile?.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground'}`}
                           />
                         </Button>
+                        )}
                         {canEdit() && (
                           <Button
                             size="sm"
@@ -534,7 +538,7 @@ export default function Teachers() {
                   return (
                     <TableRow key={t.id} className={isDisabled ? 'opacity-60' : ''}>
                       <TableCell className="w-10">
-                        {canEdit() ? (
+                        {canStarStudentOrTeacher() ? (
                           <Button
                             variant="ghost"
                             size="sm"

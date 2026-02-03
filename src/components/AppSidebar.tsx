@@ -42,6 +42,11 @@ const trainerItems = [
   // { title: 'Repository', url: '/repository', icon: FolderOpen }, // Hidden for now
 ];
 
+const trainerViewOnlyItems = [
+  { title: 'Students Management', url: '/admin/students', icon: Users },
+  { title: 'Teachers Management', url: '/admin/teachers', icon: GraduationCap },
+];
+
 const teacherItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Sessions', url: '/sessions', icon: Calendar },
@@ -89,6 +94,7 @@ export function AppSidebar() {
     teacherItems;
   
   const showUserManagement = role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu';
+  const showTrainerViewOnly = role === 'trainer';
   const showSystemManagement = role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu';
   const showAdminOnly = role === 'admin';
   const showHybridMonitoring = false; // Hidden for now
@@ -145,6 +151,46 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {showTrainerViewOnly && (
+          <SidebarGroup className="px-4 py-3 mt-2">
+            <div className="h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent mb-4" />
+            <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/50 px-2 mb-2">
+              My Teachers &amp; Students
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {trainerViewOnlyItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild className="group">
+                      <NavLink 
+                        to={item.url} 
+                        className={({ isActive }) =>
+                          cn(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden",
+                            "before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary/10 before:to-secondary/10 before:opacity-0 before:transition-opacity before:duration-300",
+                            "hover:before:opacity-100 hover:translate-x-1",
+                            isActive 
+                              ? "bg-gradient-to-r from-sidebar-accent to-sidebar-accent/80 text-sidebar-accent-foreground font-semibold shadow-md shadow-sidebar-accent/20" 
+                              : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
+                          )
+                        }
+                      >
+                        <div className={cn(
+                          "p-1.5 rounded-lg transition-all duration-300",
+                          "group-hover:scale-110 group-hover:rotate-3"
+                        )}>
+                          <item.icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-medium">{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {showUserManagement && (
           <SidebarGroup className="px-4 py-3 mt-2">
