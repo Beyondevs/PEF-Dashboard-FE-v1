@@ -507,6 +507,8 @@ export default function Trainers() {
               <TableHead className="max-w-[150px]">CNIC</TableHead>
               <TableHead className="max-w-[140px]">Qualification</TableHead>
               <TableHead className="max-w-[140px]">Certification</TableHead>
+              <TableHead className="max-w-[120px]">Division</TableHead>
+              <TableHead className="max-w-[120px]">District</TableHead>
               <TableHead>Schools</TableHead>
               {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
             </TableRow>
@@ -514,20 +516,22 @@ export default function Trainers() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={10} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : trainers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">No trainers found</TableCell>
+                <TableCell colSpan={10} className="text-center">No trainers found</TableCell>
               </TableRow>
             ) : (
               trainers.map((trainer: any) => {
                 const assignedSchools = trainer.trainerProfile?.assignedSchools || [];
-                const schoolNames = assignedSchools
-                  .map((schoolId: string) => {
-                    const school = schools.find((s: any) => s.id === schoolId);
-                    return school ? `${school.name} (${school.emisCode})` : schoolId;
-                  })
+                const assignedSchoolObjects = assignedSchools
+                  .map((schoolId: string) => schools.find((s: any) => s.id === schoolId))
+                  .filter(Boolean);
+                const divisionNames = [...new Set(assignedSchoolObjects.map((s: any) => s?.division?.name).filter(Boolean))];
+                const districtNames = [...new Set(assignedSchoolObjects.map((s: any) => s?.district?.name).filter(Boolean))];
+                const schoolNames = assignedSchoolObjects
+                  .map((s: any) => s ? `${s.name} (${s.emisCode})` : '')
                   .filter(Boolean);
                 
                 return (
@@ -546,6 +550,12 @@ export default function Trainers() {
                   </TableCell>
                   <TableCell className="max-w-[140px] truncate" title={trainer.trainerProfile?.certification || 'not yet'}>
                     <span className="block truncate">{trainer.trainerProfile?.certification?.trim() ? trainer.trainerProfile.certification : 'not yet'}</span>
+                  </TableCell>
+                  <TableCell className="max-w-[120px] truncate" title={divisionNames.join(', ')}>
+                    <span className="block truncate">{divisionNames.length > 0 ? divisionNames.join(', ') : '—'}</span>
+                  </TableCell>
+                  <TableCell className="max-w-[120px] truncate" title={districtNames.join(', ')}>
+                    <span className="block truncate">{districtNames.length > 0 ? districtNames.join(', ') : '—'}</span>
                   </TableCell>
                   <TableCell>
                     {schoolNames.length > 0 ? (
