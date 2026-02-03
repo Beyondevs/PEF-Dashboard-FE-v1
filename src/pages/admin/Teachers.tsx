@@ -439,7 +439,7 @@ export default function Teachers() {
                           className="p-2"
                         >
                           <Star
-                            className={`h-4 w-4 ${t.teacherProfile?.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground'}`}
+                            className={`h-4 w-4 ${t.teacherProfile?.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground'}`}
                           />
                         </Button>
                         {canEdit() && (
@@ -543,12 +543,12 @@ export default function Teachers() {
                             title={t.teacherProfile?.starred ? 'Remove star' : 'Mark as outstanding'}
                           >
                             <Star
-                              className={`h-5 w-5 ${t.teacherProfile?.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground'}`}
+                              className={`h-5 w-5 ${t.teacherProfile?.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground'}`}
                             />
                           </Button>
                         ) : (
                           <Star
-                            className={`h-5 w-5 ${t.teacherProfile?.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground opacity-50'}`}
+                            className={`h-5 w-5 ${t.teacherProfile?.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground opacity-50'}`}
                           />
                         )}
                       </TableCell>

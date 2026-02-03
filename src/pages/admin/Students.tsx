@@ -547,12 +547,12 @@ export default function Students() {
                           title={student.starred ? 'Remove star' : 'Mark as outstanding'}
                         >
                           <Star
-                            className={`h-5 w-5 ${student.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground'}`}
+                            className={`h-5 w-5 ${student.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground'}`}
                           />
                         </Button>
                       ) : (
                         <Star
-                          className={`h-5 w-5 ${student.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground opacity-50'}`}
+                          className={`h-5 w-5 ${student.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground opacity-50'}`}
                         />
                       )}
                     </TableCell>
