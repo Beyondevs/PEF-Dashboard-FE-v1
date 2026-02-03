@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Mail, Phone as PhoneIcon, CreditCard, School, Ban, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Mail, Phone as PhoneIcon, CreditCard, School, Ban, CheckCircle, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -198,6 +198,25 @@ export default function Teachers() {
   const getTeacherStatus = (teacher: any) => {
     if (!teacher.isActive) return { label: 'Disabled', variant: 'destructive' as const };
     return { label: 'Active', variant: 'default' as const };
+  };
+
+  const handleToggleStar = async (teacher: any) => {
+    try {
+      await api.updateTeacher(teacher.id, { starred: !teacher.teacherProfile?.starred });
+      toast({
+        title: teacher.teacherProfile?.starred ? 'Removed from starred' : 'Marked as outstanding',
+        description: teacher.teacherProfile?.starred
+          ? `${teacher.teacherProfile?.name} is no longer starred`
+          : `${teacher.teacherProfile?.name} is now marked as outstanding`,
+      });
+      fetchTeachers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to update star',
+        variant: 'destructive',
+      });
+    }
   };
 
   const openEditDialog = (teacher: any) => {
@@ -401,7 +420,7 @@ export default function Teachers() {
               return (
                 <MobileCard
                   key={t.id}
-                  title={t.teacherProfile?.name || 'N/A'}
+                  title={`${t.teacherProfile?.name || 'N/A'}${t.teacherProfile?.starred ? ' ★' : ''}`}
                   subtitle={<Badge variant={status.variant}>{status.label}</Badge> as any}
                   metadata={[
                     { label: 'Email', value: t.email, icon: <Mail className="h-3 w-3" /> },
@@ -412,6 +431,17 @@ export default function Teachers() {
                   actions={
                     (canEdit() || canDelete() || isAdmin()) ? (
                       <div className="flex gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleToggleStar(t)}
+                          title={t.teacherProfile?.starred ? 'Remove star' : 'Mark as outstanding'}
+                          className="p-2"
+                        >
+                          <Star
+                            className={`h-4 w-4 ${t.teacherProfile?.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground'}`}
+                          />
+                        </Button>
                         {canEdit() && (
                           <Button
                             size="sm"
@@ -474,6 +504,7 @@ export default function Teachers() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">Star</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
@@ -486,11 +517,11 @@ export default function Teachers() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                  <TableCell colSpan={8} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : teachers.length === 0 ? (
                 <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   {statusFilter === 'missing'
                     ? 'No teachers are missing a speaking assessment record'
                     : 'No teachers found'}
@@ -502,6 +533,25 @@ export default function Teachers() {
                   const isDisabled = !t.isActive;
                   return (
                     <TableRow key={t.id} className={isDisabled ? 'opacity-60' : ''}>
+                      <TableCell className="w-10">
+                        {canEdit() ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 h-8 w-8"
+                            onClick={() => handleToggleStar(t)}
+                            title={t.teacherProfile?.starred ? 'Remove star' : 'Mark as outstanding'}
+                          >
+                            <Star
+                              className={`h-5 w-5 ${t.teacherProfile?.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground'}`}
+                            />
+                          </Button>
+                        ) : (
+                          <Star
+                            className={`h-5 w-5 ${t.teacherProfile?.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground opacity-50'}`}
+                          />
+                        )}
+                      </TableCell>
                       <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.teacherProfile?.name || 'N/A'}</TableCell>
                       <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.email}</TableCell>
                       <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>{t.phone || 'N/A'}</TableCell>

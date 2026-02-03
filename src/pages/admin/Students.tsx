@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Ban, CheckCircle, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, Ban, CheckCircle, FileText, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -279,6 +279,23 @@ export default function Students() {
     return { label: 'Active', variant: 'default' as const };
   };
 
+  const handleToggleStar = async (student: any) => {
+    try {
+      await api.updateStudent(student.id, { starred: !student.starred });
+      toast({
+        title: student.starred ? 'Removed from starred' : 'Marked as outstanding',
+        description: student.starred ? `${student.name} is no longer starred` : `${student.name} is now marked as outstanding`,
+      });
+      fetchStudents();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to update star',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const openEditDialog = (student: any) => {
     setEditingStudent(student);
     setFormData({
@@ -487,6 +504,7 @@ export default function Students() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">Star</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Roll No</TableHead>
               <TableHead>Grade</TableHead>
@@ -499,11 +517,11 @@ export default function Students() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={8} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : students.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   {statusFilter === 'missing'
                     ? 'No students are missing a speaking assessment record'
                     : 'No students found'}
@@ -519,6 +537,25 @@ export default function Students() {
                     key={student.id}
                     className={isDisabled ? 'opacity-60' : ''}
                   >
+                    <TableCell className="w-10">
+                      {canEdit() ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-8 w-8"
+                          onClick={() => handleToggleStar(student)}
+                          title={student.starred ? 'Remove star' : 'Mark as outstanding'}
+                        >
+                          <Star
+                            className={`h-5 w-5 ${student.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground'}`}
+                          />
+                        </Button>
+                      ) : (
+                        <Star
+                          className={`h-5 w-5 ${student.starred ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground opacity-50'}`}
+                        />
+                      )}
+                    </TableCell>
                     <TableCell className={isDisabled ? 'text-muted-foreground' : ''}>
                       {student.name}
                     </TableCell>
