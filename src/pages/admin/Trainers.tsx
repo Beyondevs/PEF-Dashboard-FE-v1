@@ -42,6 +42,8 @@ export default function Trainers() {
     email: '',
     phone: '',
     cnic: '',
+    qualification: '',
+    certification: '',
     password: '',
     assignedSchools: [] as string[],
   });
@@ -201,7 +203,7 @@ export default function Trainers() {
       }
       setIsDialogOpen(false);
       setEditingTrainer(null);
-      setFormData({ name: '', email: '', phone: '', cnic: '', password: '', assignedSchools: [] });
+      setFormData({ name: '', email: '', phone: '', cnic: '', qualification: '', certification: '', password: '', assignedSchools: [] });
       fetchTrainers();
     } catch (error) {
       toast({
@@ -259,6 +261,8 @@ export default function Trainers() {
       email: trainer.email || '',
       phone: trainer.phone || '',
       cnic: trainer.trainerProfile?.cnic || '',
+      qualification: trainer.trainerProfile?.qualification || '',
+      certification: trainer.trainerProfile?.certification || '',
       password: '',
       assignedSchools: trainer.trainerProfile?.assignedSchools || [],
     });
@@ -268,7 +272,7 @@ export default function Trainers() {
   const openCreateDialog = () => {
     setEditingTrainer(null);
     setSchoolSearchTerm('');
-    setFormData({ name: '', email: '', phone: '', cnic: '', password: '', assignedSchools: [] });
+    setFormData({ name: '', email: '', phone: '', cnic: '', qualification: '', certification: '', password: '', assignedSchools: [] });
     setIsDialogOpen(true);
   };
 
@@ -410,6 +414,22 @@ export default function Trainers() {
                   />
                 </div>
                 <div>
+                  <Label>Qualification</Label>
+                  <Input 
+                    placeholder="Enter qualification" 
+                    value={formData.qualification}
+                    onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Certification</Label>
+                  <Input 
+                    placeholder="Enter certification" 
+                    value={formData.certification}
+                    onChange={(e) => setFormData({ ...formData, certification: e.target.value })}
+                  />
+                </div>
+                <div>
                   <Label>Assigned Schools</Label>
                   <div className="mb-2">
                     <Input
@@ -485,6 +505,8 @@ export default function Trainers() {
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead className="max-w-[150px]">CNIC</TableHead>
+              <TableHead className="max-w-[140px]">Qualification</TableHead>
+              <TableHead className="max-w-[140px]">Certification</TableHead>
               <TableHead>Schools</TableHead>
               {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
             </TableRow>
@@ -492,11 +514,11 @@ export default function Trainers() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={8} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : trainers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">No trainers found</TableCell>
+                <TableCell colSpan={8} className="text-center">No trainers found</TableCell>
               </TableRow>
             ) : (
               trainers.map((trainer: any) => {
@@ -518,6 +540,12 @@ export default function Trainers() {
                     title={trainer.trainerProfile?.cnic || 'N/A'}
                   >
                     <span className="block truncate">{trainer.trainerProfile?.cnic || 'N/A'}</span>
+                  </TableCell>
+                  <TableCell className="max-w-[140px] truncate" title={trainer.trainerProfile?.qualification || 'not yet'}>
+                    <span className="block truncate">{trainer.trainerProfile?.qualification?.trim() ? trainer.trainerProfile.qualification : 'not yet'}</span>
+                  </TableCell>
+                  <TableCell className="max-w-[140px] truncate" title={trainer.trainerProfile?.certification || 'not yet'}>
+                    <span className="block truncate">{trainer.trainerProfile?.certification?.trim() ? trainer.trainerProfile.certification : 'not yet'}</span>
                   </TableCell>
                   <TableCell>
                     {schoolNames.length > 0 ? (
