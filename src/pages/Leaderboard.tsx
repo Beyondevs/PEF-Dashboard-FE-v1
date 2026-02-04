@@ -13,6 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useFilters } from '@/contexts/FilterContext';
@@ -251,57 +257,89 @@ const Leaderboard = () => {
     if (!summary) return null;
     
     const total = type === 'teachers' ? summary.totalTeachers : summary.totalStudents;
+    const label = type === 'teachers' ? 'teachers' : 'students';
     
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              {type === 'teachers' ? <Users className="h-5 w-5 text-blue-500" /> : <GraduationCap className="h-5 w-5 text-purple-500" />}
-              <div>
-                <p className="text-sm text-muted-foreground">Total {type === 'teachers' ? 'Teachers' : 'Students'}</p>
-                <p className="text-2xl font-bold">{total || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Score</p>
-                <p className="text-2xl font-bold">{summary.averageLatestScore?.toFixed(1) || 0}</p>
-                <p className="text-xs text-muted-foreground">out of {summary.maxPossibleScore}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Improvement</p>
-                <p className="text-2xl font-bold">{summary.averageImprovement?.toFixed(1) || 0}</p>
-                <p className="text-xs text-muted-foreground">points</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">All Phases Done</p>
-                <p className="text-2xl font-bold">{summary.completedAllPhases || 0}</p>
-                <p className="text-xs text-muted-foreground">{type}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <TooltipProvider delayDuration={300}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    {type === 'teachers' ? <Users className="h-6 w-6 text-blue-500 shrink-0" /> : <GraduationCap className="h-6 w-6 text-purple-500 shrink-0" />}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Total {type === 'teachers' ? 'Teachers' : 'Students'}</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{total ?? 0}</p>
+                      <p className="text-xs text-muted-foreground mt-1">With at least one assessment phase</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Count of {label} who have completed at least the Pre-assessment. Use filters above to narrow by location or school.</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <Trophy className="h-6 w-6 text-yellow-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Avg Score</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{summary.averageLatestScore?.toFixed(1) ?? 0}</p>
+                      <p className="text-xs text-muted-foreground mt-1">out of {summary.maxPossibleScore} (latest phase)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Average of the latest completed phase score (Pre, Mid, or Post) across all {label}. Higher is better.</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="h-6 w-6 text-green-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Avg Improvement</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{summary.averageImprovement?.toFixed(1) ?? 0}</p>
+                      <p className="text-xs text-muted-foreground mt-1">points from Pre to latest phase</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Average gain in score from Pre-assessment to the latest completed phase. Positive = progress.</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-6 w-6 text-green-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">All Phases Done</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{summary.completedAllPhases ?? 0}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Pre + Mid + Post completed</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Number of {label} who have completed all three phases (Pre, Mid, and Post). Full progression tracked.</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
     );
   };
 
@@ -310,60 +348,65 @@ const Leaderboard = () => {
       <SummaryCards summary={teacherSummary} type="teachers" />
       {teacherPagination.items.length > 0 ? (
         <>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-20">Rank</TableHead>
-                  <TableHead>Teacher</TableHead>
-                  <TableHead>School</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-[4.5rem] font-semibold">Rank</TableHead>
+                  <TableHead className="min-w-[140px] font-semibold">Teacher</TableHead>
+                  <TableHead className="min-w-[160px] font-semibold">School</TableHead>
                   {showStarColumn && (
-                    <TableHead className="w-14 text-center" title="Starred (admin only)">
+                    <TableHead className="w-14 text-center font-semibold" title="Starred (admin only)">
                       <Star className="h-4 w-4 inline text-amber-500 fill-amber-500" />
                     </TableHead>
                   )}
-                  <TableHead>District</TableHead>
-                  <TableHead className="text-center">Pre</TableHead>
-                  <TableHead className="text-center">Mid</TableHead>
-                  <TableHead className="text-center">Post</TableHead>
-                  <TableHead className="text-right">Latest %</TableHead>
-                  <TableHead className="text-right">Improvement</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Badge</TableHead>
+                  <TableHead className="min-w-[100px] font-semibold">District</TableHead>
+                  <TableHead className="text-center w-16 font-semibold tabular-nums">Pre</TableHead>
+                  <TableHead className="text-center w-16 font-semibold tabular-nums">Mid</TableHead>
+                  <TableHead className="text-center w-16 font-semibold tabular-nums">Post</TableHead>
+                  <TableHead className="text-right w-24 font-semibold tabular-nums">Latest %</TableHead>
+                  <TableHead className="text-right w-24 font-semibold tabular-nums">Improvement</TableHead>
+                  <TableHead className="min-w-[100px] font-semibold">Status</TableHead>
+                  <TableHead className="min-w-[80px] font-semibold">Badge</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {teacherPagination.items.map((item, index) => (
-                  <TableRow key={item.teacher?.id || index} className={item.rank <= 3 ? 'bg-muted/30' : ''}>
-                    <TableCell className="font-bold flex items-center gap-2">
-                      {getRankIcon(item.rank)}
-                      {item.rank}
+                  <TableRow
+                    key={item.teacher?.id || index}
+                    className={`transition-colors hover:bg-muted/40 ${item.rank <= 3 ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+                  >
+                    <TableCell className="font-bold tabular-nums align-middle py-4">
+                      <span className="flex items-center gap-2">
+                        {getRankIcon(item.rank)}
+                        <span className={item.rank <= 3 ? 'text-base' : ''}>{item.rank}</span>
+                      </span>
                     </TableCell>
-                    <TableCell className="font-medium">{item.teacher?.name || 'N/A'}</TableCell>
-                    <TableCell className="max-w-xs truncate">{item.teacher?.school || 'N/A'}</TableCell>
+                    <TableCell className="font-semibold text-foreground py-4">{item.teacher?.name || 'N/A'}</TableCell>
+                    <TableCell className="max-w-[200px] truncate text-muted-foreground py-4" title={item.teacher?.school || undefined}>{item.teacher?.school || 'N/A'}</TableCell>
                     {showStarColumn && (
-                      <TableCell className="text-center">
+                      <TableCell className="text-center py-4">
                         {item.teacher?.starred ? (
-                          <Star className="h-4 w-4 text-amber-500 fill-amber-500 inline" title="Starred" />
+                          <span title="Starred"><Star className="h-4 w-4 text-amber-500 fill-amber-500 inline" /></span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
                     )}
-                    <TableCell>{item.teacher?.district || 'N/A'}</TableCell>
-                    <TableCell className="text-center">{item.scores?.pre || 0}</TableCell>
-                    <TableCell className="text-center">{item.scores?.mid || 0}</TableCell>
-                    <TableCell className="text-center">{item.scores?.post || 0}</TableCell>
-                    <TableCell className="text-right font-bold text-primary">
-                      {item.scores?.latestPercentage?.toFixed(1) || 0}%
+                    <TableCell className="text-muted-foreground py-4">{item.teacher?.district || 'N/A'}</TableCell>
+                    <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.pre ?? 0}</TableCell>
+                    <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.mid ?? 0}</TableCell>
+                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.post ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.scores?.post ?? 0}</TableCell>
+                    <TableCell className="text-right py-4">
+                      <span className="font-bold tabular-nums text-primary text-base">{item.scores?.latestPercentage?.toFixed(1) ?? 0}%</span>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <span className={item.improvement?.points > 0 ? 'text-green-600' : item.improvement?.points < 0 ? 'text-red-600' : ''}>
-                        {item.improvement?.points > 0 ? '+' : ''}{item.improvement?.points || 0}
+                    <TableCell className="text-right py-4">
+                      <span className={`font-semibold tabular-nums ${item.improvement?.points > 0 ? 'text-green-600' : item.improvement?.points < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                        {item.improvement?.points > 0 ? '+' : ''}{item.improvement?.points ?? 0}
                       </span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(item.status)}</TableCell>
-                    <TableCell>{getRankBadge(item.rank)}</TableCell>
+                    <TableCell className="py-4">{getStatusBadge(item.status)}</TableCell>
+                    <TableCell className="py-4">{getRankBadge(item.rank)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -398,62 +441,67 @@ const Leaderboard = () => {
       <SummaryCards summary={studentSummary} type="students" />
       {studentPagination.items.length > 0 ? (
         <>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-20">Rank</TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Roll No</TableHead>
-                  <TableHead>School</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-[4.5rem] font-semibold">Rank</TableHead>
+                  <TableHead className="min-w-[140px] font-semibold">Student</TableHead>
+                  <TableHead className="min-w-[90px] font-semibold">Roll No</TableHead>
+                  <TableHead className="min-w-[160px] font-semibold">School</TableHead>
                   {showStarColumn && (
-                    <TableHead className="w-14 text-center" title="Starred (admin only)">
+                    <TableHead className="w-14 text-center font-semibold" title="Starred (admin only)">
                       <Star className="h-4 w-4 inline text-amber-500 fill-amber-500" />
                     </TableHead>
                   )}
-                  <TableHead>District</TableHead>
-                  <TableHead className="text-center">Pre</TableHead>
-                  <TableHead className="text-center">Mid</TableHead>
-                  <TableHead className="text-center">Post</TableHead>
-                  <TableHead className="text-right">Latest %</TableHead>
-                  <TableHead className="text-right">Improvement</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Badge</TableHead>
+                  <TableHead className="min-w-[100px] font-semibold">District</TableHead>
+                  <TableHead className="text-center w-16 font-semibold tabular-nums">Pre</TableHead>
+                  <TableHead className="text-center w-16 font-semibold tabular-nums">Mid</TableHead>
+                  <TableHead className="text-center w-16 font-semibold tabular-nums">Post</TableHead>
+                  <TableHead className="text-right w-24 font-semibold tabular-nums">Latest %</TableHead>
+                  <TableHead className="text-right w-24 font-semibold tabular-nums">Improvement</TableHead>
+                  <TableHead className="min-w-[100px] font-semibold">Status</TableHead>
+                  <TableHead className="min-w-[80px] font-semibold">Badge</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {studentPagination.items.map((item, index) => (
-                  <TableRow key={item.student?.id || index} className={item.rank <= 3 ? 'bg-muted/30' : ''}>
-                    <TableCell className="font-bold flex items-center gap-2">
-                      {getRankIcon(item.rank)}
-                      {item.rank}
+                  <TableRow
+                    key={item.student?.id || index}
+                    className={`transition-colors hover:bg-muted/40 ${item.rank <= 3 ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+                  >
+                    <TableCell className="font-bold tabular-nums align-middle py-4">
+                      <span className="flex items-center gap-2">
+                        {getRankIcon(item.rank)}
+                        <span className={item.rank <= 3 ? 'text-base' : ''}>{item.rank}</span>
+                      </span>
                     </TableCell>
-                    <TableCell className="font-medium">{item.student?.name || 'N/A'}</TableCell>
-                    <TableCell>{item.student?.rollNo || '-'}</TableCell>
-                    <TableCell className="max-w-xs truncate">{item.student?.school || 'N/A'}</TableCell>
+                    <TableCell className="font-semibold text-foreground py-4">{item.student?.name || 'N/A'}</TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground py-4">{item.student?.rollNo || '—'}</TableCell>
+                    <TableCell className="max-w-[200px] truncate text-muted-foreground py-4" title={item.student?.school || undefined}>{item.student?.school || 'N/A'}</TableCell>
                     {showStarColumn && (
-                      <TableCell className="text-center">
+                      <TableCell className="text-center py-4">
                         {item.student?.starred ? (
-                          <Star className="h-4 w-4 text-amber-500 fill-amber-500 inline" title="Starred" />
+                          <span title="Starred"><Star className="h-4 w-4 text-amber-500 fill-amber-500 inline" /></span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
                     )}
-                    <TableCell>{item.student?.district || 'N/A'}</TableCell>
-                    <TableCell className="text-center">{item.scores?.pre || 0}</TableCell>
-                    <TableCell className="text-center">{item.scores?.mid || 0}</TableCell>
-                    <TableCell className="text-center">{item.scores?.post || 0}</TableCell>
-                    <TableCell className="text-right font-bold text-primary">
-                      {item.scores?.latestPercentage?.toFixed(1) || 0}%
+                    <TableCell className="text-muted-foreground py-4">{item.student?.district || 'N/A'}</TableCell>
+                    <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.pre ?? 0}</TableCell>
+                    <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.mid ?? 0}</TableCell>
+                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.post ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.scores?.post ?? 0}</TableCell>
+                    <TableCell className="text-right py-4">
+                      <span className="font-bold tabular-nums text-primary text-base">{item.scores?.latestPercentage?.toFixed(1) ?? 0}%</span>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <span className={item.improvement?.points > 0 ? 'text-green-600' : item.improvement?.points < 0 ? 'text-red-600' : ''}>
-                        {item.improvement?.points > 0 ? '+' : ''}{item.improvement?.points || 0}
+                    <TableCell className="text-right py-4">
+                      <span className={`font-semibold tabular-nums ${item.improvement?.points > 0 ? 'text-green-600' : item.improvement?.points < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                        {item.improvement?.points > 0 ? '+' : ''}{item.improvement?.points ?? 0}
                       </span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(item.status)}</TableCell>
-                    <TableCell>{getRankBadge(item.rank)}</TableCell>
+                    <TableCell className="py-4">{getStatusBadge(item.status)}</TableCell>
+                    <TableCell className="py-4">{getRankBadge(item.rank)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -483,33 +531,41 @@ const Leaderboard = () => {
     </>
   );
 
+  const hasActiveFilters = !!(filters.division || filters.district || filters.school);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header Section */}
-      <div className="flex justify-between items-center"> 
-        <div className="flex-grow">
-          <h1 className="text-3xl font-bold text-foreground">Speaking Assessment Leaderboard</h1>
-          <p className="text-muted-foreground">Top 50 performers based on speaking assessment scores</p>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div className="flex-grow min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Speaking Assessment Leaderboard</h1>
+          <p className="text-muted-foreground mt-1">Top 50 performers based on speaking assessment scores</p>
+          {hasActiveFilters && (
+            <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" aria-hidden />
+              Results filtered by location or school. Use the filters above to change or reset.
+            </p>
+          )}
         </div>
-        
-        <Button onClick={handleExport} variant="outline" className="shrink-0">
+        <Button onClick={handleExport} variant="outline" className="shrink-0 self-start sm:self-center">
           <Download className="mr-2 h-4 w-4" /> Export
         </Button>
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Leaderboard Rankings</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl">Leaderboard Rankings</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">Ranked by latest score % then improvement. Pre → Mid → Post shows progression.</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <div className="text-center py-16">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
               <p className="text-muted-foreground">Loading leaderboard...</p>
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'teachers' | 'students')}>
-              <TabsList className="mb-6">
+              <TabsList className="mb-6 w-full sm:w-auto">
                 <TabsTrigger value="teachers" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   Teachers ({teacherData.length})
@@ -534,14 +590,27 @@ const Leaderboard = () => {
 
       {/* Info Card */}
       <Card>
-        <CardHeader>
-          <CardTitle>About Speaking Assessment Scores</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">About Speaking Assessment Scores</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">How scores and rankings are calculated for program stakeholders</p>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p><strong>Teachers:</strong> Scored on 14 criteria (max 70 points per phase) - Fluency, Sentences, Accuracy, Pronunciation, Vocabulary, Confidence, Asking, Answering, Classroom Instructions, Feedback, Engaging Students, Professional Interaction, Passion, Role Model</p>
-          <p><strong>Students:</strong> Scored on 12 criteria (max 60 points per phase) - Fluency, Complete Sentences, Accuracy, Pronunciation, Vocabulary, Confidence, Asking Questions, Answering Questions, Sharing Info, Describing, Feelings, Audience</p>
-          <p><strong>Phases:</strong> Pre-Assessment (baseline), Mid-Assessment (progress check), Post-Assessment (final evaluation)</p>
-          <p><strong>Ranking:</strong> Based on latest completed phase score percentage, then by improvement points</p>
+        <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <div>
+            <p className="font-medium text-foreground mb-0.5">Teachers</p>
+            <p>Scored on 14 criteria (max 70 points per phase): Fluency, Sentences, Accuracy, Pronunciation, Vocabulary, Confidence, Asking, Answering, Classroom Instructions, Feedback, Engaging Students, Professional Interaction, Passion, Role Model.</p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground mb-0.5">Students</p>
+            <p>Scored on 12 criteria (max 60 points per phase): Fluency, Complete Sentences, Accuracy, Pronunciation, Vocabulary, Confidence, Asking Questions, Answering Questions, Sharing Info, Describing, Feelings, Audience.</p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground mb-0.5">Phases</p>
+            <p>Pre-Assessment (baseline) → Mid-Assessment (progress check) → Post-Assessment (final evaluation). Completion status in the table shows how far each person has progressed.</p>
+          </div>
+          <div>
+            <p className="font-medium text-foreground mb-0.5">Ranking</p>
+            <p>Based on latest completed phase score percentage, then by improvement points. Higher latest % and positive improvement indicate stronger performance.</p>
+          </div>
         </CardContent>
       </Card>
     </div>
