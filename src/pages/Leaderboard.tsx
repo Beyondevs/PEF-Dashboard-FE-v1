@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, Users, GraduationCap, TrendingUp, Award } from 'lucide-react';
 import {
@@ -23,7 +23,7 @@ import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeacherLeaderboard, getStudentLeaderboard } from '@/lib/api';
+import { getTeacherLeaderboard, getStudentLeaderboard, getSchoolRankings, getTeachers, getStudents } from '@/lib/api';
 
 interface TeacherLeaderboardItem {
   rank: number;
@@ -98,9 +98,12 @@ const Leaderboard = () => {
   const { filters } = useFilters();
   const { role } = useAuth();
   const showStarColumn = role === 'admin';
-  const [activeTab, setActiveTab] = useState<'teachers' | 'students'>('teachers');
+  const [activeTab, setActiveTab] = useState<'teachers' | 'students' | 'schools'>('teachers');
   const [teacherData, setTeacherData] = useState<TeacherLeaderboardItem[]>([]);
   const [studentData, setStudentData] = useState<StudentLeaderboardItem[]>([]);
+  const [schoolData, setSchoolData] = useState<any[]>([]); // Will hold aggregated school rows
+  const [schoolRows, setSchoolRows] = useState<any[]>([]);
+  const schoolPagination = usePagination(schoolRows, { initialPageSize: 10 });
   const [teacherSummary, setTeacherSummary] = useState<Summary | null>(null);
   const [studentSummary, setStudentSummary] = useState<Summary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,28 +121,120 @@ const Leaderboard = () => {
         // Add filter params
         if (filters.division) params.divisionId = filters.division;
         if (filters.district) params.districtId = filters.district;
+        if (filters.tehsil) params.tehsilId = filters.tehsil;
         if (filters.school) params.schoolId = filters.school;
 
-        const [teacherResponse, studentResponse] = await Promise.all([
+        // Fetch teacher & student leaderboards and school rankings in parallel
+        const [teacherResponse, studentResponse, schoolResponse] = await Promise.all([
           getTeacherLeaderboard(params),
           getStudentLeaderboard(params),
+          getSchoolRankings(params),
         ]);
 
         setTeacherData(teacherResponse.data?.leaderboard || []);
         setTeacherSummary(teacherResponse.data?.summary || null);
         setStudentData(studentResponse.data?.leaderboard || []);
         setStudentSummary(studentResponse.data?.summary || null);
+        // schoolResponse may contain rankings or empty shape; we'll aggregate starred counts per school below
+        const rankings = (schoolResponse.data?.rankings || schoolResponse.data?.rankings || []);
+        // Map minimal school info for later augmentation
+        const schools = rankings.map((r: any) => ({
+          id: r.school?.id,
+          name: r.school?.name,
+          emisCode: r.school?.emisCode,
+          district: r.school?.district || null,
+          tehsil: r.school?.tehsil || null,
+          division: r.school?.division || null,
+          metrics: r.metrics || {},
+        }));
+        setSchoolData(schools);
       } catch (error) {
         console.error('Failed to fetch leaderboard:', error);
         setTeacherData([]);
         setStudentData([]);
+        setSchoolData([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLeaderboard();
-  }, [filters.division, filters.district, filters.school]);
+  }, [filters.division, filters.district, filters.tehsil, filters.school]);
+  // Aggregate starred counts and totals per school by calling teachers/students endpoints.
+  useEffect(() => {
+    if (!schoolData || schoolData.length === 0) {
+      setSchoolRows([]);
+      return;
+    }
+
+    let mounted = true;
+    const loadCounts = async () => {
+      setIsLoading(true);
+      try {
+        const aggregated = await Promise.all(
+          schoolData.map(async (s) => {
+            const schoolId = s.id;
+            // Fetch totals and starred totals (use pageSize=1 to read total from response)
+            const [teachersResp, teachersStarResp, studentsResp, studentsStarResp] = await Promise.all([
+              getTeachers({ schoolId, pageSize: 1 }),
+              getTeachers({ schoolId, starred: 'true', pageSize: 1 }),
+              getStudents({ schoolId, pageSize: 1 }),
+              getStudents({ schoolId, starred: 'true', pageSize: 1 }),
+            ]);
+
+            const totalTeachers = teachersResp.data?.total ?? 0;
+            const teachersWithStars = teachersStarResp.data?.total ?? 0;
+            const totalStudents = studentsResp.data?.total ?? 0;
+            const studentsWithStars = studentsStarResp.data?.total ?? 0;
+
+            const teachersStarsPct = totalTeachers > 0 ? (teachersWithStars / totalTeachers) * 100 : 0;
+            const studentsStarsPct = totalStudents > 0 ? (studentsWithStars / totalStudents) * 100 : 0;
+            const overallStarsPct = (totalTeachers + totalStudents) > 0
+              ? ((teachersWithStars + studentsWithStars) / (totalTeachers + totalStudents)) * 100
+              : 0;
+
+            return {
+              id: schoolId,
+              name: s.name,
+              emisCode: s.emisCode,
+              district: s.district,
+              tehsil: s.tehsil,
+              division: s.division,
+              totalTeachers,
+              teachersWithStars,
+              teachersStarsPct: Math.round(teachersStarsPct * 10) / 10,
+              totalStudents,
+              studentsWithStars,
+              studentsStarsPct: Math.round(studentsStarsPct * 10) / 10,
+              overallStarsPct: Math.round(overallStarsPct * 10) / 10,
+            };
+          })
+        );
+
+        // Sort by overallStarsPct DESC, then teachersStarsPct, then studentsStarsPct
+        aggregated.sort((a, b) => {
+          if (b.overallStarsPct !== a.overallStarsPct) return b.overallStarsPct - a.overallStarsPct;
+          if (b.teachersStarsPct !== a.teachersStarsPct) return b.teachersStarsPct - a.teachersStarsPct;
+          return b.studentsStarsPct - a.studentsStarsPct;
+        });
+
+        // Assign ranks and badges
+        const ranked = aggregated.map((r, idx) => ({ ...r, rank: idx + 1, badge: idx < 10 ? 'Top 10' : '' }));
+        if (mounted) setSchoolRows(ranked);
+      } catch (err) {
+        console.error('Failed to aggregate school starred counts', err);
+        if (mounted) setSchoolRows([]);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    loadCounts();
+    return () => {
+      mounted = false;
+    };
+  }, [schoolData, filters.division, filters.district, filters.school, filters.tehsil]);
+  // Re-run when tehsil filter changes as well
 
   const teacherPagination = usePagination(teacherData, { initialPageSize: 10 });
   const studentPagination = usePagination(studentData, { initialPageSize: 10 });
@@ -231,15 +326,17 @@ const Leaderboard = () => {
   };
 
   const handleExport = () => {
-    const data = activeTab === 'teachers' ? teacherData : studentData;
-    if (data.length === 0) {
-      alert('No data to export.');
-      return;
+    let csvContent = '';
+    if (activeTab === 'teachers') {
+      if (teacherData.length === 0) { alert('No data to export.'); return; }
+      csvContent = formatTeacherDataForCSV(teacherData as TeacherLeaderboardItem[]);
+    } else if (activeTab === 'students') {
+      if (studentData.length === 0) { alert('No data to export.'); return; }
+      csvContent = formatStudentDataForCSV(studentData as StudentLeaderboardItem[]);
+    } else { // schools
+      if (schoolRows.length === 0) { alert('No data to export.'); return; }
+      csvContent = formatSchoolDataForCSV(schoolRows);
     }
-
-    const csvContent = activeTab === 'teachers' 
-      ? formatTeacherDataForCSV(data as TeacherLeaderboardItem[])
-      : formatStudentDataForCSV(data as StudentLeaderboardItem[]);
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -251,6 +348,34 @@ const Leaderboard = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const formatSchoolDataForCSV = (data: any[]) => {
+    const header = [
+      'Rank','School','EMIS Code','District','Tehsil','Total Teachers','Teachers with Stars','Teachers Stars %',
+      'Total Students','Students with Stars','Students Stars %','Overall Stars %','Badge'
+    ].join(',');
+
+    const rows = data.map(d => {
+      const escape = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      return [
+        d.rank,
+        escape(d.name),
+        escape(d.emisCode),
+        escape(d.district),
+        escape(d.tehsil),
+        d.totalTeachers ?? 0,
+        d.teachersWithStars ?? 0,
+        (d.teachersStarsPct != null ? d.teachersStarsPct.toFixed(1) : '0.0'),
+        d.totalStudents ?? 0,
+        d.studentsWithStars ?? 0,
+        (d.studentsStarsPct != null ? d.studentsStarsPct.toFixed(1) : '0.0'),
+        (d.overallStarsPct != null ? d.overallStarsPct.toFixed(1) : '0.0'),
+        escape(d.badge),
+      ].join(',');
+    });
+
+    return [header, ...rows].join('\n');
   };
 
   const SummaryCards = ({ summary, type }: { summary: Summary | null; type: 'teachers' | 'students' }) => {
@@ -531,6 +656,74 @@ const Leaderboard = () => {
     </>
   );
 
+  const SchoolTable = () => (
+    <>
+      {schoolPagination.items.length > 0 ? (
+        <>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-[4.5rem] font-semibold">Rank</TableHead>
+                  <TableHead className="min-w-[220px] font-semibold">School</TableHead>
+                  <TableHead className="min-w-[120px] font-semibold">District</TableHead>
+                  <TableHead className="min-w-[120px] font-semibold">Tehsil</TableHead>
+                  <TableHead className="text-right w-28 font-semibold tabular-nums">Total Teachers</TableHead>
+                  <TableHead className="text-right w-28 font-semibold tabular-nums">Teachers w/ Stars</TableHead>
+                  <TableHead className="text-right w-28 font-semibold tabular-nums">Teachers %</TableHead>
+                  <TableHead className="text-right w-28 font-semibold tabular-nums">Total Students</TableHead>
+                  <TableHead className="text-right w-28 font-semibold tabular-nums">Students w/ Stars</TableHead>
+                  <TableHead className="text-right w-28 font-semibold tabular-nums">Students %</TableHead>
+                  <TableHead className="text-right w-28 font-semibold tabular-nums">Overall %</TableHead>
+                  <TableHead className="min-w-[80px] font-semibold">Badge</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {schoolPagination.items.map((item: any, index: number) => (
+                  <TableRow key={item.id || index} className={`transition-colors hover:bg-muted/40 ${item.rank <= 3 ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}>
+                    <TableCell className="font-bold tabular-nums align-middle py-4">
+                      <span className="flex items-center gap-2">
+                        {getRankIcon(item.rank)}
+                        <span className={item.rank <= 3 ? 'text-base' : ''}>{item.rank}</span>
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-semibold text-foreground py-4">{item.name || 'N/A'}</TableCell>
+                    <TableCell className="text-muted-foreground py-4">{item.district || '—'}</TableCell>
+                    <TableCell className="text-muted-foreground py-4">{item.tehsil || '—'}</TableCell>
+                    <TableCell className="text-right tabular-nums py-4">{item.totalTeachers ?? 0}</TableCell>
+                    <TableCell className="text-right tabular-nums py-4">{item.teachersWithStars ?? 0}</TableCell>
+                    <TableCell className="text-right tabular-nums py-4">{(item.teachersStarsPct != null ? item.teachersStarsPct.toFixed(1) : '0.0')}%</TableCell>
+                    <TableCell className="text-right tabular-nums py-4">{item.totalStudents ?? 0}</TableCell>
+                    <TableCell className="text-right tabular-nums py-4">{item.studentsWithStars ?? 0}</TableCell>
+                    <TableCell className="text-right tabular-nums py-4">{(item.studentsStarsPct != null ? item.studentsStarsPct.toFixed(1) : '0.0')}%</TableCell>
+                    <TableCell className="text-right tabular-nums py-4"><span className="font-bold text-primary">{(item.overallStarsPct != null ? item.overallStarsPct.toFixed(1) : '0.0')}%</span></TableCell>
+                    <TableCell className="py-4">{item.badge ? <Badge className="bg-green-500">{item.badge}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <PaginationControls
+            currentPage={schoolPagination.page}
+            totalPages={schoolPagination.totalPages}
+            onPageChange={schoolPagination.setPage}
+            pageInfo={
+              schoolPagination.totalItems > 0
+                ? `Showing ${schoolPagination.startIndex}-${schoolPagination.endIndex} of ${schoolPagination.totalItems} schools`
+                : undefined
+            }
+            className="mt-6"
+          />
+        </>
+      ) : (
+        <div className="text-center py-12">
+          <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">No school data</h3>
+          <p className="text-muted-foreground">No schools found with speaking assessments</p>
+        </div>
+      )}
+    </>
+  );
   const hasActiveFilters = !!(filters.division || filters.district || filters.school);
 
   return (
@@ -564,7 +757,7 @@ const Leaderboard = () => {
               <p className="text-muted-foreground">Loading leaderboard...</p>
             </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'teachers' | 'students')}>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'teachers' | 'students' | 'schools')}>
               <TabsList className="mb-6 w-full sm:w-auto">
                 <TabsTrigger value="teachers" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -574,6 +767,10 @@ const Leaderboard = () => {
                   <GraduationCap className="h-4 w-4" />
                   Students ({studentData.length})
                 </TabsTrigger>
+                <TabsTrigger value="schools" className="flex items-center gap-2">
+                  <Award className="h-4 w-4" />
+                  School-wise ({schoolRows.length || schoolData.length})
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="teachers">
@@ -582,6 +779,10 @@ const Leaderboard = () => {
 
               <TabsContent value="students">
                 <StudentTable />
+              </TabsContent>
+              
+              <TabsContent value="schools">
+                <SchoolTable />
               </TabsContent>
             </Tabs>
           )}
