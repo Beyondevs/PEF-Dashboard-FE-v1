@@ -78,6 +78,7 @@ const Dashboard = () => {
   const [teachersTaught, setTeachersTaught] = useState<number>(0);
   const [studentsTaught, setStudentsTaught] = useState<number>(0);
   const [teachersEnrolled, setTeachersEnrolled] = useState<number>(0);
+  const [activeTeachersCount, setActiveTeachersCount] = useState<number>(0);
   const [studentsEnrolled, setStudentsEnrolled] = useState<number>(0);
   const [totalSessions, setTotalSessions] = useState<number>(0);
   const [activeSchools, setActiveSchools] = useState<number>(0);
@@ -170,6 +171,7 @@ const Dashboard = () => {
         // Update state with individual responses
         setTeachersTaught(teachersData.data.taught);
         setTeachersEnrolled(teachersData.data.active);
+        setActiveTeachersCount(teachersData.data.active ?? 0);
         setStudentsTaught(studentsData.data.taught);
         setStudentsEnrolled(studentsData.data.active);
         setTotalSessions(sessionsData.data.total);
@@ -545,7 +547,7 @@ const Dashboard = () => {
                 <UserCheck className="h-5 w-5 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">{stats.teachersEnrolled}</div>
+                <div className="text-3xl font-bold text-primary">{activeTeachersCount}</div>
                 <p className="text-xs text-muted-foreground mt-1">Active today • {stats.teacherTaught} taught</p>
               </CardContent>
             </Card>
@@ -602,7 +604,7 @@ const Dashboard = () => {
                 <Award className="h-5 w-5 text-secondary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-secondary">{stats.teacherTaught}</div>
+                <div className="text-3xl font-bold text-secondary">{activeTeachersCount}</div>
                 
               </CardContent>
             </Card>
