@@ -53,6 +53,7 @@ export default function Trainers() {
     total: 0,
   });
   const { canEdit, canDelete, isAdmin, role } = useAuth();
+  const showPhoneColumn = role !== 'client';
   const { toast } = useToast();
   const { filters } = useFilters();
 
@@ -516,11 +517,11 @@ export default function Trainers() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={showPhoneColumn ? 10 : 9} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : trainers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center">No trainers found</TableCell>
+                <TableCell colSpan={showPhoneColumn ? 10 : 9} className="text-center">No trainers found</TableCell>
               </TableRow>
             ) : (
               trainers.map((trainer: any) => {
@@ -538,7 +539,7 @@ export default function Trainers() {
                 <TableRow key={trainer.id}>
                   <TableCell>{trainer.trainerProfile?.name || 'N/A'}</TableCell>
                   <TableCell>{trainer.email}</TableCell>
-                  <TableCell>{trainer.phone || 'N/A'}</TableCell>
+                  {showPhoneColumn && <TableCell>{trainer.phone || 'N/A'}</TableCell>}
                   <TableCell 
                     className="max-w-[150px] truncate" 
                     title={trainer.trainerProfile?.cnic || 'N/A'}
