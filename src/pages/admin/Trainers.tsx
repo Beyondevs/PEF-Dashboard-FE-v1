@@ -497,20 +497,20 @@ export default function Trainers() {
         </div>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
+      <div className="border rounded-lg overflow-x-auto">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead className="max-w-[150px]">CNIC</TableHead>
-              <TableHead className="max-w-[140px]">Qualification</TableHead>
-              <TableHead className="max-w-[140px]">Certification</TableHead>
-              <TableHead className="max-w-[120px]">Division</TableHead>
-              <TableHead className="max-w-[120px]">District</TableHead>
-              <TableHead>Schools</TableHead>
-              {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
+              <TableHead className="min-w-[120px]">Name</TableHead>
+              <TableHead className="min-w-[160px]">Email</TableHead>
+              <TableHead className="min-w-[110px] whitespace-nowrap">Phone</TableHead>
+              <TableHead className="min-w-[120px] max-w-[150px]">CNIC</TableHead>
+              <TableHead className="min-w-[100px] max-w-[140px]">Qualification</TableHead>
+              <TableHead className="min-w-[100px] max-w-[140px]">Certification</TableHead>
+              <TableHead className="min-w-[90px] max-w-[120px]">Division</TableHead>
+              <TableHead className="min-w-[90px] max-w-[120px]">District</TableHead>
+              <TableHead className="min-w-[280px] w-[22%]">Schools</TableHead>
+              {(canEdit() || canDelete()) && <TableHead className="w-[1%] whitespace-nowrap">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -557,11 +557,11 @@ export default function Trainers() {
                   <TableCell className="max-w-[120px] truncate" title={districtNames.join(', ')}>
                     <span className="block truncate">{districtNames.length > 0 ? districtNames.join(', ') : '—'}</span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-[280px] align-top">
                     {schoolNames.length > 0 ? (
-                      <div className="flex flex-wrap gap-1 max-w-md">
+                      <div className="flex flex-wrap gap-1.5 min-w-[260px]">
                         {schoolNames.map((name: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
+                          <Badge key={idx} variant="outline" className="text-xs whitespace-nowrap">
                             {name}
                           </Badge>
                         ))}
