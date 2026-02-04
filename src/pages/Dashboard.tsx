@@ -460,11 +460,13 @@ const Dashboard = () => {
       'hsl(var(--chart-5))',
       'hsl(var(--chart-3))',
     ];
-    return (weekdaySessionsDistribution || []).map((item, index) => ({
-      day: item.day,
-      sessions: item.sessions,
-      fill: fillColors[index % fillColors.length],
-    }));
+    return (weekdaySessionsDistribution || [])
+      .filter((item) => item.day !== 'Saturday')
+      .map((item, index) => ({
+        day: item.day,
+        sessions: item.sessions,
+        fill: fillColors[index % fillColors.length],
+      }));
   }, [weekdaySessionsDistribution]);
   
   // Use backend-calculated sessions progress (no local calculations)
