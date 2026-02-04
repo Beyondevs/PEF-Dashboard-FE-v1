@@ -23,7 +23,7 @@ import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeacherLeaderboard, getStudentLeaderboard, getSchoolRankings, getTeachers, getStudents } from '@/lib/api';
+import { getTeacherLeaderboard, getStudentLeaderboard, getSchoolRankings, getSchoolStarStats } from '@/lib/api';
 
 interface TeacherLeaderboardItem {
   rank: number;
@@ -124,30 +124,38 @@ const Leaderboard = () => {
         if (filters.tehsil) params.tehsilId = filters.tehsil;
         if (filters.school) params.schoolId = filters.school;
 
-        // Fetch teacher & student leaderboards and school rankings in parallel
-        const [teacherResponse, studentResponse, schoolResponse] = await Promise.all([
+        // Fetch teacher & student leaderboards and school star stats in parallel
+        const [teacherResponse, studentResponse, schoolStarsResponse] = await Promise.all([
           getTeacherLeaderboard(params),
           getStudentLeaderboard(params),
-          getSchoolRankings(params),
+          getSchoolStarStats(params),
         ]);
 
         setTeacherData(teacherResponse.data?.leaderboard || []);
         setTeacherSummary(teacherResponse.data?.summary || null);
         setStudentData(studentResponse.data?.leaderboard || []);
         setStudentSummary(studentResponse.data?.summary || null);
-        // schoolResponse may contain rankings or empty shape; we'll aggregate starred counts per school below
-        const rankings = (schoolResponse.data?.rankings || schoolResponse.data?.rankings || []);
-        // Map minimal school info for later augmentation
-        const schools = rankings.map((r: any) => ({
+        // Use backend-provided school star stats if available
+        const schoolRankings = schoolStarsResponse.data?.rankings || [];
+        // Map to rows expected by frontend
+        const mapped = schoolRankings.map((r: any) => ({
           id: r.school?.id,
           name: r.school?.name,
           emisCode: r.school?.emisCode,
           district: r.school?.district || null,
           tehsil: r.school?.tehsil || null,
           division: r.school?.division || null,
-          metrics: r.metrics || {},
+          totalTeachers: r.metrics?.totalTeachers ?? 0,
+          teachersWithStars: r.metrics?.teachersWithStars ?? 0,
+          teachersStarsPct: r.metrics?.teachersStarsPct ?? 0,
+          totalStudents: r.metrics?.totalStudents ?? 0,
+          studentsWithStars: r.metrics?.studentsWithStars ?? 0,
+          studentsStarsPct: r.metrics?.studentsStarsPct ?? 0,
+          overallStarsPct: r.metrics?.overallStarsPct ?? 0,
+          rank: r.rank,
+          badge: r.rank <= 10 ? 'Top 10' : '',
         }));
-        setSchoolData(schools);
+        setSchoolRows(mapped);
       } catch (error) {
         console.error('Failed to fetch leaderboard:', error);
         setTeacherData([]);
@@ -160,81 +168,7 @@ const Leaderboard = () => {
 
     fetchLeaderboard();
   }, [filters.division, filters.district, filters.tehsil, filters.school]);
-  // Aggregate starred counts and totals per school by calling teachers/students endpoints.
-  useEffect(() => {
-    if (!schoolData || schoolData.length === 0) {
-      setSchoolRows([]);
-      return;
-    }
-
-    let mounted = true;
-    const loadCounts = async () => {
-      setIsLoading(true);
-      try {
-        const aggregated = await Promise.all(
-          schoolData.map(async (s) => {
-            const schoolId = s.id;
-            // Fetch totals and starred totals (use pageSize=1 to read total from response)
-            const [teachersResp, teachersStarResp, studentsResp, studentsStarResp] = await Promise.all([
-              getTeachers({ schoolId, pageSize: 1 }),
-              getTeachers({ schoolId, starred: 'true', pageSize: 1 }),
-              getStudents({ schoolId, pageSize: 1 }),
-              getStudents({ schoolId, starred: 'true', pageSize: 1 }),
-            ]);
-
-            const totalTeachers = teachersResp.data?.total ?? 0;
-            const teachersWithStars = teachersStarResp.data?.total ?? 0;
-            const totalStudents = studentsResp.data?.total ?? 0;
-            const studentsWithStars = studentsStarResp.data?.total ?? 0;
-
-            const teachersStarsPct = totalTeachers > 0 ? (teachersWithStars / totalTeachers) * 100 : 0;
-            const studentsStarsPct = totalStudents > 0 ? (studentsWithStars / totalStudents) * 100 : 0;
-            const overallStarsPct = (totalTeachers + totalStudents) > 0
-              ? ((teachersWithStars + studentsWithStars) / (totalTeachers + totalStudents)) * 100
-              : 0;
-
-            return {
-              id: schoolId,
-              name: s.name,
-              emisCode: s.emisCode,
-              district: s.district,
-              tehsil: s.tehsil,
-              division: s.division,
-              totalTeachers,
-              teachersWithStars,
-              teachersStarsPct: Math.round(teachersStarsPct * 10) / 10,
-              totalStudents,
-              studentsWithStars,
-              studentsStarsPct: Math.round(studentsStarsPct * 10) / 10,
-              overallStarsPct: Math.round(overallStarsPct * 10) / 10,
-            };
-          })
-        );
-
-        // Sort by overallStarsPct DESC, then teachersStarsPct, then studentsStarsPct
-        aggregated.sort((a, b) => {
-          if (b.overallStarsPct !== a.overallStarsPct) return b.overallStarsPct - a.overallStarsPct;
-          if (b.teachersStarsPct !== a.teachersStarsPct) return b.teachersStarsPct - a.teachersStarsPct;
-          return b.studentsStarsPct - a.studentsStarsPct;
-        });
-
-        // Assign ranks and badges
-        const ranked = aggregated.map((r, idx) => ({ ...r, rank: idx + 1, badge: idx < 10 ? 'Top 10' : '' }));
-        if (mounted) setSchoolRows(ranked);
-      } catch (err) {
-        console.error('Failed to aggregate school starred counts', err);
-        if (mounted) setSchoolRows([]);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    };
-
-    loadCounts();
-    return () => {
-      mounted = false;
-    };
-  }, [schoolData, filters.division, filters.district, filters.school, filters.tehsil]);
-  // Re-run when tehsil filter changes as well
+  // schoolRows are loaded from backend via getSchoolStarStats in fetchLeaderboard
 
   const teacherPagination = usePagination(teacherData, { initialPageSize: 10 });
   const studentPagination = usePagination(studentData, { initialPageSize: 10 });

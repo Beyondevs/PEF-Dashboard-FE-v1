@@ -202,6 +202,10 @@ export const getSchoolRankings = (params: Record<string, string | number | boole
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<any>(`/leaderboard/schools${qs ? `?${qs}` : ''}`);
 };
+export const getSchoolStarStats = (params: Record<string, string | number | boolean> = {}) => {
+  const qs = new URLSearchParams(params as any).toString();
+  return apiClient.get<any>(`/leaderboard/schools/stars${qs ? `?${qs}` : ''}`);
+};
 
 export const getTeacherKPI = (id: string) => apiClient.get<any>(`/leaderboard/teachers/${id}/kpi`);
 
