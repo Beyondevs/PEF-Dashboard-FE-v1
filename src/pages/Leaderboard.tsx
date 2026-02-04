@@ -98,6 +98,7 @@ const Leaderboard = () => {
   const { filters } = useFilters();
   const { role } = useAuth();
   const showStarColumn = role === 'admin';
+  const showSchoolTab = role === 'admin';
   const [activeTab, setActiveTab] = useState<'teachers' | 'students' | 'schools'>('teachers');
   const [teacherData, setTeacherData] = useState<TeacherLeaderboardItem[]>([]);
   const [studentData, setStudentData] = useState<StudentLeaderboardItem[]>([]);
@@ -692,7 +693,7 @@ const Leaderboard = () => {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'teachers' | 'students' | 'schools')}>
-              <TabsList className="mb-6 w-full sm:w-auto">
+            <TabsList className="mb-6 w-full sm:w-auto">
                 <TabsTrigger value="teachers" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   Teachers ({teacherData.length})
@@ -701,10 +702,12 @@ const Leaderboard = () => {
                   <GraduationCap className="h-4 w-4" />
                   Students ({studentData.length})
                 </TabsTrigger>
-                <TabsTrigger value="schools" className="flex items-center gap-2">
-                  <Award className="h-4 w-4" />
-                  School-wise ({schoolRows.length || schoolData.length})
-                </TabsTrigger>
+                {showSchoolTab && (
+                  <TabsTrigger value="schools" className="flex items-center gap-2">
+                    <Award className="h-4 w-4" />
+                    School-wise ({schoolRows.length})
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="teachers">
@@ -715,9 +718,11 @@ const Leaderboard = () => {
                 <StudentTable />
               </TabsContent>
               
-              <TabsContent value="schools">
-                <SchoolTable />
-              </TabsContent>
+              {showSchoolTab && (
+                <TabsContent value="schools">
+                  <SchoolTable />
+                </TabsContent>
+              )}
             </Tabs>
           )}
         </CardContent>
