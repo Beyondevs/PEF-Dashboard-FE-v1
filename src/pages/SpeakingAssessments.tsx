@@ -542,10 +542,11 @@ const SpeakingAssessments = () => {
                     </div>
                   </div>
                 )}
-                <Table className="min-w-[880px]">
+                <Table className="min-w-[920px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Student</TableHead>
+                      <TableHead className="whitespace-nowrap">Grade</TableHead>
                       <TableHead className="whitespace-nowrap">School</TableHead>
                       <TableHead className="whitespace-nowrap">School EMIS Code</TableHead>
                       <TableHead className="whitespace-nowrap">District</TableHead>
@@ -562,6 +563,7 @@ const SpeakingAssessments = () => {
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={`skeleton-${i}`}>
                           <TableCell><div className="h-4 bg-muted rounded w-24 animate-pulse"></div></TableCell>
+                          <TableCell><div className="h-4 bg-muted rounded w-14 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-4 bg-muted rounded w-32 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
                           <TableCell><div className="h-4 bg-muted rounded w-20 animate-pulse"></div></TableCell>
@@ -575,7 +577,7 @@ const SpeakingAssessments = () => {
                       ))
                     ) : studentAssessments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
+                        <TableCell colSpan={11} className="text-center text-muted-foreground py-12">
                           <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                           <p>No student speaking assessments found</p>
                           <p className="text-sm mt-2">Assessments are created automatically for session participants</p>
@@ -585,6 +587,9 @@ const SpeakingAssessments = () => {
                       studentAssessments.map((assessment) => (
                         <TableRow key={assessment.id}>
                           <TableCell className="font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]" title={assessment.studentName}>{assessment.studentName}</TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">
+                            {assessment.studentGrade != null ? `${assessment.studentGrade}th Grade` : '—'}
+                          </TableCell>
                           <TableCell className="min-w-[140px] max-w-[220px]">
                             <div className="flex items-center gap-1 min-w-0">
                               <School className="h-3 w-3 shrink-0 text-muted-foreground" />

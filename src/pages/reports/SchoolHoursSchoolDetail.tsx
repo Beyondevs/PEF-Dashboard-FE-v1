@@ -94,6 +94,17 @@ function formatHoursAsHHMM(hours: number): string {
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
+/** Default date range for this report when no filter is applied: February (current year). */
+function getDefaultFebruaryRange(): { from: string; to: string } {
+  const year = new Date().getFullYear();
+  const isLeap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const lastDay = isLeap(year) ? 29 : 28;
+  return {
+    from: `${year}-02-01`,
+    to: `${year}-02-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
 const SchoolHoursSchoolDetail = () => {
   const { schoolId } = useParams<{ schoolId: string }>();
   const navigate = useNavigate();
@@ -113,8 +124,9 @@ const SchoolHoursSchoolDetail = () => {
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
-    if (filters.startDate) params.from = filters.startDate;
-    if (filters.endDate) params.to = filters.endDate;
+    const febDefault = getDefaultFebruaryRange();
+    params.from = filters.startDate || febDefault.from;
+    params.to = filters.endDate || febDefault.to;
     if (schoolId) params.schoolId = schoolId;
     return params;
   }, [filters, schoolId]);
@@ -125,8 +137,9 @@ const SchoolHoursSchoolDetail = () => {
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
-    if (filters.startDate) params.from = filters.startDate;
-    if (filters.endDate) params.to = filters.endDate;
+    const febDefault = getDefaultFebruaryRange();
+    params.from = filters.startDate || febDefault.from;
+    params.to = filters.endDate || febDefault.to;
     return params;
   }, [filters]);
 

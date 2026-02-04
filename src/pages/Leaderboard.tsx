@@ -10,12 +10,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Medal } from 'lucide-react';
+import { Trophy, Medal, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useFilters } from '@/contexts/FilterContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getTeacherLeaderboard, getStudentLeaderboard } from '@/lib/api';
 
 interface TeacherLeaderboardItem {
@@ -27,6 +28,7 @@ interface TeacherLeaderboardItem {
     school: string;
     district: string;
     division: string;
+    starred?: boolean;
   };
   assessmentId: string;
   status: string;
@@ -57,6 +59,7 @@ interface StudentLeaderboardItem {
     school: string;
     district: string;
     division: string;
+    starred?: boolean;
   };
   assessmentId: string;
   status: string;
@@ -87,6 +90,8 @@ interface Summary {
 
 const Leaderboard = () => {
   const { filters } = useFilters();
+  const { role } = useAuth();
+  const showStarColumn = role === 'admin';
   const [activeTab, setActiveTab] = useState<'teachers' | 'students'>('teachers');
   const [teacherData, setTeacherData] = useState<TeacherLeaderboardItem[]>([]);
   const [studentData, setStudentData] = useState<StudentLeaderboardItem[]>([]);
@@ -312,6 +317,11 @@ const Leaderboard = () => {
                   <TableHead className="w-20">Rank</TableHead>
                   <TableHead>Teacher</TableHead>
                   <TableHead>School</TableHead>
+                  {showStarColumn && (
+                    <TableHead className="w-14 text-center" title="Starred (admin only)">
+                      <Star className="h-4 w-4 inline text-amber-500 fill-amber-500" />
+                    </TableHead>
+                  )}
                   <TableHead>District</TableHead>
                   <TableHead className="text-center">Pre</TableHead>
                   <TableHead className="text-center">Mid</TableHead>
@@ -331,6 +341,15 @@ const Leaderboard = () => {
                     </TableCell>
                     <TableCell className="font-medium">{item.teacher?.name || 'N/A'}</TableCell>
                     <TableCell className="max-w-xs truncate">{item.teacher?.school || 'N/A'}</TableCell>
+                    {showStarColumn && (
+                      <TableCell className="text-center">
+                        {item.teacher?.starred ? (
+                          <Star className="h-4 w-4 text-amber-500 fill-amber-500 inline" title="Starred" />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>{item.teacher?.district || 'N/A'}</TableCell>
                     <TableCell className="text-center">{item.scores?.pre || 0}</TableCell>
                     <TableCell className="text-center">{item.scores?.mid || 0}</TableCell>
@@ -387,6 +406,11 @@ const Leaderboard = () => {
                   <TableHead>Student</TableHead>
                   <TableHead>Roll No</TableHead>
                   <TableHead>School</TableHead>
+                  {showStarColumn && (
+                    <TableHead className="w-14 text-center" title="Starred (admin only)">
+                      <Star className="h-4 w-4 inline text-amber-500 fill-amber-500" />
+                    </TableHead>
+                  )}
                   <TableHead>District</TableHead>
                   <TableHead className="text-center">Pre</TableHead>
                   <TableHead className="text-center">Mid</TableHead>
@@ -407,6 +431,15 @@ const Leaderboard = () => {
                     <TableCell className="font-medium">{item.student?.name || 'N/A'}</TableCell>
                     <TableCell>{item.student?.rollNo || '-'}</TableCell>
                     <TableCell className="max-w-xs truncate">{item.student?.school || 'N/A'}</TableCell>
+                    {showStarColumn && (
+                      <TableCell className="text-center">
+                        {item.student?.starred ? (
+                          <Star className="h-4 w-4 text-amber-500 fill-amber-500 inline" title="Starred" />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>{item.student?.district || 'N/A'}</TableCell>
                     <TableCell className="text-center">{item.scores?.pre || 0}</TableCell>
                     <TableCell className="text-center">{item.scores?.mid || 0}</TableCell>

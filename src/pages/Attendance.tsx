@@ -193,19 +193,13 @@ const Attendance = () => {
       setApiTeacherAttendance(teacherResponse.data.data || []);
       setApiStudentAttendance(studentResponse.data.data || []);
 
-      if (teacherResponse.data.totalPages !== undefined) {
-        setTeacherTotalPages(teacherResponse.data.totalPages);
-      } else if (teacherResponse.data.total !== undefined) {
-        setTeacherTotalPages(Math.ceil(teacherResponse.data.total / pageSize));
-      }
-      setTeacherTotalItems(teacherResponse.data.totalItems || teacherResponse.data.total || 0);
+      const teacherTotal = teacherResponse.data.total ?? 0;
+      setTeacherTotalPages(Math.ceil(teacherTotal / pageSize) || 1);
+      setTeacherTotalItems(teacherTotal);
 
-      if (studentResponse.data.totalPages !== undefined) {
-        setStudentTotalPages(studentResponse.data.totalPages);
-      } else if (studentResponse.data.total !== undefined) {
-        setStudentTotalPages(Math.ceil(studentResponse.data.total / pageSize));
-      }
-      setStudentTotalItems(studentResponse.data.totalItems || studentResponse.data.total || 0);
+      const studentTotal = studentResponse.data.total ?? 0;
+      setStudentTotalPages(Math.ceil(studentTotal / pageSize) || 1);
+      setStudentTotalItems(studentTotal);
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
       setApiError(true);
@@ -567,6 +561,8 @@ return (
                               label: "CNIC",
                               value: att.personCNIC || '-',
                             },
+                            { label: "School", value: att.schoolName ?? '—' },
+                            { label: "EMIS Code", value: att.schoolEmisCode ?? '—' },
                             {
                               label: "Date",
                               value: new Date(att.session?.date).toLocaleDateString(),
@@ -596,6 +592,8 @@ return (
                   <TableRow>
                     <TableHead>Teacher</TableHead>
                     <TableHead>CNIC</TableHead>
+                    <TableHead>School</TableHead>
+                    <TableHead className="whitespace-nowrap">EMIS Code</TableHead>
                     <TableHead>Session</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
@@ -605,7 +603,7 @@ return (
                 <TableBody>
                   {apiTeacherAttendance.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={editMode ? 6 : 5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={editMode ? 8 : 7} className="text-center text-muted-foreground py-8">
                         {isLoading ? 'Loading teacher attendance...' : 'No teacher attendance records found for the selected filters.'}
                       </TableCell>
                     </TableRow>
@@ -619,6 +617,10 @@ return (
                         <TableRow key={att.id} className={hasChanges ? 'bg-muted/50' : ''}>
                           <TableCell className="font-medium">{att.personName}</TableCell>
                           <TableCell className="text-muted-foreground">{att.personCNIC || '-'}</TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={att.schoolName ?? undefined}>
+                            {att.schoolName ?? '—'}
+                          </TableCell>
+                          <TableCell className="font-mono text-muted-foreground">{att.schoolEmisCode ?? '—'}</TableCell>
                           <TableCell>{att.session?.title}</TableCell>
                           <TableCell>{new Date(att.session?.date).toLocaleDateString()}</TableCell>
                           <TableCell>
@@ -688,6 +690,8 @@ return (
                               { label: currentStatus ? 'Present' : 'Absent', variant: currentStatus ? 'default' : 'destructive' }
                             ]}
                             metadata={[
+                              { label: "School", value: att.schoolName ?? '—' },
+                              { label: "EMIS Code", value: att.schoolEmisCode ?? '—' },
                               {
                                 label: "Date",
                                 value: new Date(att.session?.date).toLocaleDateString(),
@@ -723,6 +727,8 @@ return (
                     <TableHead>Student</TableHead>
                     <TableHead>Roll No.</TableHead>
                     <TableHead>Grade</TableHead>
+                    <TableHead>School</TableHead>
+                    <TableHead className="whitespace-nowrap">EMIS Code</TableHead>
                     <TableHead>Session</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
@@ -732,7 +738,7 @@ return (
                 <TableBody>
                   {apiStudentAttendance.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={editMode ? 6 : 5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={editMode ? 9 : 8} className="text-center text-muted-foreground py-8">
                         {isLoading ? 'Loading student attendance...' : 'No student attendance records found for the selected filters.'}
                       </TableCell>
                     </TableRow>
@@ -748,6 +754,10 @@ return (
                           <TableCell className="font-medium">{att.personName}</TableCell>
                           <TableCell className="font-mono">{rollNumber}</TableCell>
                           <TableCell>Grade {att.personGrade || 'N/A'}</TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={att.schoolName ?? undefined}>
+                            {att.schoolName ?? '—'}
+                          </TableCell>
+                          <TableCell className="font-mono text-muted-foreground">{att.schoolEmisCode ?? '—'}</TableCell>
                           <TableCell>{att.session?.title}</TableCell>
                           <TableCell>{new Date(att.session?.date).toLocaleDateString()}</TableCell>
                           <TableCell>

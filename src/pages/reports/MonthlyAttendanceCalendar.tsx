@@ -30,6 +30,8 @@ interface PersonAttendance {
   name: string;
   rollNo?: string;
   cnic?: string;
+  grade?: number | null;
+  gender?: string | null;
   school: { name: string; emisCode: string };
   attendance: Record<string, 'P' | 'A' | 'H' | 'NS' | null>;
 }
@@ -336,6 +338,8 @@ const MonthlyAttendanceCalendar = () => {
                             <TableHead className="sticky left-[160px] z-10 bg-background min-w-[200px]">School Name</TableHead>
                             <TableHead className="sticky left-[360px] z-10 bg-background min-w-[200px]">Student Name</TableHead>
                             <TableHead className="sticky left-[560px] z-10 bg-background min-w-[120px]">Roll No</TableHead>
+                            <TableHead className="sticky left-[680px] z-10 bg-background min-w-[80px]">Grade</TableHead>
+                            <TableHead className="sticky left-[760px] z-10 bg-background min-w-[80px]">Gender</TableHead>
                         {daysInMonth.map((day) => {
                           const date = new Date(selectedYear, selectedMonth - 1, day);
                           const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -370,6 +374,12 @@ const MonthlyAttendanceCalendar = () => {
                               </TableCell>
                               <TableCell className="sticky left-[560px] z-10 bg-background">
                                 {person.rollNo || '-'}
+                              </TableCell>
+                              <TableCell className="sticky left-[680px] z-10 bg-background text-muted-foreground">
+                                {person.grade != null ? `${person.grade}th Grade` : '—'}
+                              </TableCell>
+                              <TableCell className="sticky left-[760px] z-10 bg-background text-muted-foreground">
+                                {person.gender ?? '—'}
                               </TableCell>
                               {daysInMonth.map((day) => {
                                 const dateKey = `${selectedYear}-${pad2(selectedMonth)}-${pad2(day)}`;
