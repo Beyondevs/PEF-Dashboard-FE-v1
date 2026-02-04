@@ -94,14 +94,13 @@ function formatHoursAsHHMM(hours: number): string {
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
-/** Default date range for this report when no filter is applied: February (current year). */
-function getDefaultFebruaryRange(): { from: string; to: string } {
-  const year = new Date().getFullYear();
+/** Default date range when no filter is applied: Oct 2025 through Feb 2026 (incl. February). */
+function getDefaultSchoolHoursRange(): { from: string; to: string } {
   const isLeap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-  const lastDay = isLeap(year) ? 29 : 28;
+  const lastDayFeb2026 = isLeap(2026) ? 29 : 28;
   return {
-    from: `${year}-02-01`,
-    to: `${year}-02-${String(lastDay).padStart(2, '0')}`,
+    from: '2025-10-01',
+    to: `2026-02-${String(lastDayFeb2026).padStart(2, '0')}`,
   };
 }
 
@@ -124,9 +123,9 @@ const SchoolHoursSchoolDetail = () => {
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
-    const febDefault = getDefaultFebruaryRange();
-    params.from = filters.startDate || febDefault.from;
-    params.to = filters.endDate || febDefault.to;
+    const defaultRange = getDefaultSchoolHoursRange();
+    params.from = filters.startDate || defaultRange.from;
+    params.to = filters.endDate || defaultRange.to;
     if (schoolId) params.schoolId = schoolId;
     return params;
   }, [filters, schoolId]);
@@ -137,9 +136,9 @@ const SchoolHoursSchoolDetail = () => {
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
-    const febDefault = getDefaultFebruaryRange();
-    params.from = filters.startDate || febDefault.from;
-    params.to = filters.endDate || febDefault.to;
+    const defaultRange = getDefaultSchoolHoursRange();
+    params.from = filters.startDate || defaultRange.from;
+    params.to = filters.endDate || defaultRange.to;
     return params;
   }, [filters]);
 
