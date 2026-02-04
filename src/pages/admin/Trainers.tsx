@@ -504,7 +504,7 @@ export default function Trainers() {
             <TableRow>
               <TableHead className="min-w-[120px]">Name</TableHead>
               <TableHead className="min-w-[160px]">Email</TableHead>
-              <TableHead className="min-w-[110px] whitespace-nowrap">Phone</TableHead>
+              {showPhoneColumn && <TableHead className="min-w-[110px] whitespace-nowrap">Phone</TableHead>}
               <TableHead className="min-w-[120px] max-w-[150px]">CNIC</TableHead>
               <TableHead className="min-w-[100px] max-w-[140px]">Qualification</TableHead>
               <TableHead className="min-w-[100px] max-w-[140px]">Certification</TableHead>
