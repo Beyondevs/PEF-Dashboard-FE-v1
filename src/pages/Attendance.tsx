@@ -193,12 +193,12 @@ const Attendance = () => {
       setApiTeacherAttendance(teacherResponse.data.data || []);
       setApiStudentAttendance(studentResponse.data.data || []);
 
-      const teacherTotal = teacherResponse.data.total ?? 0;
-      setTeacherTotalPages(Math.ceil(teacherTotal / pageSize) || 1);
+      const teacherTotal = (teacherResponse.data as any).totalItems ?? teacherResponse.data.total ?? 0;
+      setTeacherTotalPages(Math.max(1, Math.ceil(teacherTotal / pageSize)));
       setTeacherTotalItems(teacherTotal);
 
-      const studentTotal = studentResponse.data.total ?? 0;
-      setStudentTotalPages(Math.ceil(studentTotal / pageSize) || 1);
+      const studentTotal = (studentResponse.data as any).totalItems ?? studentResponse.data.total ?? 0;
+      setStudentTotalPages(Math.max(1, Math.ceil(studentTotal / pageSize)));
       setStudentTotalItems(studentTotal);
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
