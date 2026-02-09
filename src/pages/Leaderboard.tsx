@@ -115,21 +115,21 @@ const Leaderboard = () => {
       try {
         setIsLoading(true);
         
-        const params: Record<string, string | number> = {
-          topN: 50,
-        };
+        const filterParams: Record<string, string | number> = {};
+        if (filters.division) filterParams.divisionId = filters.division;
+        if (filters.district) filterParams.districtId = filters.district;
+        if (filters.tehsil) filterParams.tehsilId = filters.tehsil;
+        if (filters.school) filterParams.schoolId = filters.school;
 
-        // Add filter params
-        if (filters.division) params.divisionId = filters.division;
-        if (filters.district) params.districtId = filters.district;
-        if (filters.tehsil) params.tehsilId = filters.tehsil;
-        if (filters.school) params.schoolId = filters.school;
+        // Teachers & students: top 50. Schools: no limit (show all).
+        const teacherStudentParams = { ...filterParams, topN: 50 };
+        const schoolParams = { ...filterParams, topN: 9999 };
 
         // Fetch teacher & student leaderboards and school star stats in parallel
         const [teacherResponse, studentResponse, schoolStarsResponse] = await Promise.all([
-          getTeacherLeaderboard(params),
-          getStudentLeaderboard(params),
-          getSchoolStarStats(params),
+          getTeacherLeaderboard(teacherStudentParams),
+          getStudentLeaderboard(teacherStudentParams),
+          getSchoolStarStats(schoolParams),
         ]);
 
         setTeacherData(teacherResponse.data?.leaderboard || []);
