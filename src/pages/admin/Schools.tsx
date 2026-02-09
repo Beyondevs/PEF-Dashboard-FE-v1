@@ -25,6 +25,7 @@ import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { useFilters } from '@/contexts/FilterContext';
 import { SearchTag } from '@/components/SearchTag';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function Schools() {
   const [schools, setSchools] = useState([]);
@@ -268,14 +269,14 @@ export default function Schools() {
   );
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6 min-w-0">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Schools Management</h1>
-        <p className="text-muted-foreground mt-1">Manage schools and their details</p>
+        <h1 className="text-2xl sm:text-3xl font-bold truncate">Schools Management</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage schools and their details</p>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="relative flex gap-2 w-full sm:w-auto">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
+        <div className="relative flex gap-2 w-full sm:w-auto min-w-0">
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
@@ -304,7 +305,7 @@ export default function Schools() {
         )}
 
         {/* RIGHT SIDE ACTIONS (TOP-RIGHT AREA) */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           {/* NEW EXPORT BUTTON IN THE HIGHLIGHTED AREA */}
           <ExportButton
             label="Export"
@@ -479,20 +480,87 @@ export default function Schools() {
         </div>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
+      {/* Mobile: card list */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
+          </Card>
+        ) : schools.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">No schools found</CardContent>
+          </Card>
+        ) : (
+          schools.map((school: any) => (
+            <Card key={school.id} className="overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground truncate" title={school.name}>{school.name}</p>
+                    <p className="text-sm text-muted-foreground">EMIS: {school.emisCode}</p>
+                  </div>
+                  {(canEdit() || canDelete()) && (
+                    <div className="flex gap-1 shrink-0">
+                      {canEdit() && (
+                        <Button size="sm" variant="outline" onClick={() => openEditDialog(school)} aria-label="Edit">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete() && (
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(school.id)} aria-label="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                  <dt className="text-muted-foreground">Division</dt>
+                  <dd>{school.division?.name || 'N/A'}</dd>
+                  <dt className="text-muted-foreground">District</dt>
+                  <dd>{school.district?.name || 'N/A'}</dd>
+                  <dt className="text-muted-foreground">Tehsil</dt>
+                  <dd>{school.tehsil?.name || 'N/A'}</dd>
+                  <dt className="text-muted-foreground">Teachers</dt>
+                  <dd className="tabular-nums">{school.totalActiveTeachers ?? 0}</dd>
+                  <dt className="text-muted-foreground">Students</dt>
+                  <dd className="tabular-nums">{school.totalActiveStudents ?? 0}</dd>
+                  <dt className="text-muted-foreground">Today&apos;s Sessions</dt>
+                  <dd>
+                    {school.todaySessionCount != null && school.todaySessionCount > 0
+                      ? school.todaySessionCount === 1 ? '1 Session' : `${school.todaySessionCount} Sessions`
+                      : 'No sessions today'}
+                  </dd>
+                  <dt className="text-muted-foreground">Time Slots</dt>
+                  <dd className="text-muted-foreground">
+                    {school.todayTimeSlots?.length
+                      ? school.todayTimeSlots.map((slot: { startTime: string; endTime: string }, i: number) => (
+                          <span key={i}>{i > 0 ? ', ' : ''}{formatTimeSlot(slot.startTime, slot.endTime)}</span>
+                        ))
+                      : '—'}
+                  </dd>
+                </dl>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop: scrollable table */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border min-w-0">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
-              <TableHead>EMIS Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Division</TableHead>
-              <TableHead>District</TableHead>
-              <TableHead>Tehsil</TableHead>
-              <TableHead className="text-center">Total Teachers</TableHead>
-              <TableHead className="text-center">Total Students</TableHead>
-              <TableHead className="text-center">Today&apos;s Sessions</TableHead>
-              <TableHead>Time Slots</TableHead>
-              {(canEdit() || canDelete()) && <TableHead>Actions</TableHead>}
+              <TableHead className="whitespace-nowrap">EMIS Code</TableHead>
+              <TableHead className="min-w-[140px]">Name</TableHead>
+              <TableHead className="whitespace-nowrap">Division</TableHead>
+              <TableHead className="whitespace-nowrap">District</TableHead>
+              <TableHead className="whitespace-nowrap">Tehsil</TableHead>
+              <TableHead className="text-center whitespace-nowrap">Total Teachers</TableHead>
+              <TableHead className="text-center whitespace-nowrap">Total Students</TableHead>
+              <TableHead className="text-center whitespace-nowrap">Today&apos;s Sessions</TableHead>
+              <TableHead className="min-w-[120px]">Time Slots</TableHead>
+              {(canEdit() || canDelete()) && <TableHead className="whitespace-nowrap">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -507,13 +575,13 @@ export default function Schools() {
             ) : (
               schools.map((school: any) => (
                 <TableRow key={school.id}>
-                  <TableCell>{school.emisCode}</TableCell>
-                  <TableCell>{school.name}</TableCell>
-                  <TableCell>{school.division?.name || 'N/A'}</TableCell>
-                  <TableCell>{school.district?.name || 'N/A'}</TableCell>
-                  <TableCell>{school.tehsil?.name || 'N/A'}</TableCell>
-                  <TableCell className="text-center tabular-nums">{school.totalActiveTeachers ?? 0}</TableCell>
-                  <TableCell className="text-center tabular-nums">{school.totalActiveStudents ?? 0}</TableCell>
+                  <TableCell className="whitespace-nowrap">{school.emisCode}</TableCell>
+                  <TableCell className="min-w-[140px]">{school.name}</TableCell>
+                  <TableCell className="whitespace-nowrap">{school.division?.name || 'N/A'}</TableCell>
+                  <TableCell className="whitespace-nowrap">{school.district?.name || 'N/A'}</TableCell>
+                  <TableCell className="whitespace-nowrap">{school.tehsil?.name || 'N/A'}</TableCell>
+                  <TableCell className="text-center tabular-nums whitespace-nowrap">{school.totalActiveTeachers ?? 0}</TableCell>
+                  <TableCell className="text-center tabular-nums whitespace-nowrap">{school.totalActiveStudents ?? 0}</TableCell>
                   <TableCell className="text-center whitespace-nowrap">
                     {school.todaySessionCount != null && school.todaySessionCount > 0
                       ? school.todaySessionCount === 1
@@ -521,7 +589,7 @@ export default function Schools() {
                         : `${school.todaySessionCount} Sessions`
                       : 'No sessions today'}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[200px]">
+                  <TableCell className="text-sm text-muted-foreground min-w-[120px]">
                     {school.todayTimeSlots?.length
                       ? school.todayTimeSlots.map((slot: { startTime: string; endTime: string }, i: number) => (
                           <div key={i}>{formatTimeSlot(slot.startTime, slot.endTime)}</div>
@@ -529,7 +597,7 @@ export default function Schools() {
                       : '—'}
                   </TableCell>
                   {(canEdit() || canDelete()) && (
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex gap-2">
                         {canEdit() && (
                           <Button
@@ -561,12 +629,12 @@ export default function Schools() {
 
       {/* Pagination */}
       {pagination.total > 0 && (
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mt-4">
+          <div className="text-sm text-muted-foreground order-2 sm:order-1 text-center sm:text-left">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} schools
             {activeSearchTerm && ' (filtered)'}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2 order-1 sm:order-2">
             <Button
               variant="outline"
               size="sm"
