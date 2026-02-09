@@ -32,7 +32,7 @@ const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
   const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
     pending: { label: 'Pending', color: 'bg-gray-100 text-gray-700', icon: Clock },
     pre_completed: { label: 'Pre Completed', color: 'bg-blue-100 text-blue-700', icon: AlertCircle },
-    mid_completed: { label: 'Mid Completed', color: 'bg-yellow-100 text-yellow-700', icon: AlertCircle },
+    mid_completed: { label: 'Post Completed', color: 'bg-green-100 text-green-700', icon: AlertCircle },
     completed: { label: 'Completed', color: 'bg-green-100 text-green-700', icon: CheckCircle },
   };
 
@@ -59,10 +59,10 @@ const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
     const isCompleted = totalScore > 0;
 
     // Determine if this phase can be edited based on current status
+    // Post phase (old DB post) hidden; only pre and mid (user-facing Post) shown
     const phaseEditAllowed =
       (phase === 'pre' && (assessment.status === 'pre_completed' || assessment.status === 'mid_completed' || assessment.status === 'completed')) ||
-      (phase === 'mid' && (assessment.status === 'mid_completed' || assessment.status === 'completed')) ||
-      (phase === 'post' && assessment.status === 'completed');
+      (phase === 'mid' && (assessment.status === 'mid_completed' || assessment.status === 'completed'));
 
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -155,14 +155,13 @@ const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
           </div>
         </div>
 
-        {/* Phase Sections */}
+        {/* Phase Sections: Pre and Post only (Post = mid in DB); original post hidden */}
         <div className="p-6 space-y-6">
           {renderPhaseSection('pre', 'Pre-Assessment')}
-          {renderPhaseSection('mid', 'Mid-Assessment')}
-          {renderPhaseSection('post', 'Post-Assessment')}
+          {renderPhaseSection('mid', 'Post-Assessment')}
 
-          {/* Notes (phase-wise) */}
-          {(assessment.preNotes || assessment.midNotes || assessment.postNotes || assessment.notes) && (
+          {/* Notes (phase-wise): Pre and Post only */}
+          {(assessment.preNotes || assessment.midNotes || assessment.notes) && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Notes</h3>
 
@@ -173,16 +172,9 @@ const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-1">Mid-Assessment Notes</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">Post-Assessment Notes</h4>
                   <p className="text-gray-600 whitespace-pre-wrap">{assessment.midNotes || '-'}</p>
                 </div>
-
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-1">Post-Assessment Notes</h4>
-                  <p className="text-gray-600 whitespace-pre-wrap">{assessment.postNotes || '-'}</p>
-                </div>
-
-                {/* General Notes (Legacy) intentionally removed */}
               </div>
             </div>
           )}

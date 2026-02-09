@@ -192,7 +192,7 @@ const Leaderboard = () => {
       case 'completed':
         return <Badge className="bg-green-500">Completed</Badge>;
       case 'mid_completed':
-        return <Badge className="bg-blue-500">Mid Done</Badge>;
+        return <Badge className="bg-blue-500">Post Done</Badge>;
       case 'pre_completed':
         return <Badge className="bg-yellow-500">Pre Done</Badge>;
       default:
@@ -202,7 +202,7 @@ const Leaderboard = () => {
 
   const formatTeacherDataForCSV = (data: TeacherLeaderboardItem[]) => {
     const header = [
-      'Rank', 'Teacher', 'School', 'District', 'Division', 'Pre Score', 'Mid Score', 'Post Score', 
+      'Rank', 'Teacher', 'School', 'District', 'Division', 'Pre Score', 'Post Score', 
       'Latest Score', 'Latest %', 'Improvement', 'Improvement %', 'Phases Completed', 'Status'
     ].join(',');
 
@@ -216,7 +216,6 @@ const Leaderboard = () => {
         escape(item.teacher?.division),
         item.scores?.pre || 0,
         item.scores?.mid || 0,
-        item.scores?.post || 0,
         item.scores?.latest || 0,
         item.scores?.latestPercentage?.toFixed(1) || 0,
         item.improvement?.points || 0,
@@ -231,7 +230,7 @@ const Leaderboard = () => {
 
   const formatStudentDataForCSV = (data: StudentLeaderboardItem[]) => {
     const header = [
-      'Rank', 'Student', 'Roll No', 'Grade', 'School', 'District', 'Division', 'Pre Score', 'Mid Score', 'Post Score', 
+      'Rank', 'Student', 'Roll No', 'Grade', 'School', 'District', 'Division', 'Pre Score', 'Post Score', 
       'Latest Score', 'Latest %', 'Improvement', 'Improvement %', 'Phases Completed', 'Status'
     ].join(',');
 
@@ -247,7 +246,6 @@ const Leaderboard = () => {
         escape(item.student?.division),
         item.scores?.pre || 0,
         item.scores?.mid || 0,
-        item.scores?.post || 0,
         item.scores?.latest || 0,
         item.scores?.latestPercentage?.toFixed(1) || 0,
         item.improvement?.points || 0,
@@ -357,7 +355,7 @@ const Leaderboard = () => {
               </Card>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
-              <p>Average of the latest completed phase score (Pre, Mid, or Post) across all {label}. Higher is better.</p>
+              <p>Average of the latest completed phase score (Pre or Post) across all {label}. Higher is better.</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -388,14 +386,14 @@ const Leaderboard = () => {
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-muted-foreground">All Phases Done</p>
                       <p className="text-2xl font-bold tabular-nums mt-0.5">{summary.completedAllPhases ?? 0}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Pre + Mid + Post completed</p>
+                      <p className="text-xs text-muted-foreground mt-1">Pre + Post completed</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
-              <p>Number of {label} who have completed all three phases (Pre, Mid, and Post). Full progression tracked.</p>
+              <p>Number of {label} who have completed both phases (Pre and Post). Full progression tracked.</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -422,7 +420,6 @@ const Leaderboard = () => {
                   )}
                   <TableHead className="min-w-[100px] font-semibold">District</TableHead>
                   <TableHead className="text-center w-16 font-semibold tabular-nums">Pre</TableHead>
-                  <TableHead className="text-center w-16 font-semibold tabular-nums">Mid</TableHead>
                   <TableHead className="text-center w-16 font-semibold tabular-nums">Post</TableHead>
                   <TableHead className="text-right w-24 font-semibold tabular-nums">Latest %</TableHead>
                   <TableHead className="text-right w-24 font-semibold tabular-nums">Improvement</TableHead>
@@ -455,8 +452,7 @@ const Leaderboard = () => {
                     )}
                     <TableCell className="text-muted-foreground py-4">{item.teacher?.district || 'N/A'}</TableCell>
                     <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.pre ?? 0}</TableCell>
-                    <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.mid ?? 0}</TableCell>
-                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.post ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.scores?.post ?? 0}</TableCell>
+                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.mid ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.scores?.mid ?? 0}</TableCell>
                     <TableCell className="text-right py-4">
                       <span className="font-bold tabular-nums text-primary text-base">{item.scores?.latestPercentage?.toFixed(1) ?? 0}%</span>
                     </TableCell>
@@ -516,7 +512,6 @@ const Leaderboard = () => {
                   )}
                   <TableHead className="min-w-[100px] font-semibold">District</TableHead>
                   <TableHead className="text-center w-16 font-semibold tabular-nums">Pre</TableHead>
-                  <TableHead className="text-center w-16 font-semibold tabular-nums">Mid</TableHead>
                   <TableHead className="text-center w-16 font-semibold tabular-nums">Post</TableHead>
                   <TableHead className="text-right w-24 font-semibold tabular-nums">Latest %</TableHead>
                   <TableHead className="text-right w-24 font-semibold tabular-nums">Improvement</TableHead>
@@ -550,8 +545,7 @@ const Leaderboard = () => {
                     )}
                     <TableCell className="text-muted-foreground py-4">{item.student?.district || 'N/A'}</TableCell>
                     <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.pre ?? 0}</TableCell>
-                    <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.mid ?? 0}</TableCell>
-                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.post ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.scores?.post ?? 0}</TableCell>
+                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.mid ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.scores?.mid ?? 0}</TableCell>
                     <TableCell className="text-right py-4">
                       <span className="font-bold tabular-nums text-primary text-base">{item.scores?.latestPercentage?.toFixed(1) ?? 0}%</span>
                     </TableCell>
@@ -683,7 +677,7 @@ const Leaderboard = () => {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-xl">Leaderboard Rankings</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">Ranked by latest score % then improvement. Pre → Mid → Post shows progression.</p>
+          <p className="text-sm text-muted-foreground mt-1">Ranked by latest score % then improvement. Pre → Post shows progression.</p>
         </CardHeader>
         <CardContent className="pt-0">
           {isLoading ? (
@@ -745,7 +739,7 @@ const Leaderboard = () => {
           </div>
           <div>
             <p className="font-medium text-foreground mb-0.5">Phases</p>
-            <p>Pre-Assessment (baseline) → Mid-Assessment (progress check) → Post-Assessment (final evaluation). Completion status in the table shows how far each person has progressed.</p>
+            <p>Pre-Assessment (baseline) → Post-Assessment (final evaluation). Completion status in the table shows how far each person has progressed.</p>
           </div>
           <div>
             <p className="font-medium text-foreground mb-0.5">Ranking</p>

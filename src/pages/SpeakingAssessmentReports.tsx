@@ -233,7 +233,7 @@ const SpeakingAssessmentReports = () => {
                             (studentReport.statusBreakdown?.completed || 0),
                         )}
                     </div>
-                    <p className="text-xs text-muted-foreground">Pre or Mid completed</p>
+                    <p className="text-xs text-muted-foreground">Pre or Post completed</p>
                   </CardContent>
                 </Card>
 
@@ -275,7 +275,7 @@ const SpeakingAssessmentReports = () => {
 
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">Mid-Assessment</span>
+                        <span className="text-sm font-medium">Post-Assessment</span>
                         <span className="text-sm font-bold">{studentReport.averageScores?.mid || 0} / {maxScore}</span>
                       </div>
                       <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
@@ -286,18 +286,6 @@ const SpeakingAssessmentReports = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">Post-Assessment</span>
-                        <span className="text-sm font-bold">{studentReport.averageScores?.post || 0} / {maxScore}</span>
-                      </div>
-                      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${getProgressColor(getProgressPercentage(studentReport.averageScores?.post || 0))} transition-all`}
-                          style={{ width: `${getProgressPercentage(studentReport.averageScores?.post || 0)}%` }}
-                        />
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -321,13 +309,9 @@ const SpeakingAssessmentReports = () => {
                       <div className="text-3xl font-bold text-blue-600">{studentReport.statusBreakdown?.pre_completed || 0}</div>
                       <div className="text-sm text-blue-500 mt-1">Pre Done</div>
                     </div>
-                    <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                      <div className="text-3xl font-bold text-yellow-600">{studentReport.statusBreakdown?.mid_completed || 0}</div>
-                      <div className="text-sm text-yellow-500 mt-1">Mid Done</div>
-                    </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-3xl font-bold text-green-600">{studentReport.statusBreakdown?.completed || 0}</div>
-                      <div className="text-sm text-green-500 mt-1">Completed</div>
+                      <div className="text-3xl font-bold text-green-600">{studentReport.statusBreakdown?.mid_completed || 0}</div>
+                      <div className="text-sm text-green-500 mt-1">Post Done</div>
                     </div>
                   </div>
                 </CardContent>
@@ -378,7 +362,7 @@ const SpeakingAssessmentReports = () => {
                             (teacherReport.statusBreakdown?.completed || 0),
                         )}
                     </div>
-                    <p className="text-xs text-muted-foreground">Pre or Mid completed</p>
+                    <p className="text-xs text-muted-foreground">Pre or Post completed</p>
                   </CardContent>
                 </Card>
 
@@ -420,7 +404,7 @@ const SpeakingAssessmentReports = () => {
 
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">Mid-Assessment</span>
+                        <span className="text-sm font-medium">Post-Assessment</span>
                         <span className="text-sm font-bold">{teacherReport.averageScores?.mid || 0} / 70</span>
                       </div>
                       <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
@@ -431,18 +415,6 @@ const SpeakingAssessmentReports = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">Post-Assessment</span>
-                        <span className="text-sm font-bold">{teacherReport.averageScores?.post || 0} / 70</span>
-                      </div>
-                      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${getProgressColor((teacherReport.averageScores?.post || 0) / 70 * 100)} transition-all`}
-                          style={{ width: `${(teacherReport.averageScores?.post || 0) / 70 * 100}%` }}
-                        />
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -466,13 +438,9 @@ const SpeakingAssessmentReports = () => {
                       <div className="text-3xl font-bold text-blue-600">{teacherReport.statusBreakdown?.pre_completed || 0}</div>
                       <div className="text-sm text-blue-500 mt-1">Pre Done</div>
                     </div>
-                    <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                      <div className="text-3xl font-bold text-yellow-600">{teacherReport.statusBreakdown?.mid_completed || 0}</div>
-                      <div className="text-sm text-yellow-500 mt-1">Mid Done</div>
-                    </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-3xl font-bold text-green-600">{teacherReport.statusBreakdown?.completed || 0}</div>
-                      <div className="text-sm text-green-500 mt-1">Completed</div>
+                      <div className="text-3xl font-bold text-green-600">{teacherReport.statusBreakdown?.mid_completed || 0}</div>
+                      <div className="text-sm text-green-500 mt-1">Post Done</div>
                     </div>
                   </div>
                 </CardContent>

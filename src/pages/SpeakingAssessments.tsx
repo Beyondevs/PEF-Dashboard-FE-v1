@@ -239,7 +239,7 @@ const SpeakingAssessments = () => {
       case 'mid_completed':
         return (
           <Badge className="gap-1 bg-yellow-500">
-            <AlertCircle className="h-3 w-3" /> Mid Done
+            <AlertCircle className="h-3 w-3" /> Post Done
           </Badge>
         );
       case 'completed':
@@ -258,7 +258,7 @@ const SpeakingAssessments = () => {
       case 'pre':
         return 'Fill Pre';
       case 'mid':
-        return 'Fill Mid';
+        return 'Fill Post';
       case 'post':
         return 'Fill Post';
       default:
@@ -469,7 +469,7 @@ const SpeakingAssessments = () => {
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="pre_completed">Pre Completed</SelectItem>
-              <SelectItem value="mid_completed">Mid Completed</SelectItem>
+              <SelectItem value="mid_completed">Post Completed</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
           </Select>
@@ -552,7 +552,6 @@ const SpeakingAssessments = () => {
                       <TableHead className="whitespace-nowrap">District</TableHead>
                       <TableHead className="whitespace-nowrap">Status</TableHead>
                       <TableHead className="text-center whitespace-nowrap">Pre</TableHead>
-                      <TableHead className="text-center whitespace-nowrap">Mid</TableHead>
                       <TableHead className="text-center whitespace-nowrap">Post</TableHead>
                       <TableHead className="whitespace-nowrap">Created</TableHead>
                       <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
@@ -608,14 +607,7 @@ const SpeakingAssessments = () => {
                           </TableCell>
                           <TableCell className="text-center whitespace-nowrap">
                             {assessment.midTotalScore > 0 ? (
-                              <span className="font-semibold text-yellow-600">{assessment.midTotalScore}/{studentMaxScore}</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center whitespace-nowrap">
-                            {assessment.postTotalScore > 0 ? (
-                              <span className="font-semibold text-green-600">{assessment.postTotalScore}/{studentMaxScore}</span>
+                              <span className="font-semibold text-green-600">{assessment.midTotalScore}/{studentMaxScore}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
@@ -717,7 +709,6 @@ const SpeakingAssessments = () => {
                       <TableHead className="whitespace-nowrap">District</TableHead>
                       <TableHead className="whitespace-nowrap">Status</TableHead>
                       <TableHead className="text-center whitespace-nowrap">Pre</TableHead>
-                      <TableHead className="text-center whitespace-nowrap">Mid</TableHead>
                       <TableHead className="text-center whitespace-nowrap">Post</TableHead>
                       <TableHead className="whitespace-nowrap">Created</TableHead>
                       <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
@@ -769,14 +760,7 @@ const SpeakingAssessments = () => {
                           </TableCell>
                           <TableCell className="text-center whitespace-nowrap">
                             {assessment.midTotalScore > 0 ? (
-                              <span className="font-semibold text-yellow-600">{assessment.midTotalScore}/{teacherMaxScore}</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center whitespace-nowrap">
-                            {assessment.postTotalScore > 0 ? (
-                              <span className="font-semibold text-green-600">{assessment.postTotalScore}/{teacherMaxScore}</span>
+                              <span className="font-semibold text-green-600">{assessment.midTotalScore}/{teacherMaxScore}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
@@ -911,7 +895,7 @@ const SpeakingAssessments = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset speaking assessment?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will clear all filled phases (Pre, Mid, and Post) for{' '}
+              This will clear all filled phases (Pre and Post) for{' '}
               <span className="font-medium">
                 {resetTarget?.type === 'students'
                   ? resetTarget?.assessment?.studentName

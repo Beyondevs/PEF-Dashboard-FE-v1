@@ -80,7 +80,7 @@ const StudentSpeakingAssessmentForm: React.FC<StudentSpeakingAssessmentFormProps
 
   const phaseLabel = {
     pre: 'Pre-Assessment',
-    mid: 'Mid-Assessment',
+    mid: 'Post-Assessment',
     post: 'Post-Assessment',
   };
 
