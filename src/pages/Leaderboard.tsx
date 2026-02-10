@@ -88,6 +88,7 @@ interface StudentLeaderboardItem {
 interface Summary {
   totalTeachers?: number;
   totalStudents?: number;
+  totalStarPerformers?: number;
   averageLatestScore: number;
   averageImprovement: number;
   completedAllPhases: number;
@@ -98,7 +99,7 @@ const Leaderboard = () => {
   const { filters } = useFilters();
   const { role } = useAuth();
   const showStarColumn = role === 'admin';
-  const showSchoolTab = role === 'admin';
+  const showSchoolTab = role === 'admin' || role === 'division_role' || role === 'trainer';
   const [activeTab, setActiveTab] = useState<'teachers' | 'students' | 'schools'>('teachers');
   const [teacherData, setTeacherData] = useState<TeacherLeaderboardItem[]>([]);
   const [studentData, setStudentData] = useState<StudentLeaderboardItem[]>([]);
@@ -202,22 +203,23 @@ const Leaderboard = () => {
 
   const formatTeacherDataForCSV = (data: TeacherLeaderboardItem[]) => {
     const header = [
-      'Rank', 'Teacher', 'School', 'District', 'Division', 'Pre Score', 'Post Score', 
-      'Latest Score', 'Latest %', 'Improvement', 'Improvement %', 'Phases Completed', 'Status'
+      'Rank', 'Teacher', 'School', 'District', 'Division', 'Pre %', 'Post %', 
+      'Improvement', 'Improvement %', 'Phases Completed', 'Status'
     ].join(',');
 
     const rows = data.map(item => {
       const escape = (value: string | number | null) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const maxPossible = item.scores?.maxPossible ?? 70;
+      const prePct = maxPossible > 0 ? (((item.scores?.pre ?? 0) / maxPossible) * 100).toFixed(1) : '0.0';
+      const postPct = maxPossible > 0 ? (((item.scores?.mid ?? 0) / maxPossible) * 100).toFixed(1) : '0.0';
       return [
         item.rank,
         escape(item.teacher?.name),
         escape(item.teacher?.school),
         escape(item.teacher?.district),
         escape(item.teacher?.division),
-        item.scores?.pre || 0,
-        item.scores?.mid || 0,
-        item.scores?.latest || 0,
-        item.scores?.latestPercentage?.toFixed(1) || 0,
+        prePct,
+        postPct,
         item.improvement?.points || 0,
         item.improvement?.percentage?.toFixed(1) || 0,
         item.phasesCompleted || 0,
@@ -230,12 +232,15 @@ const Leaderboard = () => {
 
   const formatStudentDataForCSV = (data: StudentLeaderboardItem[]) => {
     const header = [
-      'Rank', 'Student', 'Roll No', 'Grade', 'School', 'District', 'Division', 'Pre Score', 'Post Score', 
-      'Latest Score', 'Latest %', 'Improvement', 'Improvement %', 'Phases Completed', 'Status'
+      'Rank', 'Student', 'Roll No', 'Grade', 'School', 'District', 'Division', 'Pre %', 'Post %', 
+      'Improvement', 'Improvement %', 'Phases Completed', 'Status'
     ].join(',');
 
     const rows = data.map(item => {
       const escape = (value: string | number | null) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const maxPossible = item.scores?.maxPossible ?? 60;
+      const prePct = maxPossible > 0 ? (((item.scores?.pre ?? 0) / maxPossible) * 100).toFixed(1) : '0.0';
+      const postPct = maxPossible > 0 ? (((item.scores?.mid ?? 0) / maxPossible) * 100).toFixed(1) : '0.0';
       return [
         item.rank,
         escape(item.student?.name),
@@ -244,10 +249,8 @@ const Leaderboard = () => {
         escape(item.student?.school),
         escape(item.student?.district),
         escape(item.student?.division),
-        item.scores?.pre || 0,
-        item.scores?.mid || 0,
-        item.scores?.latest || 0,
-        item.scores?.latestPercentage?.toFixed(1) || 0,
+        prePct,
+        postPct,
         item.improvement?.points || 0,
         item.improvement?.percentage?.toFixed(1) || 0,
         item.phasesCompleted || 0,
@@ -319,7 +322,7 @@ const Leaderboard = () => {
     
     return (
       <TooltipProvider delayDuration={300}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           <Tooltip>
             <TooltipTrigger asChild>
               <Card className="transition-shadow hover:shadow-md">
@@ -337,6 +340,25 @@ const Leaderboard = () => {
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
               <p>Count of {label} who have completed at least the Pre-assessment. Use filters above to narrow by location or school.</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <Star className="h-6 w-6 text-amber-500 fill-amber-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Total Star Performers</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{summary.totalStarPerformers ?? 0}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Marked as star performers</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Number of {label} in this leaderboard who are marked as star performers (starred).</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -419,16 +441,19 @@ const Leaderboard = () => {
                     </TableHead>
                   )}
                   <TableHead className="min-w-[100px] font-semibold">District</TableHead>
-                  <TableHead className="text-center w-16 font-semibold tabular-nums">Pre</TableHead>
-                  <TableHead className="text-center w-16 font-semibold tabular-nums">Post</TableHead>
-                  <TableHead className="text-right w-24 font-semibold tabular-nums">Latest %</TableHead>
+                  <TableHead className="text-center w-20 font-semibold tabular-nums">Pre</TableHead>
+                  <TableHead className="text-center w-20 font-semibold tabular-nums">Post</TableHead>
                   <TableHead className="text-right w-24 font-semibold tabular-nums">Improvement</TableHead>
                   <TableHead className="min-w-[100px] font-semibold">Status</TableHead>
                   <TableHead className="min-w-[80px] font-semibold">Badge</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {teacherPagination.items.map((item, index) => (
+                {teacherPagination.items.map((item, index) => {
+                  const maxPossible = item.scores?.maxPossible ?? 70;
+                  const prePct = maxPossible > 0 ? (((item.scores?.pre ?? 0) / maxPossible) * 100).toFixed(1) : '0.0';
+                  const postPct = maxPossible > 0 ? (((item.scores?.mid ?? 0) / maxPossible) * 100).toFixed(1) : '0.0';
+                  return (
                   <TableRow
                     key={item.teacher?.id || index}
                     className={`transition-colors hover:bg-muted/40 ${item.rank <= 3 ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
@@ -451,11 +476,8 @@ const Leaderboard = () => {
                       </TableCell>
                     )}
                     <TableCell className="text-muted-foreground py-4">{item.teacher?.district || 'N/A'}</TableCell>
-                    <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.pre ?? 0}</TableCell>
-                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.mid ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.scores?.mid ?? 0}</TableCell>
-                    <TableCell className="text-right py-4">
-                      <span className="font-bold tabular-nums text-primary text-base">{item.scores?.latestPercentage?.toFixed(1) ?? 0}%</span>
-                    </TableCell>
+                    <TableCell className="text-center tabular-nums py-4 font-medium">{prePct}%</TableCell>
+                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.mid ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{postPct}%</TableCell>
                     <TableCell className="text-right py-4">
                       <span className={`font-semibold tabular-nums ${item.improvement?.points > 0 ? 'text-green-600' : item.improvement?.points < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
                         {item.improvement?.points > 0 ? '+' : ''}{item.improvement?.points ?? 0}
@@ -464,7 +486,8 @@ const Leaderboard = () => {
                     <TableCell className="py-4">{getStatusBadge(item.status)}</TableCell>
                     <TableCell className="py-4">{getRankBadge(item.rank)}</TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -511,16 +534,19 @@ const Leaderboard = () => {
                     </TableHead>
                   )}
                   <TableHead className="min-w-[100px] font-semibold">District</TableHead>
-                  <TableHead className="text-center w-16 font-semibold tabular-nums">Pre</TableHead>
-                  <TableHead className="text-center w-16 font-semibold tabular-nums">Post</TableHead>
-                  <TableHead className="text-right w-24 font-semibold tabular-nums">Latest %</TableHead>
+                  <TableHead className="text-center w-20 font-semibold tabular-nums">Pre</TableHead>
+                  <TableHead className="text-center w-20 font-semibold tabular-nums">Post</TableHead>
                   <TableHead className="text-right w-24 font-semibold tabular-nums">Improvement</TableHead>
                   <TableHead className="min-w-[100px] font-semibold">Status</TableHead>
                   <TableHead className="min-w-[80px] font-semibold">Badge</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {studentPagination.items.map((item, index) => (
+                {studentPagination.items.map((item, index) => {
+                  const maxPossible = item.scores?.maxPossible ?? 60;
+                  const prePct = maxPossible > 0 ? (((item.scores?.pre ?? 0) / maxPossible) * 100).toFixed(1) : '0.0';
+                  const postPct = maxPossible > 0 ? (((item.scores?.mid ?? 0) / maxPossible) * 100).toFixed(1) : '0.0';
+                  return (
                   <TableRow
                     key={item.student?.id || index}
                     className={`transition-colors hover:bg-muted/40 ${item.rank <= 3 ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
@@ -544,11 +570,8 @@ const Leaderboard = () => {
                       </TableCell>
                     )}
                     <TableCell className="text-muted-foreground py-4">{item.student?.district || 'N/A'}</TableCell>
-                    <TableCell className="text-center tabular-nums py-4 font-medium">{item.scores?.pre ?? 0}</TableCell>
-                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.mid ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.scores?.mid ?? 0}</TableCell>
-                    <TableCell className="text-right py-4">
-                      <span className="font-bold tabular-nums text-primary text-base">{item.scores?.latestPercentage?.toFixed(1) ?? 0}%</span>
-                    </TableCell>
+                    <TableCell className="text-center tabular-nums py-4 font-medium">{prePct}%</TableCell>
+                    <TableCell className={`text-center tabular-nums py-4 ${(item.scores?.mid ?? 0) > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{postPct}%</TableCell>
                     <TableCell className="text-right py-4">
                       <span className={`font-semibold tabular-nums ${item.improvement?.points > 0 ? 'text-green-600' : item.improvement?.points < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
                         {item.improvement?.points > 0 ? '+' : ''}{item.improvement?.points ?? 0}
@@ -557,7 +580,8 @@ const Leaderboard = () => {
                     <TableCell className="py-4">{getStatusBadge(item.status)}</TableCell>
                     <TableCell className="py-4">{getRankBadge(item.rank)}</TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
