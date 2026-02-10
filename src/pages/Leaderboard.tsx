@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Medal, Star } from 'lucide-react';
+import { Trophy, Medal, Star, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -322,7 +322,7 @@ const Leaderboard = () => {
     
     return (
       <TooltipProvider delayDuration={300}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <Tooltip>
             <TooltipTrigger asChild>
               <Card className="transition-shadow hover:shadow-md">
@@ -359,6 +359,29 @@ const Leaderboard = () => {
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
               <p>Number of {label} in this leaderboard who are marked as star performers (starred).</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <Percent className="h-6 w-6 text-amber-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">% Star Performers</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">
+                        {(total && total > 0)
+                          ? (((summary.totalStarPerformers ?? 0) / total) * 100).toFixed(1)
+                          : '0.0'}%
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">of total with assessment</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Percentage of {label} in this leaderboard who are marked as star performers (star performers ÷ total).</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
