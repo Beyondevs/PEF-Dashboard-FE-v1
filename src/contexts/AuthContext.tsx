@@ -303,7 +303,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const canEdit = () => role === 'admin';
   const canDelete = () => role === 'admin';
   const canMarkAttendance = () => role === 'admin' || role === 'trainer' || role === 'division_role';
-  const canStarStudentOrTeacher = () => role === 'admin' || role === 'trainer';
+  const canStarStudentOrTeacher = () => role === 'admin' || role === 'trainer' || role === 'division_role';
 
   return (
     <AuthContext.Provider value={{ 
