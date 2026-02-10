@@ -201,6 +201,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
                 {userManagementItems
+                  .filter((item) => item.title !== 'Portal Users' || role === 'admin')
                   .map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild className="group">
