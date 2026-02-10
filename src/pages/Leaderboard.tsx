@@ -322,7 +322,7 @@ const Leaderboard = () => {
     
     return (
       <TooltipProvider delayDuration={300}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-8">
           <Tooltip>
             <TooltipTrigger asChild>
               <Card className="transition-shadow hover:shadow-md">
