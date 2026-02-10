@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Medal, Star, Percent } from 'lucide-react';
+import { Trophy, Medal, Star, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -363,13 +363,15 @@ const Leaderboard = () => {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Card className="transition-shadow hover:shadow-md">
+              <Card className="transition-shadow hover:shadow-md border-amber-200/60 bg-gradient-to-br from-amber-50/80 to-white dark:from-amber-950/20 dark:to-background dark:border-amber-800/30">
                 <CardContent className="pt-6 pb-5">
                   <div className="flex items-center gap-3">
-                    <Percent className="h-6 w-6 text-amber-600 shrink-0" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                      <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-muted-foreground">% Star Performers</p>
-                      <p className="text-2xl font-bold tabular-nums mt-0.5">
+                      <p className="text-2xl font-bold tabular-nums mt-0.5 text-amber-700 dark:text-amber-400">
                         {(total && total > 0)
                           ? (((summary.totalStarPerformers ?? 0) / total) * 100).toFixed(1)
                           : '0.0'}%
