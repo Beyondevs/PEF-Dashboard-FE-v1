@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileText, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -511,17 +512,17 @@ export default function Trainers() {
               <TableHead className="min-w-[90px] max-w-[120px]">Division</TableHead>
               <TableHead className="min-w-[90px] max-w-[120px]">District</TableHead>
               <TableHead className="min-w-[280px] w-[22%]">Schools</TableHead>
-              {(canEdit() || canDelete()) && <TableHead className="w-[1%] whitespace-nowrap">Actions</TableHead>}
+              <TableHead className="w-[1%] whitespace-nowrap">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={showPhoneColumn ? 10 : 9} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={showPhoneColumn ? 11 : 10} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : trainers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={showPhoneColumn ? 10 : 9} className="text-center">No trainers found</TableCell>
+                <TableCell colSpan={showPhoneColumn ? 11 : 10} className="text-center">No trainers found</TableCell>
               </TableRow>
             ) : (
               trainers.map((trainer: any) => {
@@ -571,30 +572,33 @@ export default function Trainers() {
                       <span className="text-muted-foreground">None</span>
                     )}
                   </TableCell>
-                  {(canEdit() || canDelete()) && (
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {canEdit() && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(trainer)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {canDelete() && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(trainer.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  )}
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" asChild>
+                        <Link to={`/admin/trainers/${trainer.id}`} title="View details">
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      {canEdit() && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEditDialog(trainer)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete() && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(trainer.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
                 );
               })

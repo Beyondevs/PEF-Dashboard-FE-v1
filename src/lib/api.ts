@@ -21,7 +21,17 @@ export async function login(body: { identifier: string; password: string }) {
 }
 
 export async function getProfile() {
-  return apiClient.get<{ id: string; email: string; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'division_role'; profile?: { name?: string; cnic?: string; division?: { id: string; name: string }; divisionId?: string; [key: string]: any } }>('/auth/me');
+  return apiClient.get<{ id: string; email: string; role: 'admin' | 'client' | 'trainer' | 'teacher' | 'division_role'; profile?: { name?: string; cnic?: string; hasSignature?: boolean; division?: { id: string; name: string }; divisionId?: string; [key: string]: any } }>('/auth/me');
+}
+
+// Signature (trainer only)
+export async function getSignature() {
+  return apiClient.get<{ signatureSvg: string | null }>('/signature');
+}
+export async function uploadSignature(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiClient.post<{ success: boolean }>('/signature', formData);
 }
 
 export async function refresh(refreshToken: string) {
@@ -481,6 +491,22 @@ export const getTrainers = (params: Record<string, string | number | boolean> = 
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<{ data: any[]; page: number; pageSize: number; total: number }>(`/trainers${qs ? `?${qs}` : ''}`);
 };
+export const getTrainerById = (id: string) =>
+  apiClient.get<{
+    id: string;
+    email: string | null;
+    phone: string | null;
+    role: string;
+    trainerProfile: {
+      id: string;
+      name: string;
+      cnic: string | null;
+      qualification: string | null;
+      certification: string | null;
+      assignedSchools: string[];
+      signatureSvg: string | null;
+    } | null;
+  }>(`/trainers/${id}`);
 export const createTrainer = (data: any) => apiClient.post('/trainers', data);
 export const updateTrainer = (id: string, data: any) => apiClient.patch(`/trainers/${id}`, data);
 export const deleteTrainer = (id: string) => apiClient.delete(`/trainers/${id}`);

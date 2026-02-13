@@ -11,6 +11,8 @@ interface AuthContextType {
   email: string | null;
   divisionId: string | null;
   divisionName: string | null;
+  /** True if current user (trainer) has added a signature */
+  hasSignature: boolean;
   isLoading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
@@ -34,6 +36,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [email, setEmail] = useState<string | null>(null);
   const [divisionId, setDivisionId] = useState<string | null>(null);
   const [divisionName, setDivisionName] = useState<string | null>(null);
+  const [hasSignature, setHasSignature] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const refreshTimeoutRef = useRef<number | null>(null);
 
@@ -82,16 +85,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserId(user.id);
       setEmail(user.email);
       
-      // Fetch profile to get division info for division_role users
-      if (userRole === 'division_role') {
+      // Fetch profile for division_role (division info) and trainer (hasSignature)
+      if (userRole === 'division_role' || userRole === 'trainer') {
         try {
           const profileResponse = await getProfile();
           const { profile } = profileResponse.data;
-          if (profile?.division) {
+          if (userRole === 'division_role' && profile?.division) {
             setDivisionId(profile.division.id || profile.divisionId);
             setDivisionName(profile.division.name);
             localStorage.setItem(STORAGE_KEYS.divisionId, profile.division.id || profile.divisionId);
             localStorage.setItem(STORAGE_KEYS.divisionName, profile.division.name);
+          }
+          if (userRole === 'trainer') {
+            setHasSignature(!!profile?.hasSignature);
           }
         } catch (error) {
           console.error('Failed to fetch profile after login:', error);
@@ -142,6 +148,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUserName('');
     setDivisionId(null);
     setDivisionName(null);
+    setHasSignature(false);
 
     clearRefreshTimer();
     // Store current path for redirect after login
@@ -164,6 +171,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserName('');
         setDivisionId(null);
         setDivisionName(null);
+        setHasSignature(false);
         return;
       }
 
@@ -205,6 +213,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
         setUserName(nameMap[userRole] || 'User');
       }
+
+      setHasSignature(userRole === 'trainer' ? !!profile?.hasSignature : false);
 
       scheduleProactiveRefresh(storedToken);
     } catch (error) {
@@ -313,6 +323,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email, 
       divisionId,
       divisionName,
+      hasSignature,
       isLoading, 
       login, 
       logout, 
