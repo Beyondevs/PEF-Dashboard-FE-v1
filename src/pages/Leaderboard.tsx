@@ -641,8 +641,158 @@ const Leaderboard = () => {
     </>
   );
 
+  const SchoolSummaryCards = () => {
+    if (schoolRows.length === 0) return null;
+    
+    // Calculate summary statistics from schoolRows
+    const totalSchools = schoolRows.length;
+    const totalTeachers = schoolRows.reduce((sum, s) => sum + (s.totalTeachers || 0), 0);
+    const totalStudents = schoolRows.reduce((sum, s) => sum + (s.totalStudents || 0), 0);
+    const totalStars = schoolRows.reduce((sum, s) => sum + (s.teachersWithStars || 0) + (s.studentsWithStars || 0), 0);
+    const avgSchoolStarsPct = schoolRows.length > 0 
+      ? (schoolRows.reduce((sum, s) => sum + (s.overallStarsPct || 0), 0) / schoolRows.length)
+      : 0;
+    
+    return (
+      <TooltipProvider delayDuration={300}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-6 w-6 text-blue-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Total Schools</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{totalSchools}</p>
+                      <p className="text-xs text-muted-foreground mt-1">In current filter scope</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Total number of schools with speaking assessment data. Use filters above to narrow by location.</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-6 w-6 text-purple-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{totalStudents.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Across filtered schools</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Total number of students across all schools in the current filter scope.</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <GraduationCap className="h-6 w-6 text-green-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Total Teachers</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{totalTeachers.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Across filtered schools</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Total number of teachers across all schools in the current filter scope.</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <Star className="h-6 w-6 text-amber-500 fill-amber-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Total Star Performers</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{totalStars.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Students + teachers combined</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Combined total of starred students and teachers across all filtered schools.</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md border-amber-200/60 bg-gradient-to-br from-amber-50/80 to-white dark:from-amber-950/20 dark:to-background dark:border-amber-800/30">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                      <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">% Star Performers</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5 text-amber-700 dark:text-amber-400">
+                        {((totalTeachers + totalStudents) > 0)
+                          ? ((totalStars / (totalTeachers + totalStudents)) * 100).toFixed(1)
+                          : '0.0'}%
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">of all participants</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Percentage of total participants (students + teachers) who are star performers across all filtered schools.</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Card className="transition-shadow hover:shadow-md border-green-200/60 bg-gradient-to-br from-green-50/80 to-white dark:from-green-950/20 dark:to-background dark:border-green-800/30">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/40">
+                      <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-muted-foreground">Avg School Stars %</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5 text-green-700 dark:text-green-400">
+                        {avgSchoolStarsPct.toFixed(1)}%
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">average across schools</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>Average percentage of star performers per school. Shows typical performance level across all filtered schools.</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
+    );
+  };
+
   const SchoolTable = () => (
     <>
+      <SchoolSummaryCards />
       {schoolPagination.items.length > 0 ? (
         <>
           <div className="overflow-x-auto rounded-md border">
