@@ -644,13 +644,10 @@ const Leaderboard = () => {
     const totalStarPerformers = studentsWithStars + teachersWithStars;
     const totalPeople = totalStudents + totalTeachers;
     const pctStarPerformers = totalPeople > 0 ? (totalStarPerformers / totalPeople) * 100 : 0;
-    const weightedOverall =
-      totalPeople > 0
-        ? schoolRows.reduce(
-            (sum, r) =>
-              sum + (r.overallStarsPct ?? 0) * ((r.totalTeachers ?? 0) + (r.totalStudents ?? 0)),
-            0
-          ) / totalPeople
+    // Simple average of each school's overall % (one value per school; small and large schools count equally)
+    const avgSchoolPct =
+      schoolRows.length > 0
+        ? schoolRows.reduce((sum, r) => sum + (r.overallStarsPct ?? 0), 0) / schoolRows.length
         : 0;
     return {
       totalSchools: schoolRows.length,
@@ -658,7 +655,7 @@ const Leaderboard = () => {
       totalTeachers,
       totalStarPerformers,
       pctStarPerformers,
-      avgOverallPct: weightedOverall,
+      avgSchoolPct,
     };
   }, [schoolRows]);
 
@@ -773,16 +770,16 @@ const Leaderboard = () => {
                   <div className="flex items-center gap-3">
                     <Trophy className="h-6 w-6 text-yellow-500 shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-muted-foreground">Overall Stars %</p>
-                      <p className="text-2xl font-bold tabular-nums mt-0.5">{summary.avgOverallPct.toFixed(1)}%</p>
-                      <p className="text-xs text-muted-foreground mt-1">Weighted by school size</p>
+                      <p className="text-sm font-medium text-muted-foreground">Avg school stars %</p>
+                      <p className="text-2xl font-bold tabular-nums mt-0.5">{summary.avgSchoolPct.toFixed(1)}%</p>
+                      <p className="text-xs text-muted-foreground mt-1">Simple average across schools</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
-              <p>Weighted average of each school&apos;s overall stars %. Matches the Overall % column in the table.</p>
+              <p>Average of each school&apos;s overall stars % (one value per school). Small and large schools count equally. Compare with &quot;% Star Performers&quot; which is weighted by people.</p>
             </TooltipContent>
           </Tooltip>
         </div>
