@@ -34,9 +34,7 @@ const trainerItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Sessions', url: '/sessions', icon: Calendar },
   { title: 'Attendance', url: '/attendance', icon: Users },
-  // { title: 'Assessments', url: '/assessments', icon: ClipboardCheck },
-  { title: 'Assessment', url: '/speaking-assessments', icon: Mic2 },
-  { title: 'Leaderboard', url: '/leaderboard', icon: Trophy },
+  // Speaking Assessment and Leaderboard hidden for trainer role
   { title: 'Reports', url: '/reports', icon: FileText },
   { title: 'Schools', url: '/schools', icon: School },
   // { title: 'Repository', url: '/repository', icon: FolderOpen }, // Hidden for now
