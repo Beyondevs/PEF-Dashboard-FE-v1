@@ -1,18 +1,50 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, IdCard, Award, BookOpen, School, PenLine } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, IdCard, Award, BookOpen, School, PenLine, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getTrainerById, getSchools } from '@/lib/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { getTrainerById, getSchools, deleteTrainerSignature } from '@/lib/api';
 
 export default function TrainerDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const { toast } = useToast();
   const [trainer, setTrainer] = useState<Awaited<ReturnType<typeof getTrainerById>>['data'] | null>(null);
   const [schools, setSchools] = useState<{ id: string; name: string; emisCode?: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingSignature, setDeletingSignature] = useState(false);
+  const [deleteSignatureOpen, setDeleteSignatureOpen] = useState(false);
+
+  const fetchTrainer = useCallback(async () => {
+    if (!id) return;
+    try {
+      const [trainerRes, schoolsRes] = await Promise.all([
+        getTrainerById(id),
+        getSchools({ page: 1, pageSize: 2000 }).catch(() => ({ data: { data: [] } })),
+      ]);
+      setTrainer(trainerRes.data);
+      const list = schoolsRes.data?.data ?? [];
+      setSchools(Array.isArray(list) ? list : []);
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load trainer');
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!id) {
@@ -25,22 +57,13 @@ export default function TrainerDetail() {
       try {
         setLoading(true);
         setError(null);
-        const [trainerRes, schoolsRes] = await Promise.all([
-          getTrainerById(id),
-          getSchools({ page: 1, pageSize: 2000 }).catch(() => ({ data: { data: [] } })),
-        ]);
-        if (cancelled) return;
-        setTrainer(trainerRes.data);
-        const list = schoolsRes.data?.data ?? [];
-        setSchools(Array.isArray(list) ? list : []);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? 'Failed to load trainer');
+        await fetchTrainer();
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, fetchTrainer]);
 
   const profile = trainer?.trainerProfile;
   const assignedSchoolIds = profile?.assignedSchools ?? [];
@@ -181,14 +204,57 @@ export default function TrainerDetail() {
         <div className="lg:w-[360px] shrink-0">
           <Card className="overflow-hidden shadow-sm border-border/80 h-fit">
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                  <PenLine className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                    <PenLine className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Signature</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">Trainer&apos;s saved signature</CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg">Signature</CardTitle>
-                  <CardDescription className="text-xs mt-0.5">Trainer&apos;s saved signature</CardDescription>
-                </div>
+                {isAdmin() && profile?.signatureSvg && (
+                  <AlertDialog open={deleteSignatureOpen} onOpenChange={setDeleteSignatureOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                        <Trash2 className="h-4 w-4 mr-1.5" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete trainer signature?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently remove this trainer&apos;s saved signature. They can add a new one from the header. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deletingSignature}>Cancel</AlertDialogCancel>
+                        <Button
+                          variant="destructive"
+                          disabled={deletingSignature}
+                          onClick={async () => {
+                            if (!id) return;
+                            setDeletingSignature(true);
+                            try {
+                              await deleteTrainerSignature(id);
+                              setDeleteSignatureOpen(false);
+                              toast({ title: 'Signature deleted', description: 'Trainer signature has been removed.' });
+                              await fetchTrainer();
+                            } catch (err: any) {
+                              toast({ title: 'Failed to delete signature', description: err?.message ?? 'Please try again.', variant: 'destructive' });
+                            } finally {
+                              setDeletingSignature(false);
+                            }
+                          }}
+                        >
+                          {deletingSignature ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete signature'}
+                        </Button>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </CardHeader>
             <CardContent className="pt-2">

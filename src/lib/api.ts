@@ -510,6 +510,8 @@ export const getTrainerById = (id: string) =>
 export const createTrainer = (data: any) => apiClient.post('/trainers', data);
 export const updateTrainer = (id: string, data: any) => apiClient.patch(`/trainers/${id}`, data);
 export const deleteTrainer = (id: string) => apiClient.delete(`/trainers/${id}`);
+export const deleteTrainerSignature = (id: string) =>
+  apiClient.delete<{ message: string }>(`/trainers/${id}/signature`);
 
 // Users - Teachers
 export const getTeachers = (params: Record<string, string | number | boolean> = {}) => {
