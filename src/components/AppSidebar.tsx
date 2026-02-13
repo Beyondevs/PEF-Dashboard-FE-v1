@@ -63,6 +63,14 @@ const adminClientItems = [
   { title: 'Reports', url: '/reports', icon: FileText },
 ];
 
+// Division role: same as admin/client but without Speaking Assessment and Leaderboard
+const divisionRoleItems = [
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Sessions', url: '/sessions', icon: Calendar },
+  { title: 'Attendance', url: '/attendance', icon: Users },
+  { title: 'Reports', url: '/reports', icon: FileText },
+];
+
 const userManagementItems = [
   { title: 'Portal Users', url: '/admin/users', icon: UserCircle },
   { title: 'Trainers', url: '/admin/trainers', icon: UserCog },
@@ -86,9 +94,10 @@ const hybridMonitoringItems = [
 export function AppSidebar() {
   const { role } = useAuth();
   
-  const menuItems = 
-    role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu' ? adminClientItems :
-    role === 'trainer' ? trainerItems : 
+  const menuItems =
+    role === 'division_role' ? divisionRoleItems :
+    role === 'admin' || role === 'client' || role === 'bnu' ? adminClientItems :
+    role === 'trainer' ? trainerItems :
     teacherItems;
   
   const showUserManagement = role === 'admin' || role === 'client' || role === 'division_role' || role === 'bnu';
