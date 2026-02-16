@@ -1,5 +1,7 @@
-import React from 'react';
-import { X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, CheckCircle, Clock, AlertCircle, FileDown, Loader2 } from 'lucide-react';
+import { getTeacherSpeakingAssessmentPdf } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface TeacherAssessmentDetailProps {
   assessment: any;
@@ -7,27 +9,50 @@ interface TeacherAssessmentDetailProps {
   onEditPhase: (phase: 'pre' | 'mid' | 'post') => void;
 }
 
+// Full question text for each criterion (Speaking Assessment detail modal)
+const TEACHER_CRITERIA = [
+  { id: 'Fluency', label: 'Fluency', question: 'How would you rate the teacher\'s fluency and smoothness in speaking?' },
+  { id: 'Sentences', label: 'Complete Sentences', question: 'How well does the teacher use complete sentences when speaking?' },
+  { id: 'Accuracy', label: 'Accuracy', question: 'How accurate is the teacher\'s use of language and grammar when speaking?' },
+  { id: 'Pronunciation', label: 'Pronunciation', question: 'How would you rate the teacher\'s pronunciation and clarity of speech?' },
+  { id: 'Vocabulary', label: 'Vocabulary', question: 'How well does the teacher use vocabulary appropriate to the context?' },
+  { id: 'Confidence', label: 'Confidence', question: 'How confidently does the teacher speak?' },
+  { id: 'Asking', label: 'Asking Questions', question: 'How well does the teacher ask questions to clarify or engage?' },
+  { id: 'Answering', label: 'Answering Questions', question: 'How well does the teacher answer questions when asked?' },
+  { id: 'ClassroomInstructions', label: 'Classroom Instructions', question: 'How well does the teacher give clear classroom instructions?' },
+  { id: 'Feedback', label: 'Feedback', question: 'How well does the teacher give constructive feedback?' },
+  { id: 'EngagingStudents', label: 'Engaging Students', question: 'How well does the teacher engage students in speaking?' },
+  { id: 'ProfessionalInteraction', label: 'Professional Interaction', question: 'How would you rate the teacher\'s professional interaction?' },
+  { id: 'Passion', label: 'Passion for Teaching', question: 'How would you rate the teacher\'s passion for teaching?' },
+  { id: 'RoleModel', label: 'Role Model', question: 'How well does the teacher act as a role model in speaking?' },
+];
+
 const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
   assessment,
   onClose,
   onEditPhase,
 }) => {
-  const categories = [
-    { id: 'Fluency', label: 'Fluency' },
-    { id: 'Sentences', label: 'Complete Sentences' },
-    { id: 'Accuracy', label: 'Accuracy' },
-    { id: 'Pronunciation', label: 'Pronunciation' },
-    { id: 'Vocabulary', label: 'Vocabulary' },
-    { id: 'Confidence', label: 'Confidence' },
-    { id: 'Asking', label: 'Asking Questions' },
-    { id: 'Answering', label: 'Answering Questions' },
-    { id: 'ClassroomInstructions', label: 'Classroom Instructions' },
-    { id: 'Feedback', label: 'Feedback' },
-    { id: 'EngagingStudents', label: 'Engaging Students' },
-    { id: 'ProfessionalInteraction', label: 'Professional Interaction' },
-    { id: 'Passion', label: 'Passion for Teaching' },
-    { id: 'RoleModel', label: 'Role Model' },
-  ];
+  const categories = TEACHER_CRITERIA;
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    try {
+      setIsExportingPdf(true);
+      const blob = await getTeacherSpeakingAssessmentPdf(assessment.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `teacher-speaking-assessment-${String(assessment.teacherName || assessment.id).replace(/\s+/g, '-')}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF downloaded');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to download PDF');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
     pending: { label: 'Pending', color: 'bg-gray-100 text-gray-700', icon: Clock },
@@ -91,7 +116,7 @@ const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
 
         {isCompleted ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 gap-4 mb-4">
               {categories.map((cat) => {
                 // Map category ID to database field name (e.g., 'pre' + 'Sentences' = 'preSentences')
                 const fieldName = `${prefix}${cat.id}`;
@@ -99,9 +124,12 @@ const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
                 // Ensure we have a valid number (0-5)
                 const rating = typeof value === 'number' && value >= 0 && value <= 5 ? value : 0;
                 return (
-                  <div key={cat.id} className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-600">{cat.label}</span>
-                    {renderStars(rating)}
+                  <div key={cat.id} className="py-3 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-800 mb-1">{cat.question ?? cat.label}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">{cat.label}</span>
+                      {renderStars(rating)}
+                    </div>
                   </div>
                 );
               })}
@@ -139,6 +167,10 @@ const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
               <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                 <span><strong>Teacher:</strong> {assessment.teacherName}</span>
                 <span><strong>School:</strong> {assessment.schoolName}</span>
+                {(assessment.emisCode ?? assessment.schoolEmisCode) && (
+                  <span><strong>EMIS Code:</strong> {assessment.emisCode ?? assessment.schoolEmisCode}</span>
+                )}
+                <span><strong>Trainer:</strong> {assessment.trainerName ?? '—'}</span>
                 {assessment.district && <span><strong>District:</strong> {assessment.district}</span>}
                 {assessment.division && <span><strong>Division:</strong> {assessment.division}</span>}
               </div>
@@ -181,10 +213,23 @@ const TeacherAssessmentDetail: React.FC<TeacherAssessmentDetailProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex gap-3">
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            className="flex-1 flex items-center justify-center gap-2 bg-[#673AB7] hover:bg-[#5E35A6] disabled:opacity-60 text-white px-4 py-2 rounded-md font-medium"
+          >
+            {isExportingPdf ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="h-4 w-4" />
+            )}
+            Export PDF
+          </button>
           <button
             onClick={onClose}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-medium"
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-medium"
           >
             Close
           </button>

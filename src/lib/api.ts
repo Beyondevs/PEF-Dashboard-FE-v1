@@ -122,6 +122,8 @@ export const getTeacherLeaderboard = (params: Record<string, string | number | b
     summary: {
       totalTeachers: number;
       averageLatestScore: number;
+      averagePrePct?: number;
+      averagePostPct?: number;
       averageImprovement: number;
       completedAllPhases: number;
       maxPossibleScore: number;
@@ -162,6 +164,8 @@ export const getStudentLeaderboard = (params: Record<string, string | number | b
     summary: {
       totalStudents: number;
       averageLatestScore: number;
+      averagePrePct?: number;
+      averagePostPct?: number;
       averageImprovement: number;
       completedAllPhases: number;
       maxPossibleScore: number;
@@ -218,6 +222,10 @@ export const getSchoolStarStats = (params: Record<string, string | number | bool
 };
 
 export const getTeacherKPI = (id: string) => apiClient.get<any>(`/leaderboard/teachers/${id}/kpi`);
+
+/** Clear leaderboard caches so next load uses fresh DB data (e.g. after running marks-increase seed). */
+export const clearLeaderboardCache = () =>
+  apiClient.post<{ message: string; keysDeleted?: number }>('/leaderboard/recalculate', {});
 
 // Resources
 export const getResources = (params: Record<string, string | number | boolean> = {}) => {
@@ -805,6 +813,11 @@ export const getStudentSpeakingAssessments = (params: Record<string, string | nu
 export const getStudentSpeakingAssessmentById = (id: string) =>
   apiClient.get<any>(`/speaking-assessments/students/${id}`);
 
+export const getStudentSpeakingAssessmentPdf = async (id: string): Promise<Blob> => {
+  const response = await apiClient.getBlob(`/speaking-assessments/students/${id}/pdf`);
+  return response.data;
+};
+
 export const fillStudentSpeakingAssessment = (id: string, data: FillStudentSpeakingAssessmentPayload) =>
   apiClient.patch(`/speaking-assessments/students/${id}/fill`, data);
 
@@ -821,6 +834,11 @@ export const getTeacherSpeakingAssessments = (params: Record<string, string | nu
 
 export const getTeacherSpeakingAssessmentById = (id: string) =>
   apiClient.get<any>(`/speaking-assessments/teachers/${id}`);
+
+export const getTeacherSpeakingAssessmentPdf = async (id: string): Promise<Blob> => {
+  const response = await apiClient.getBlob(`/speaking-assessments/teachers/${id}/pdf`);
+  return response.data;
+};
 
 export const fillTeacherSpeakingAssessment = (id: string, data: FillTeacherSpeakingAssessmentPayload) =>
   apiClient.patch(`/speaking-assessments/teachers/${id}/fill`, data);

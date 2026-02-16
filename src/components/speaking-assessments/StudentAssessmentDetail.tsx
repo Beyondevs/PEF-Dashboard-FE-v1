@@ -1,5 +1,7 @@
-import React from 'react';
-import { X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, CheckCircle, Clock, AlertCircle, FileDown, Loader2 } from 'lucide-react';
+import { getStudentSpeakingAssessmentPdf } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface StudentAssessmentDetailProps {
   assessment: any;
@@ -7,25 +9,48 @@ interface StudentAssessmentDetailProps {
   onEditPhase: (phase: 'pre' | 'mid' | 'post') => void;
 }
 
+// Full question text for each criterion (Speaking Assessment detail modal)
+const STUDENT_CRITERIA = [
+  { id: 'Fluency', label: 'Fluency', question: 'How would you rate the student\'s fluency and smoothness in speaking?' },
+  { id: 'CompleteSentences', label: 'Complete Sentences', question: 'How well does the student use complete sentences when speaking?' },
+  { id: 'Accuracy', label: 'Accuracy', question: 'How accurate is the student\'s use of language and grammar when speaking?' },
+  { id: 'Pronunciation', label: 'Pronunciation', question: 'How would you rate the student\'s pronunciation and clarity of speech?' },
+  { id: 'Vocabulary', label: 'Vocabulary', question: 'How well does the student use vocabulary appropriate to the context?' },
+  { id: 'Confidence', label: 'Confidence', question: 'How confidently does the student speak?' },
+  { id: 'AskingQuestions', label: 'Asking Questions', question: 'How well does the student ask questions to clarify or engage?' },
+  { id: 'AnsweringQuestions', label: 'Answering Questions', question: 'How well does the student answer questions when asked?' },
+  { id: 'SharingInfo', label: 'Sharing Information', question: 'How well does the student share information clearly?' },
+  { id: 'Describing', label: 'Describing', question: 'How well does the student describe people, places, or events?' },
+  { id: 'Feelings', label: 'Expressing Feelings', question: 'How well does the student express feelings and opinions?' },
+  { id: 'Audience', label: 'Speaking for Audience', question: 'How well does the student speak for an audience (e.g. present to others)?' },
+];
+
 const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
   assessment,
   onClose,
   onEditPhase,
 }) => {
-  const categories = [
-    { id: 'Fluency', label: 'Fluency' },
-    { id: 'CompleteSentences', label: 'Complete Sentences' },
-    { id: 'Accuracy', label: 'Accuracy' },
-    { id: 'Pronunciation', label: 'Pronunciation' },
-    { id: 'Vocabulary', label: 'Vocabulary' },
-    { id: 'Confidence', label: 'Confidence' },
-    { id: 'AskingQuestions', label: 'Asking Questions' },
-    { id: 'AnsweringQuestions', label: 'Answering Questions' },
-    { id: 'SharingInfo', label: 'Sharing Information' },
-    { id: 'Describing', label: 'Describing' },
-    { id: 'Feelings', label: 'Expressing Feelings' },
-    { id: 'Audience', label: 'Speaking for Audience' },
-  ];
+  const categories = STUDENT_CRITERIA;
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    try {
+      setIsExportingPdf(true);
+      const blob = await getStudentSpeakingAssessmentPdf(assessment.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `student-speaking-assessment-${String(assessment.studentName || assessment.id).replace(/\s+/g, '-')}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF downloaded');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to download PDF');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
     pending: { label: 'Pending', color: 'bg-gray-100 text-gray-700', icon: Clock },
@@ -90,7 +115,7 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
 
         {isCompleted ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 gap-4 mb-4">
               {categories.map((cat) => {
                 // Map category ID to database field name (e.g., 'pre' + 'Fluency' = 'preFluency')
                 const fieldName = `${prefix}${cat.id}`;
@@ -98,9 +123,12 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
                 // Ensure we have a valid number (0-5)
                 const rating = typeof value === 'number' && value >= 0 && value <= 5 ? value : 0;
                 return (
-                  <div key={cat.id} className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-600">{cat.label}</span>
-                    {renderStars(rating)}
+                  <div key={cat.id} className="py-3 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-800 mb-1">{cat.question ?? cat.label}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">{cat.label}</span>
+                      {renderStars(rating)}
+                    </div>
                   </div>
                 );
               })}
@@ -138,6 +166,10 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
               <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                 <span><strong>Student:</strong> {assessment.studentName}</span>
                 <span><strong>School:</strong> {assessment.schoolName}</span>
+                {(assessment.emisCode ?? assessment.schoolEmisCode) && (
+                  <span><strong>EMIS Code:</strong> {assessment.emisCode ?? assessment.schoolEmisCode}</span>
+                )}
+                <span><strong>Trainer:</strong> {assessment.trainerName ?? '—'}</span>
                 {assessment.district && <span><strong>District:</strong> {assessment.district}</span>}
                 {assessment.division && <span><strong>Division:</strong> {assessment.division}</span>}
               </div>
@@ -180,10 +212,23 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex gap-3">
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            className="flex-1 flex items-center justify-center gap-2 bg-[#673AB7] hover:bg-[#5E35A6] disabled:opacity-60 text-white px-4 py-2 rounded-md font-medium"
+          >
+            {isExportingPdf ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="h-4 w-4" />
+            )}
+            Export PDF
+          </button>
           <button
             onClick={onClose}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-medium"
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-medium"
           >
             Close
           </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, Users, GraduationCap, TrendingUp, Award } from 'lucide-react';
 import {
@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Medal, Star, Sparkles } from 'lucide-react';
+import { Trophy, Medal, Star, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -23,7 +23,7 @@ import PaginationControls from '@/components/PaginationControls';
 import { usePagination } from '@/hooks/usePagination';
 import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTeacherLeaderboard, getStudentLeaderboard, getSchoolRankings, getSchoolStarStats } from '@/lib/api';
+import { getTeacherLeaderboard, getStudentLeaderboard, getSchoolRankings, getSchoolStarStats, clearLeaderboardCache } from '@/lib/api';
 
 interface TeacherLeaderboardItem {
   rank: number;
@@ -90,6 +90,8 @@ interface Summary {
   totalStudents?: number;
   totalStarPerformers?: number;
   averageLatestScore: number;
+  averagePrePct?: number;
+  averagePostPct?: number;
   averageImprovement: number;
   completedAllPhases: number;
   maxPossibleScore: number;
@@ -109,67 +111,72 @@ const Leaderboard = () => {
   const [teacherSummary, setTeacherSummary] = useState<Summary | null>(null);
   const [studentSummary, setStudentSummary] = useState<Summary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch leaderboard data from API
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        setIsLoading(true);
-        
-        const filterParams: Record<string, string | number> = {};
-        if (filters.division) filterParams.divisionId = filters.division;
-        if (filters.district) filterParams.districtId = filters.district;
-        if (filters.tehsil) filterParams.tehsilId = filters.tehsil;
-        if (filters.school) filterParams.schoolId = filters.school;
-
-        // Teachers & students: top 50. Schools: no limit (show all).
-        const teacherStudentParams = { ...filterParams, topN: 50 };
-        const schoolParams = { ...filterParams, topN: 9999 };
-
-        // Fetch teacher & student leaderboards and school star stats in parallel
-        const [teacherResponse, studentResponse, schoolStarsResponse] = await Promise.all([
-          getTeacherLeaderboard(teacherStudentParams),
-          getStudentLeaderboard(teacherStudentParams),
-          getSchoolStarStats(schoolParams),
-        ]);
-
-        setTeacherData(teacherResponse.data?.leaderboard || []);
-        setTeacherSummary(teacherResponse.data?.summary || null);
-        setStudentData(studentResponse.data?.leaderboard || []);
-        setStudentSummary(studentResponse.data?.summary || null);
-        // Use backend-provided school star stats if available
-        const schoolRankings = schoolStarsResponse.data?.rankings || [];
-        // Map to rows expected by frontend
-        const mapped = schoolRankings.map((r: any) => ({
-          id: r.school?.id,
-          name: r.school?.name,
-          emisCode: r.school?.emisCode,
-          district: r.school?.district || null,
-          tehsil: r.school?.tehsil || null,
-          division: r.school?.division || null,
-          totalTeachers: r.metrics?.totalTeachers ?? 0,
-          teachersWithStars: r.metrics?.teachersWithStars ?? 0,
-          teachersStarsPct: r.metrics?.teachersStarsPct ?? 0,
-          totalStudents: r.metrics?.totalStudents ?? 0,
-          studentsWithStars: r.metrics?.studentsWithStars ?? 0,
-          studentsStarsPct: r.metrics?.studentsStarsPct ?? 0,
-          overallStarsPct: r.metrics?.overallStarsPct ?? 0,
-          rank: r.rank,
-          badge: r.rank <= 10 ? 'Top 10' : '',
-        }));
-        setSchoolRows(mapped);
-      } catch (error) {
-        console.error('Failed to fetch leaderboard:', error);
-        setTeacherData([]);
-        setStudentData([]);
-        setSchoolData([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLeaderboard();
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const filterParams: Record<string, string | number> = {};
+      if (filters.division) filterParams.divisionId = filters.division;
+      if (filters.district) filterParams.districtId = filters.district;
+      if (filters.tehsil) filterParams.tehsilId = filters.tehsil;
+      if (filters.school) filterParams.schoolId = filters.school;
+      const teacherStudentParams = { ...filterParams, topN: 50 };
+      const schoolParams = { ...filterParams, topN: 9999 };
+      const [teacherResponse, studentResponse, schoolStarsResponse] = await Promise.all([
+        getTeacherLeaderboard(teacherStudentParams),
+        getStudentLeaderboard(teacherStudentParams),
+        getSchoolStarStats(schoolParams),
+      ]);
+      setTeacherData(teacherResponse.data?.leaderboard || []);
+      setTeacherSummary(teacherResponse.data?.summary || null);
+      setStudentData(studentResponse.data?.leaderboard || []);
+      setStudentSummary(studentResponse.data?.summary || null);
+      const schoolRankings = schoolStarsResponse.data?.rankings || [];
+      const mapped = schoolRankings.map((r: any) => ({
+        id: r.school?.id,
+        name: r.school?.name,
+        emisCode: r.school?.emisCode,
+        district: r.school?.district || null,
+        tehsil: r.school?.tehsil || null,
+        division: r.school?.division || null,
+        totalTeachers: r.metrics?.totalTeachers ?? 0,
+        teachersWithStars: r.metrics?.teachersWithStars ?? 0,
+        teachersStarsPct: r.metrics?.teachersStarsPct ?? 0,
+        totalStudents: r.metrics?.totalStudents ?? 0,
+        studentsWithStars: r.metrics?.studentsWithStars ?? 0,
+        studentsStarsPct: r.metrics?.studentsStarsPct ?? 0,
+        overallStarsPct: r.metrics?.overallStarsPct ?? 0,
+        rank: r.rank,
+        badge: r.rank <= 10 ? 'Top 10' : '',
+      }));
+      setSchoolRows(mapped);
+    } catch (error) {
+      console.error('Failed to fetch leaderboard:', error);
+      setTeacherData([]);
+      setStudentData([]);
+      setSchoolData([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [filters.division, filters.district, filters.tehsil, filters.school]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
+
+  const handleRefreshData = async () => {
+    try {
+      setIsRefreshing(true);
+      await clearLeaderboardCache();
+      await fetchLeaderboard();
+    } catch (e) {
+      console.error('Failed to refresh leaderboard:', e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // schoolRows are loaded from backend via getSchoolStarStats in fetchLeaderboard
 
   const teacherPagination = usePagination(teacherData, { initialPageSize: 10 });
@@ -319,10 +326,7 @@ const Leaderboard = () => {
     
     const total = type === 'teachers' ? summary.totalTeachers : summary.totalStudents;
     const label = type === 'teachers' ? 'teachers' : 'students';
-    const averageScorePercentage = summary.maxPossibleScore > 0 
-      ? ((summary.averageLatestScore / summary.maxPossibleScore) * 100).toFixed(1)
-      : '0.0';
-    
+
     return (
       <TooltipProvider delayDuration={300}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
@@ -389,48 +393,54 @@ const Leaderboard = () => {
               <p>Percentage of {label} in this leaderboard who are marked as star performers (star performers ÷ total).</p>
             </TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Card className="transition-shadow hover:shadow-md">
-                <CardContent className="pt-6 pb-5">
-                  <div className="flex items-center gap-3">
-                    <Trophy className="h-6 w-6 text-yellow-500 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-muted-foreground">Avg Score</p>
-                      <p className="text-2xl font-bold tabular-nums mt-0.5">{summary.averageLatestScore?.toFixed(1) ?? 0}</p>
-                      <p className="text-xs text-muted-foreground mt-1">out of {summary.maxPossibleScore} (latest phase)</p>
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Card className="transition-shadow hover:shadow-md border-green-200/60 bg-gradient-to-br from-green-50/80 to-white dark:from-green-950/20 dark:to-background dark:border-green-800/30">
+                  <CardContent className="pt-6 pb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/40">
+                        <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-muted-foreground">Avg Score % (Pre)</p>
+                        <p className="text-2xl font-bold tabular-nums mt-0.5 text-green-700 dark:text-green-400">
+                          {(summary.averagePrePct ?? 0).toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">pre-phase average</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-xs">
-              <p>Average of the latest completed phase score (Pre or Post) across all {label}. Higher is better.</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Card className="transition-shadow hover:shadow-md border-green-200/60 bg-gradient-to-br from-green-50/80 to-white dark:from-green-950/20 dark:to-background dark:border-green-800/30">
-                <CardContent className="pt-6 pb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/40">
-                      <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </CardContent>
+                </Card>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <p>Average Pre-assessment score as a percentage of max ({summary.maxPossibleScore ?? 60} points). Shows baseline performance of {label}.</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Card className="transition-shadow hover:shadow-md border-green-200/60 bg-gradient-to-br from-green-50/80 to-white dark:from-green-950/20 dark:to-background dark:border-green-800/30">
+                  <CardContent className="pt-6 pb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/40">
+                        <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-muted-foreground">Avg Score % (Post)</p>
+                        <p className="text-2xl font-bold tabular-nums mt-0.5 text-green-700 dark:text-green-400">
+                          {(summary.averagePostPct ?? 0).toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">post-phase average</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-muted-foreground">Avg Score %</p>
-                      <p className="text-2xl font-bold tabular-nums mt-0.5 text-green-700 dark:text-green-400">
-                        {averageScorePercentage}%
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">average performance rate</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-xs">
-              <p>Average score expressed as a percentage of maximum possible score ({summary.maxPossibleScore} points). Shows overall performance level of {label}.</p>
-            </TooltipContent>
-          </Tooltip>
+                  </CardContent>
+                </Card>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <p>Average Post-assessment score as a percentage of max ({summary.maxPossibleScore ?? 60} points). Shows performance after intervention.</p>
+              </TooltipContent>
+            </Tooltip>
+          </>
           <Tooltip>
             <TooltipTrigger asChild>
               <Card className="transition-shadow hover:shadow-md">
@@ -882,8 +892,25 @@ const Leaderboard = () => {
 
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl">Leaderboard Rankings</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">Ranked by latest score % then improvement. Pre → Post shows progression.</p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-xl">Leaderboard Rankings</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">Ranked by latest score % then improvement. Pre → Post shows progression.</p>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={handleRefreshData} disabled={isRefreshing || isLoading} variant="outline" size="sm" className="shrink-0">
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Refreshing...' : 'Refresh data'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p>Clear leaderboard cache and reload from database. Use after running the marks-increase seed so percentages reflect updated scores and stars.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
           {isLoading ? (
