@@ -869,4 +869,11 @@ export const exportTeacherSpeakingAssessmentsCSV = async (params: Record<string,
   return response.data;
 };
 
+/** Download all filtered student and teacher assessment PDFs as a ZIP file */
+export const exportSpeakingAssessmentsPdfsZip = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
+  const qs = new URLSearchParams(params as any).toString();
+  const response = await apiClient.getBlob(`/speaking-assessments/export-pdfs${qs ? `?${qs}` : ''}`);
+  return response.data;
+};
+
 

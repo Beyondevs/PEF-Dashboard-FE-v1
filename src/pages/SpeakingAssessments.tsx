@@ -45,6 +45,7 @@ import {
   AlertCircle,
   Loader2,
   RotateCcw,
+  FileArchive,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
@@ -64,6 +65,7 @@ import {
   getTeacherSpeakingAssessmentById,
   exportStudentSpeakingAssessmentsCSV,
   exportTeacherSpeakingAssessmentsCSV,
+  exportSpeakingAssessmentsPdfsZip,
   resetStudentSpeakingAssessment,
   resetTeacherSpeakingAssessment,
   type SpeakingAssessmentStatus,
@@ -99,6 +101,7 @@ const SpeakingAssessments = () => {
     | null
   >(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [isDownloadingPdfs, setIsDownloadingPdfs] = useState(false);
 
   // Student assessments state
   const [studentAssessments, setStudentAssessments] = useState<any[]>([]);
@@ -489,24 +492,66 @@ const SpeakingAssessments = () => {
           {/* Client/admin/division_role export of current view data */}
           {/* Simple client-side export of the currently visible assessments. Hidden for BNU by ExportButton itself */}
           {canExportAssessments && (
-            <ExportButton
-              label="Export CSV"
-              filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`}
-              exportFn={async () => {
-                const params: Record<string, string | number | boolean> = {};
-                if (selectedStatus !== 'all') params.status = selectedStatus;
-                if (filters.division) params.divisionId = filters.division;
-                if (filters.district) params.districtId = filters.district;
-                if (filters.school) params.schoolId = filters.school;
-                if (activeSearchTerm) params.search = activeSearchTerm;
+            <>
+              <Button
+                variant="outline"
+                size="default"
+                disabled={isDownloadingPdfs}
+                onClick={async () => {
+                  setIsDownloadingPdfs(true);
+                  try {
+                    const params: Record<string, string | number | boolean> = {};
+                    if (selectedStatus !== 'all') params.status = selectedStatus;
+                    if (filters.division) params.divisionId = filters.division;
+                    if (filters.district) params.districtId = filters.district;
+                    if (filters.school) params.schoolId = filters.school;
+                    if (activeSearchTerm) params.search = activeSearchTerm;
 
-                if (activeTab === 'students') {
-                  return exportStudentSpeakingAssessmentsCSV(params);
-                } else {
-                  return exportTeacherSpeakingAssessmentsCSV(params);
-                }
-              }}
-            />
+                    const blob = await exportSpeakingAssessmentsPdfsZip(params);
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `speaking-assessments-pdfs-${new Date().toISOString().slice(0, 10)}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    toast.success('ZIP download started');
+                  } catch (err) {
+                    console.error('Download PDFs ZIP failed:', err);
+                    toast.error('Failed to download PDFs');
+                  } finally {
+                    setIsDownloadingPdfs(false);
+                  }
+                }}
+                className="gap-2"
+              >
+                {isDownloadingPdfs ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileArchive className="h-4 w-4" />
+                )}
+                Download All PDFs
+              </Button>
+              <ExportButton
+                label="Export CSV"
+                filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`}
+                exportFn={async () => {
+                  const params: Record<string, string | number | boolean> = {};
+                  if (selectedStatus !== 'all') params.status = selectedStatus;
+                  if (filters.division) params.divisionId = filters.division;
+                  if (filters.district) params.districtId = filters.district;
+                  if (filters.school) params.schoolId = filters.school;
+                  if (activeSearchTerm) params.search = activeSearchTerm;
+
+                  if (activeTab === 'students') {
+                    return exportStudentSpeakingAssessmentsCSV(params);
+                  } else {
+                    return exportTeacherSpeakingAssessmentsCSV(params);
+                  }
+                }}
+              />
+            </>
           )}
         </div>
         </div>
