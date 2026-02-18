@@ -872,7 +872,9 @@ export const exportTeacherSpeakingAssessmentsCSV = async (params: Record<string,
 /** Download all filtered student and teacher assessment PDFs as a ZIP file */
 export const exportSpeakingAssessmentsPdfsZip = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
   const qs = new URLSearchParams(params as any).toString();
-  const response = await apiClient.getBlob(`/speaking-assessments/export-pdfs${qs ? `?${qs}` : ''}`);
+  const response = await apiClient.getBlob(`/speaking-assessments/export-pdfs${qs ? `?${qs}` : ''}`, {
+    timeout: 900000, // 15 min: bulk PDF generation for thousands of assessments can exceed 5 min
+  });
   return response.data;
 };
 

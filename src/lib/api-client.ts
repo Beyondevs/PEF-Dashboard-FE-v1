@@ -176,6 +176,7 @@ async function requestBlob(
     method?: HttpMethod;
     body?: any;
     headers?: Record<string, string>;
+    signal?: AbortSignal;
   } = {},
 ): Promise<ApiResponse<Blob>> {
   const url = path.startsWith('http') ? path : `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
@@ -192,6 +193,7 @@ async function requestBlob(
     headers,
     body: options.body,
     credentials: 'include',
+    signal: options.signal,
   });
 
   let res = await doFetch();
@@ -229,7 +231,16 @@ export const apiClient = {
   put: <T>(path: string, body?: any) => request<T>(path, { method: 'PUT', body }),
   patch: <T>(path: string, body?: any) => request<T>(path, { method: 'PATCH', body }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
-  getBlob: (path: string) => requestBlob(path, { method: 'GET' }),
+  getBlob: (path: string, options?: { timeout?: number }) => {
+    if (options?.timeout != null) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), options.timeout);
+      return requestBlob(path, { method: 'GET', signal: controller.signal }).finally(() =>
+        clearTimeout(timeoutId),
+      );
+    }
+    return requestBlob(path, { method: 'GET' });
+  },
 };
 
 

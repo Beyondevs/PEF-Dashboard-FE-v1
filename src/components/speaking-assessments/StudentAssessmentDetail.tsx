@@ -115,6 +115,11 @@ const StudentAssessmentDetail: React.FC<StudentAssessmentDetailProps> = ({
 
         {isCompleted ? (
           <>
+            <div className="mb-4 px-4 py-2 bg-gray-50 rounded border border-gray-200">
+              <p className="text-sm text-gray-600">
+                Rating Scale: 1 = Poor | 2 = Average | 3 = Good | 4 = Very Good | 5 = Excellent
+              </p>
+            </div>
             <div className="grid grid-cols-1 gap-4 mb-4">
               {categories.map((cat) => {
                 // Map category ID to database field name (e.g., 'pre' + 'Fluency' = 'preFluency')
