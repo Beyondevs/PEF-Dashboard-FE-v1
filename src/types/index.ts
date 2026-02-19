@@ -66,6 +66,10 @@ export interface Session {
   schoolId: string;
   status: SessionStatus;
   notes?: string;
+  durationMinutes?: number | null;
+  durationValidationCode?: 'valid' | 'invalid_time' | 'non_positive' | 'exceeds_max';
+  durationValidationMessage?: string;
+  isDurationFlagged?: boolean;
 }
 
 export interface Attendance {

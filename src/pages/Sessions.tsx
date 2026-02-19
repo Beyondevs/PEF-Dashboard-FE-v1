@@ -10,7 +10,20 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, Edit, Trash2, FileText, Search, Calendar as CalendarIcon, School as SchoolIcon, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  FileText,
+  Search,
+  Calendar as CalendarIcon,
+  School as SchoolIcon,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  AlertTriangle,
+} from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCard } from '@/components/MobileCard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -227,6 +240,37 @@ const Sessions = () => {
     return trainer ? (trainer.trainerProfile?.name || trainer.email) : 'Select trainer';
   };
 
+  const getApiErrorMessage = (error: unknown, fallbackMessage: string) => {
+    const apiMessage = (error as any)?.response?.data?.message;
+    if (Array.isArray(apiMessage)) {
+      return apiMessage.join(', ');
+    }
+    if (typeof apiMessage === 'string' && apiMessage.trim().length > 0) {
+      return apiMessage;
+    }
+
+    const genericMessage = (error as any)?.message;
+    if (typeof genericMessage === 'string' && genericMessage.trim().length > 0) {
+      return genericMessage;
+    }
+
+    return fallbackMessage;
+  };
+
+  const deriveDefaultEndTime = (startTime: string) => {
+    const [hourStr, minuteStr] = startTime.split(':');
+    const hour = Number(hourStr);
+    const minute = Number(minuteStr);
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) return '';
+
+    const totalStartMinutes = hour * 60 + minute;
+    const totalEndMinutes = (totalStartMinutes + 120) % (24 * 60);
+    const endHour = Math.floor(totalEndMinutes / 60);
+    const endMinute = totalEndMinutes % 60;
+
+    return `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
+  };
+
   const filteredTrainersForSelectedSchool = useMemo(() => {
     if (!formData.schoolId) return [];
     return apiTrainers.filter((trainer) =>
@@ -263,7 +307,7 @@ const Sessions = () => {
         courseName: 'Spoken English Programme' as const,
         date: formData.date,
         startTime: formData.startTime,
-        endTime: formData.endTime || `${parseInt(formData.startTime.split(':')[0]) + 2}:00`,
+        endTime: formData.endTime || deriveDefaultEndTime(formData.startTime),
         schoolId: formData.schoolId,
         trainerId: formData.trainerId,
       };
@@ -274,7 +318,7 @@ const Sessions = () => {
       await fetchSessions();
     } catch (error) {
       console.error('Failed to create session:', error);
-      toast.error('Failed to create session. Please try again.');
+      toast.error(getApiErrorMessage(error, 'Failed to create session. Please try again.'));
     }
   };
 
@@ -290,7 +334,7 @@ const Sessions = () => {
         courseName: 'Spoken English Programme' as const,
         date: formData.date,
         startTime: formData.startTime,
-        endTime: formData.endTime || `${parseInt(formData.startTime.split(':')[0]) + 2}:00`,
+        endTime: formData.endTime || deriveDefaultEndTime(formData.startTime),
         schoolId: formData.schoolId,
         trainerId: formData.trainerId,
       };
@@ -302,7 +346,7 @@ const Sessions = () => {
       await fetchSessions();
     } catch (error) {
       console.error('Failed to update session:', error);
-      toast.error('Failed to update session. Please try again.');
+      toast.error(getApiErrorMessage(error, 'Failed to update session. Please try again.'));
     }
   };
 
@@ -435,7 +479,10 @@ const Sessions = () => {
                     subtitle={school?.name}
                     badges={[
                       { label: session.courseName, variant: "secondary" },
-                      { label: session.status, variant: session.status === 'completed' ? 'default' : session.status === 'in_progress' ? 'destructive' : 'outline' }
+                      { label: session.status, variant: session.status === 'completed' ? 'default' : session.status === 'in_progress' ? 'destructive' : 'outline' },
+                      ...(session.isDurationFlagged
+                        ? [{ label: 'Duration Flagged', variant: 'destructive' as const }]
+                        : []),
                     ]}
                     metadata={[
                       {
@@ -469,6 +516,16 @@ const Sessions = () => {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Attendance records exist</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            {session.isDurationFlagged && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertTriangle className="h-4 w-4 text-red-600 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{session.durationValidationMessage || 'Session duration is invalid'}</p>
                                 </TooltipContent>
                               </Tooltip>
                             )}
@@ -518,7 +575,23 @@ const Sessions = () => {
                         <TableCell className="font-medium">{session.title}</TableCell>
                         <TableCell>{session.courseName}</TableCell>
                         <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
-                        <TableCell>{session.startTime} - {session.endTime}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span>{session.startTime} - {session.endTime}</span>
+                            {session.isDurationFlagged && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertTriangle className="h-4 w-4 text-red-600 cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{session.durationValidationMessage || 'Session duration is invalid'}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="max-w-xs truncate">{school?.name}</TableCell>
                         <TableCell>{getStatusBadge(session.status)}</TableCell>
                         <TableCell>

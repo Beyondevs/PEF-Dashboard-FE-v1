@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Table,
   TableBody,
@@ -41,6 +42,7 @@ import {
   CheckCircle,
   XCircle,
   Save,
+  AlertTriangle,
 } from 'lucide-react';
 import { sessions, schools, trainers, teachers, students, attendance, assessments } from '@/lib/mockData';
 import { toast } from 'sonner';
@@ -143,6 +145,9 @@ const SessionDetail = () => {
   const session = useMemo(() => apiSession || localSessions.find(s => s.id === id), [apiSession, id, localSessions]);
   const school = useMemo(() => session?.school || schools.find(s => s.id === session?.schoolId), [session]);
   const trainer = useMemo(() => session?.trainer || trainers.find(t => t.id === session?.trainerId), [session]);
+  const durationWarningMessage = session?.isDurationFlagged
+    ? (session.durationValidationMessage || 'Session duration is outside the allowed range.')
+    : null;
 
   // Calculate duration from startTime and endTime
   const calculateDuration = useMemo(() => {
@@ -614,6 +619,14 @@ const SessionDetail = () => {
           </Button>
         )}
       </div>
+
+      {durationWarningMessage && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Session Duration Flagged</AlertTitle>
+          <AlertDescription>{durationWarningMessage}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
