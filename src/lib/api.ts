@@ -281,6 +281,14 @@ export const getSchoolHoursSchoolsList = (params: Record<string, string | number
   return apiClient.get<any>(`/reports/school-hours/schools${qs ? `?${qs}` : ''}`);
 };
 
+export const downloadSchoolSpeakingAssessmentsPdf = async (schoolId: string): Promise<Blob> => {
+  const response = await apiClient.getBlob(
+    `/reports/school-hours/schools/${encodeURIComponent(schoolId)}/speaking-assessments/pdf`,
+    { timeout: 900000 },
+  );
+  return response.data;
+};
+
 export const exportDistrictComparisonCSV = async (params: Record<string, string | number | boolean> = {}): Promise<Blob> => {
   const qs = new URLSearchParams(params as any).toString();
   const response = await apiClient.getBlob(`/data-transfer/reports/district-comparison/export${qs ? `?${qs}` : ''}`);

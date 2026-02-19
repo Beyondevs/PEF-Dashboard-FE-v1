@@ -6,7 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, ArrowLeft, Download, Search, School } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFilters } from '@/contexts/FilterContext';
-import { getSchoolHoursSchoolsList, exportSchoolHoursSchoolsListCSV } from '@/lib/api';
+import {
+  getSchoolHoursSchoolsList,
+  exportSchoolHoursSchoolsListCSV,
+  downloadSchoolSpeakingAssessmentsPdf,
+} from '@/lib/api';
 import { useNavigate, Link } from 'react-router-dom';
 import { SearchTag } from '@/components/SearchTag';
 import PaginationControls from '@/components/PaginationControls';
@@ -43,6 +47,14 @@ function formatHoursAsHHhMMm(hours: number): string {
   return `${String(hh).padStart(2, '0')}h ${String(mm).padStart(2, '0')}m`;
 }
 
+function safeFilenamePart(input: string): string {
+  return String(input || '')
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+}
+
 const SchoolHoursReport = () => {
   const { filters } = useFilters();
   const navigate = useNavigate();
@@ -53,6 +65,7 @@ const SchoolHoursReport = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [downloadingSchoolId, setDownloadingSchoolId] = useState<string | null>(null);
 
   // Normalize date to YYYY-MM-DD so backend always gets consistent date strings (avoids locale/format drift)
   const toDateOnly = useCallback((value: string | undefined) => {
@@ -157,6 +170,30 @@ const SchoolHoursReport = () => {
       setIsExporting(false);
     }
   }, [buildParams]);
+
+  const handleDownloadSchoolPdf = useCallback(async (school: SchoolListRow) => {
+    try {
+      setDownloadingSchoolId(school.schoolId);
+      const blob = await downloadSchoolSpeakingAssessmentsPdf(school.schoolId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const datePart = new Date().toISOString().slice(0, 10);
+      const namePart = safeFilenamePart(school.schoolName || `school-${school.schoolId}`);
+      const emisPart = safeFilenamePart(school.emisCode || school.schoolId);
+      a.href = url;
+      a.download = `${namePart}_${emisPart}_speaking-assessments-${datePart}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success('School speaking assessment PDF downloaded');
+    } catch (error) {
+      console.error('Failed to download school speaking assessment PDF:', error);
+      toast.error('Failed to download school speaking assessment PDF');
+    } finally {
+      setDownloadingSchoolId((prev) => (prev === school.schoolId ? null : prev));
+    }
+  }, []);
 
   const summary = useMemo(
     () =>
@@ -286,7 +323,7 @@ const SchoolHoursReport = () => {
                   <TableHead className="text-right">Total Days</TableHead>
                   <TableHead className="text-right">Present People</TableHead>
                   <TableHead className="text-right">Total Sessions</TableHead>
-                  <TableHead className="text-right">Detail</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -332,6 +369,21 @@ const SchoolHoursReport = () => {
                             <Link to={`/reports/school-summary/${s.schoolId}`}>
                               Summary Detail
                             </Link>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadSchoolPdf(s)}
+                            disabled={downloadingSchoolId === s.schoolId}
+                          >
+                            {downloadingSchoolId === s.schoolId ? (
+                              <span className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Downloading...
+                              </span>
+                            ) : (
+                              'Download PDF'
+                            )}
                           </Button>
                         </div>
                       </TableCell>
