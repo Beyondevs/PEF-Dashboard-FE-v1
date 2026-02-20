@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { format } from 'date-fns';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
 import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSessions, getDivisions, getDistricts, getTehsils, getSchools } from '@/lib/api';
@@ -16,6 +16,7 @@ import { formatDateDDMMYYYY } from '@/lib/date';
 import { useState, useEffect } from 'react';
 import type { Session, Division, District, Tehsil, School } from '@/types';
 import { useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 export const FilterBar = () => {
   const { filters, setFilters, resetFilters, isDivisionLocked } = useFilters();
@@ -24,6 +25,9 @@ export const FilterBar = () => {
   const isTrainer = role === 'trainer';
   const isClient = role === 'client';
   const isDivisionRole = role === 'division_role';
+
+  // Mobile collapsible filter state — trainers start expanded (fewer filters), others collapsed
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(isTrainer);
   const disableDateFilters =
     location.pathname === '/speaking-assessments' || location.pathname === '/speaking-assessments/';
 
@@ -209,12 +213,66 @@ export const FilterBar = () => {
     fetchSessions();
   }, [isTrainer, filters.division, filters.district, filters.tehsil, filters.school]);
 
-  
+  const handleReset = () => {
+    resetFilters();
+    if (!isTrainer) setSessions([]);
+    setIsLoadingSessions(false);
+  };
+
+  // Count active filters for the mobile badge
+  const activeFilterCount = [
+    filters.division,
+    filters.district,
+    filters.tehsil,
+    filters.school,
+    filters.sessionId,
+    filters.startDate,
+    filters.endDate,
+  ].filter(Boolean).length;
 
   return (
-    <div className="bg-card border-b p-2 sm:p-3 md:p-4">
-      <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-3">
-        <div className="text-xs sm:text-sm font-medium text-foreground shrink-0 w-full sm:w-auto">Filters:</div>
+    <div className="bg-card border-b px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4">
+      {/* ── Mobile toggle header (hidden on sm+) ── */}
+      <div className="flex items-center gap-2 sm:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-border bg-background hover:bg-muted transition-colors touch-manipulation"
+          aria-expanded={mobileFiltersOpen}
+          aria-label="Toggle filters"
+        >
+          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">Filters</span>
+          {activeFilterCount > 0 && (
+            <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1">
+              {activeFilterCount}
+            </span>
+          )}
+          {mobileFiltersOpen
+            ? <ChevronUp className="h-3.5 w-3.5 ml-0.5 text-muted-foreground" />
+            : <ChevronDown className="h-3.5 w-3.5 ml-0.5 text-muted-foreground" />
+          }
+        </button>
+        {activeFilterCount > 0 && (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="ml-auto flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors touch-manipulation"
+            aria-label="Reset filters"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset
+          </button>
+        )}
+      </div>
+
+      {/* ── Filters content ── */}
+      <div className={cn(
+        "flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3",
+        "sm:flex", // always visible on sm+
+        mobileFiltersOpen ? "flex mt-2 sm:mt-0 filter-collapse-enter" : "hidden sm:flex"
+      )}>
+        <div className="text-xs sm:text-sm font-medium text-foreground shrink-0 hidden sm:block">Filters:</div>
         
         {!isTrainer && (
         <div className="flex items-center gap-2 shrink-0">
@@ -486,13 +544,7 @@ export const FilterBar = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => {
-            resetFilters();
-            if (!isTrainer) {
-              setSessions([]);
-            }
-            setIsLoadingSessions(false);
-          }}
+          onClick={handleReset}
           className="text-xs md:text-sm shrink-0 w-full sm:w-auto"
         >
           <RotateCcw className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />

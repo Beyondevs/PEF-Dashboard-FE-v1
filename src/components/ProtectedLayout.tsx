@@ -60,7 +60,7 @@ export const ProtectedLayout = ({ children }: { children: React.ReactNode }) => 
           <AppHeader />
           <FilterBar />
           <main className="flex-1 p-4 md:p-6 overflow-auto">
-            <div className="max-w-[1600px] mx-auto">
+            <div className="max-w-[1600px] mx-auto animate-page-enter">
               {children}
             </div>
           </main>

@@ -638,11 +638,11 @@ const Dashboard = () => {
       <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between flex-wrap">
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
                 Last 30 Days Attendance
-            </CardTitle>
+              </CardTitle>
               <Tabs value={attendanceTrendsFilter} onValueChange={(v) => setAttendanceTrendsFilter(v as 'both' | 'teachers' | 'students')}>
                 <TabsList className="h-8">
                   <TabsTrigger value="both" className="text-xs">Both</TabsTrigger>
@@ -739,11 +739,11 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />
-                {isTrainer ? 'Today\'s Attendance' : 'Weekday Sessions Distribution'}
-            </CardTitle>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-secondary shrink-0" />
+                {isTrainer ? "Today's Attendance" : 'Weekday Sessions Distribution'}
+              </CardTitle>
               {isTrainer && (
                 <Tabs value={attendanceTodayFilter} onValueChange={(v) => setAttendanceTodayFilter(v as 'both' | 'teachers' | 'students')}>
                   <TabsList className="h-8">
@@ -815,11 +815,11 @@ const Dashboard = () => {
       <div className="grid gap-3 md:gap-4 grid-cols-1">
         <Card>
           <CardHeader>
-            <div className="flex items-center flex-wrap justify-between">
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-chart-3" />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-chart-3 shrink-0" />
                 Last 30 Days Sessions Progress
-            </CardTitle>
+              </CardTitle>
               <Tabs value={sessionsProgressFilter} onValueChange={(v) => setSessionsProgressFilter(v as 'both' | 'teachers' | 'students')}>
                 <TabsList className="h-8">
                   <TabsTrigger value="both" className="text-xs">Both</TabsTrigger>

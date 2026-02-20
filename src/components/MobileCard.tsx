@@ -38,7 +38,7 @@ export function MobileCard({
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
 
   return (
-    <Card className={cn("overflow-hidden transition-all hover:shadow-md", className)}>
+    <Card className={cn("overflow-hidden transition-all duration-200 hover:shadow-md active:scale-[0.99] animate-slide-up", className)}>
       <CardHeader className="pb-3 space-y-0">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -52,7 +52,7 @@ export function MobileCard({
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="h-8 w-8 p-0 shrink-0"
+              className="h-9 w-9 p-0 shrink-0 touch-manipulation"
             >
               {isExpanded ? (
                 <ChevronUp className="h-4 w-4" />

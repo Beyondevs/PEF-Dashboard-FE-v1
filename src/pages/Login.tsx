@@ -71,46 +71,48 @@ const Login = () => {
     );
   }
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0f4674' }}>
-      {/* White square with rounded corners */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6">
-          {/* Left side - Image */}
-          <div className="flex items-center hidden sm:block justify-start pr-0">
+    <div className="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6" style={{ backgroundColor: '#0f4674' }}>
+      {/* Main card — scale-in entrance animation */}
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden animate-scale-in">
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          {/* Left side — only show on md+ to prevent stacked image on small tablets */}
+          <div className="hidden md:block">
             <img
               src="/Participant%20Manual.webp"
               alt="PEF Training"
-              className="w-full h-full max-h-[600px] object-cover"
+              className="w-full h-full max-h-[640px] object-cover"
             />
           </div>
+
           {/* Right side - Logos and Login form */}
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col justify-center p-5 sm:p-7 md:p-8">
             {/* Logo section */}
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
+            <div className="text-center mb-5 sm:mb-6">
+              <div className="flex items-center justify-center gap-3 md:gap-4 mb-3 sm:mb-4">
                 <img
                   src="https://www.pef.edu.pk/images/logo/pef-logo_2.png"
                   alt="PEF Logo"
-                  className="h-16 md:h-20"
+                  className="h-14 sm:h-16 md:h-20 w-auto"
                 />
                 <img
                   src="https://premierdlc.com/wp-content/uploads/2018/01/logo.png"
                   alt="Premier DLC Logo"
-                  className="h-16 md:h-20"
+                  className="h-14 sm:h-16 md:h-20 w-auto"
                 />
               </div>
-              <h1 className="text-1xl md:text-2xl font-bold text-gray-800 mb-2">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-1 tracking-tight">
                 PEF Spoken English Training Portal
               </h1>
-              <p className="text-gray-600 text-base md:text-lg">
-                Monitoring & Management System
+              <p className="text-gray-500 text-sm sm:text-base">
+                Monitoring &amp; Management System
               </p>
             </div>
-            {/* Login form */}
-            <Card className="border-2 border-gray-200 shadow-sm">
-              <CardHeader className="text-center pb-3 md:pb-4">
-                <CardTitle className="text-xl md:text-2xl">Login</CardTitle>
-                <CardDescription className="text-sm md:text-base">
+
+            {/* Login form — slide-up on entry */}
+            <Card className="border border-gray-200 shadow-sm animate-slide-up">
+              <CardHeader className="text-center pb-3 sm:pb-4">
+                <CardTitle className="text-xl sm:text-2xl">Sign In</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   Enter your credentials to access the portal
                 </CardDescription>
               </CardHeader>

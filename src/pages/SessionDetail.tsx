@@ -43,6 +43,8 @@ import {
   XCircle,
   Save,
   AlertTriangle,
+  FileText,
+  MapPin,
 } from 'lucide-react';
 import { sessions, schools, trainers, teachers, students, attendance, assessments } from '@/lib/mockData';
 import { toast } from 'sonner';
@@ -598,22 +600,22 @@ const SessionDetail = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate('/sessions')}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <Button variant="outline" size="sm" className="w-fit" onClick={() => navigate('/sessions')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">{session.title}</h1>
-            <p className="text-muted-foreground">{school?.name}</p>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-foreground break-words sm:text-2xl lg:text-3xl">{session.title}</h1>
+            <p className="text-sm text-muted-foreground break-words sm:text-base">{school?.name}</p>
           </div>
-          {getStatusBadge(session.status)}
+          <div className="w-fit">{getStatusBadge(session.status)}</div>
         </div>
         {session.status !== 'Completed' && isAdmin() && (
-          <Button onClick={handleCompleteSession}>
+          <Button className="w-full sm:w-auto" onClick={handleCompleteSession}>
             <CheckCircle className="h-4 w-4 mr-2" />
             Complete Session
           </Button>
@@ -630,16 +632,18 @@ const SessionDetail = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="teachers">Teachers ({sessionTeachers.length})</TabsTrigger>
-          <TabsTrigger value="students">Students ({sessionStudents.length})</TabsTrigger>
-        </TabsList>
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <TabsList className="h-auto min-w-full justify-start gap-1 p-1 sm:min-w-0">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="teachers" className="text-xs sm:text-sm">Teachers ({sessionTeachers.length})</TabsTrigger>
+            <TabsTrigger value="students" className="text-xs sm:text-sm">Students ({sessionStudents.length})</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {/* KPI Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Teachers</CardTitle>
@@ -707,11 +711,11 @@ const SessionDetail = () => {
                 <CardTitle>Session Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <div>
+                <div className="flex items-start gap-3">
+                  <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0">
                     <p className="text-sm font-medium">Date</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground break-words">
                       {new Date(session.date).toLocaleDateString('en-US', {
                         weekday: 'long',
                         year: 'numeric',
@@ -721,50 +725,50 @@ const SessionDetail = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                  <div>
+                <div className="flex items-start gap-3">
+                  <Clock className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0">
                     <p className="text-sm font-medium">Time</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground break-words">
                       {session.startTime} - {session.endTime}
                     </p>
                   </div>
                 </div>
-                 <div className="flex items-center gap-3">
-                   <School className="h-5 w-5 text-muted-foreground" />
-                   <div>
+                 <div className="flex items-start gap-3">
+                   <School className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                   <div className="min-w-0">
                      <p className="text-sm font-medium">School</p>
-                     <p className="text-sm text-muted-foreground">{school?.name}</p>
+                     <p className="text-sm text-muted-foreground break-words">{school?.name}</p>
                      {school?.address && (
-                       <p className="text-xs text-muted-foreground mt-1">{school.address}</p>
+                       <p className="mt-1 break-words text-xs text-muted-foreground">{school.address}</p>
                      )}
                    </div>
                  </div>
-                 <div className="flex items-center gap-3">
-                   <UserCheck className="h-5 w-5 text-muted-foreground" />
-                   <div>
+                 <div className="flex items-start gap-3">
+                   <UserCheck className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                   <div className="min-w-0">
                      <p className="text-sm font-medium">Trainer</p>
-                     <p className="text-sm text-muted-foreground">{trainer?.name}</p>
+                     <p className="text-sm text-muted-foreground break-words">{trainer?.name}</p>
                      {trainer?.email && (
-                       <p className="text-xs text-muted-foreground mt-1">{trainer.email}</p>
+                       <p className="mt-1 break-all text-xs text-muted-foreground">{trainer.email}</p>
                      )}
                    </div>
                  </div>
                  {school?.emisCode && (
-                   <div className="flex items-center gap-3">
-                     <div className="h-5 w-5 text-muted-foreground">📋</div>
-                     <div>
+                   <div className="flex items-start gap-3">
+                     <FileText className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                     <div className="min-w-0">
                        <p className="text-sm font-medium">EMIS Code</p>
-                       <p className="text-sm text-muted-foreground">{school.emisCode}</p>
+                       <p className="text-sm text-muted-foreground break-words">{school.emisCode}</p>
                      </div>
                    </div>
                  )}
                  {school?.division && school?.district && school?.tehsil && (
-                   <div className="flex items-center gap-3">
-                     <div className="h-5 w-5 text-muted-foreground">📍</div>
-                     <div>
+                   <div className="flex items-start gap-3">
+                     <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                     <div className="min-w-0">
                        <p className="text-sm font-medium">Location</p>
-                       <p className="text-sm text-muted-foreground">
+                       <p className="text-sm text-muted-foreground break-words">
                          {school.tehsil.name}, {school.district.name}, {school.division.name}
                        </p>
                      </div>
@@ -854,14 +858,15 @@ const SessionDetail = () => {
         <TabsContent value="teachers">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Teacher Attendance</CardTitle>
                 {canMarkAttendance() && session.status !== 'Completed' && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span>
+                        <span className="w-full sm:w-auto">
                           <Button
+                            className="w-full sm:w-auto"
                             onClick={() => handleOpenAttendanceModal('Teacher')}
                             disabled={role === 'trainer' && !isSessionPastOrPresent}
                           >
@@ -881,30 +886,27 @@ const SessionDetail = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>CNIC</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      {canMarkAttendance() && session.status !== 'Completed' && (
-                        <TableHead>Action</TableHead>
-                      )}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedSessionTeachers.map(teacher => {
-                      const att = getAttendanceForPerson(teacher.id, 'Teacher');
-                      return (
-                        <TableRow key={teacher.id}>
-                        <TableCell className="font-medium">{teacher.name}</TableCell>
-                        <TableCell className="font-mono text-sm">{teacher.cnic}</TableCell>
-                        <TableCell>{teacher.phone}</TableCell>
-                        <TableCell>{teacher.email}</TableCell>
-                        <TableCell>
+              <div className="space-y-3 md:hidden">
+                {paginatedSessionTeachers.map(teacher => {
+                  const att = getAttendanceForPerson(teacher.id, 'Teacher');
+                  return (
+                    <div key={teacher.id} className="rounded-lg border p-4">
+                      <div className="space-y-3">
+                        <div className="min-w-0">
+                          <p className="font-medium break-words">{teacher.name}</p>
+                          <p className="text-xs text-muted-foreground break-all">{teacher.email || 'No email available'}</p>
+                        </div>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <p className="break-words">
+                              <span className="font-medium text-foreground">CNIC: </span>
+                              {teacher.cnic || 'N/A'}
+                            </p>
+                            <p className="break-words">
+                              <span className="font-medium text-foreground">Phone: </span>
+                              {teacher.phone || 'N/A'}
+                            </p>
+                          </div>
                           {isAttendancePresent(att) ? (
                             <Badge className="bg-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -916,9 +918,10 @@ const SessionDetail = () => {
                               Absent
                             </Badge>
                           )}
-                        </TableCell>
+                        </div>
                         {canMarkAttendance() && session.status !== 'Completed' && (
-                          <TableCell>
+                          <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
+                            <span className="text-sm font-medium">Mark Attendance</span>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -937,13 +940,78 @@ const SessionDetail = () => {
                                 )}
                               </Tooltip>
                             </TooltipProvider>
-                          </TableCell>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="hidden md:block">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>CNIC</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Status</TableHead>
+                        {canMarkAttendance() && session.status !== 'Completed' && (
+                          <TableHead>Action</TableHead>
                         )}
                       </TableRow>
-                    );
-                    })}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedSessionTeachers.map(teacher => {
+                        const att = getAttendanceForPerson(teacher.id, 'Teacher');
+                        return (
+                          <TableRow key={teacher.id}>
+                            <TableCell className="font-medium">{teacher.name}</TableCell>
+                            <TableCell className="font-mono text-sm">{teacher.cnic}</TableCell>
+                            <TableCell>{teacher.phone}</TableCell>
+                            <TableCell className="break-all">{teacher.email}</TableCell>
+                            <TableCell>
+                              {isAttendancePresent(att) ? (
+                                <Badge className="bg-green-500">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Present
+                                </Badge>
+                              ) : (
+                                <Badge variant="destructive">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Absent
+                                </Badge>
+                              )}
+                            </TableCell>
+                            {canMarkAttendance() && session.status !== 'Completed' && (
+                              <TableCell>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <Switch
+                                          checked={isAttendancePresent(att)}
+                                          onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
+                                          disabled={role === 'trainer' && !isSessionPastOrPresent}
+                                        />
+                                      </span>
+                                    </TooltipTrigger>
+                                    {role === 'trainer' && !isSessionPastOrPresent && (
+                                      <TooltipContent>
+                                        <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
               <PaginationControls
                 currentPage={teacherPage}
@@ -964,14 +1032,15 @@ const SessionDetail = () => {
         <TabsContent value="students">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Student Attendance</CardTitle>
                 {canMarkAttendance() && session.status !== 'Completed' && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span>
+                        <span className="w-full sm:w-auto">
                           <Button
+                            className="w-full sm:w-auto"
                             onClick={() => handleOpenAttendanceModal('Student')}
                             disabled={role === 'trainer' && !isSessionPastOrPresent}
                           >
@@ -991,30 +1060,29 @@ const SessionDetail = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Roll No</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Gender</TableHead>
-                      <TableHead>Grade</TableHead>
-                      <TableHead>Status</TableHead>
-                      {canMarkAttendance() && session.status !== 'Completed' && (
-                        <TableHead>Action</TableHead>
-                      )}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedSessionStudents.map(student => {
-                      const att = getAttendanceForPerson(student.id, 'Student');
-                      return (
-                        <TableRow key={student.id}>
-                        <TableCell className="font-mono">{student.rollNo}</TableCell>
-                        <TableCell className="font-medium">{student.name}</TableCell>
-                        <TableCell className="capitalize">{student.gender}</TableCell>
-                        <TableCell>Grade {student.grade}</TableCell>
-                        <TableCell>
+              <div className="space-y-3 md:hidden">
+                {paginatedSessionStudents.map(student => {
+                  const att = getAttendanceForPerson(student.id, 'Student');
+                  return (
+                    <div key={student.id} className="rounded-lg border p-4">
+                      <div className="space-y-3">
+                        <div className="min-w-0">
+                          <p className="font-medium break-words">{student.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Roll No: <span className="font-mono">{student.rollNo}</span>
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <p className="break-words">
+                              <span className="font-medium text-foreground">Gender: </span>
+                              <span className="capitalize">{student.gender}</span>
+                            </p>
+                            <p className="break-words">
+                              <span className="font-medium text-foreground">Grade: </span>
+                              {student.grade}
+                            </p>
+                          </div>
                           {isAttendancePresent(att) ? (
                             <Badge className="bg-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -1026,9 +1094,10 @@ const SessionDetail = () => {
                               Absent
                             </Badge>
                           )}
-                        </TableCell>
+                        </div>
                         {canMarkAttendance() && session.status !== 'Completed' && (
-                          <TableCell>
+                          <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
+                            <span className="text-sm font-medium">Mark Attendance</span>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -1047,13 +1116,78 @@ const SessionDetail = () => {
                                 )}
                               </Tooltip>
                             </TooltipProvider>
-                          </TableCell>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="hidden md:block">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Roll No</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Gender</TableHead>
+                        <TableHead>Grade</TableHead>
+                        <TableHead>Status</TableHead>
+                        {canMarkAttendance() && session.status !== 'Completed' && (
+                          <TableHead>Action</TableHead>
                         )}
                       </TableRow>
-                    );
-                    })}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedSessionStudents.map(student => {
+                        const att = getAttendanceForPerson(student.id, 'Student');
+                        return (
+                          <TableRow key={student.id}>
+                            <TableCell className="font-mono">{student.rollNo}</TableCell>
+                            <TableCell className="font-medium">{student.name}</TableCell>
+                            <TableCell className="capitalize">{student.gender}</TableCell>
+                            <TableCell>Grade {student.grade}</TableCell>
+                            <TableCell>
+                              {isAttendancePresent(att) ? (
+                                <Badge className="bg-green-500">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Present
+                                </Badge>
+                              ) : (
+                                <Badge variant="destructive">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Absent
+                                </Badge>
+                              )}
+                            </TableCell>
+                            {canMarkAttendance() && session.status !== 'Completed' && (
+                              <TableCell>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <Switch
+                                          checked={isAttendancePresent(att)}
+                                          onCheckedChange={() => toggleAttendance(student.id, 'Student')}
+                                          disabled={role === 'trainer' && !isSessionPastOrPresent}
+                                        />
+                                      </span>
+                                    </TooltipTrigger>
+                                    {role === 'trainer' && !isSessionPastOrPresent && (
+                                      <TooltipContent>
+                                        <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
               <PaginationControls
                 currentPage={studentPage}
@@ -1073,7 +1207,7 @@ const SessionDetail = () => {
 
       {/* Attendance Marking Modal (Full Screen) */}
       <Dialog open={isAttendanceModalOpen} onOpenChange={setIsAttendanceModalOpen}>
-        <DialogContent className="max-w-6xl h-[90vh] overflow-y-auto">
+        <DialogContent className="h-[90vh] w-[calc(100vw-1rem)] max-w-6xl overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Mark {attendanceType} Attendance</DialogTitle>
             <DialogDescription>
@@ -1081,7 +1215,7 @@ const SessionDetail = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-2 sm:py-4">
             <div className="grid gap-4">
               {attendanceType === 'Teacher'
                 ? sessionTeachers.map(teacher => {
@@ -1089,9 +1223,9 @@ const SessionDetail = () => {
                     return (
                       <div
                         key={teacher.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                        className="flex flex-col gap-3 rounded-lg border p-4 hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex w-full min-w-0 items-start gap-3 sm:items-center sm:gap-4">
                           <Checkbox
                             checked={isPresent}
                             onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
@@ -1099,15 +1233,15 @@ const SessionDetail = () => {
                           />
                           <label
                             htmlFor={`teacher-${teacher.id}`}
-                            className="cursor-pointer flex-1"
+                            className="min-w-0 flex-1 cursor-pointer"
                           >
-                            <p className="font-medium">
+                            <p className="break-words font-medium">
                               {teacher.name || 'Unknown Teacher'}{teacher.cnic ? `_${teacher.cnic}` : ''}
                             </p>
-                            <p className="text-sm text-muted-foreground">{teacher.email}</p>
+                            <p className="text-sm text-muted-foreground break-all">{teacher.email}</p>
                           </label>
                         </div>
-                        <Badge variant={isPresent ? 'default' : 'outline'}>
+                        <Badge variant={isPresent ? 'default' : 'outline'} className="self-end sm:self-auto">
                           {isPresent ? 'Present' : 'Absent'}
                         </Badge>
                       </div>
@@ -1118,9 +1252,9 @@ const SessionDetail = () => {
                     return (
                       <div
                         key={student.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                        className="flex flex-col gap-3 rounded-lg border p-4 hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex w-full min-w-0 items-start gap-3 sm:items-center sm:gap-4">
                           <Checkbox
                             checked={isPresent}
                             onCheckedChange={() => toggleAttendance(student.id, 'Student')}
@@ -1128,15 +1262,15 @@ const SessionDetail = () => {
                           />
                           <label
                             htmlFor={`student-${student.id}`}
-                            className="cursor-pointer flex-1"
+                            className="min-w-0 flex-1 cursor-pointer"
                           >
-                            <p className="font-medium">{student.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Roll No: {student.rollNo} • Grade {student.grade}
+                            <p className="break-words font-medium">{student.name}</p>
+                            <p className="text-sm text-muted-foreground break-words">
+                              Roll No: {student.rollNo} - Grade {student.grade}
                             </p>
                           </label>
                         </div>
-                        <Badge variant={isPresent ? 'default' : 'outline'}>
+                        <Badge variant={isPresent ? 'default' : 'outline'} className="self-end sm:self-auto">
                           {isPresent ? 'Present' : 'Absent'}
                         </Badge>
                       </div>
@@ -1144,8 +1278,9 @@ const SessionDetail = () => {
                   })}
             </div>
             
-            <div className="flex justify-end gap-2 pt-4 sticky bottom-0 bg-background pb-4">
+            <div className="sticky bottom-0 flex flex-col-reverse gap-2 bg-background pb-2 pt-4 sm:flex-row sm:justify-end sm:pb-4">
               <Button 
+                className="w-full sm:w-auto"
                 variant="outline" 
                 onClick={() => {
                   setIsAttendanceModalOpen(false);
@@ -1154,7 +1289,7 @@ const SessionDetail = () => {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSaveAttendance} disabled={isAttendanceLoading}>
+              <Button className="w-full sm:w-auto" onClick={handleSaveAttendance} disabled={isAttendanceLoading}>
                 <Save className="h-4 w-4 mr-2" />
                 {isAttendanceLoading ? 'Saving...' : 'Save Attendance'}
               </Button>
@@ -1165,7 +1300,7 @@ const SessionDetail = () => {
 
       {/* Assessments Entry Modal */}
       <Dialog open={isAssessmentModalOpen} onOpenChange={setIsAssessmentModalOpen}>
-        <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto">
+        <DialogContent className="h-[90vh] w-[calc(100vw-1rem)] max-w-4xl overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Enter Student Assessments</DialogTitle>
             <DialogDescription>
@@ -1173,49 +1308,93 @@ const SessionDetail = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Roll No</TableHead>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead>Grade</TableHead>
-                    <TableHead className="text-right">Score (0-10)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedSessionStudents.map(student => {
-                    const studentAtt = getAttendanceForPerson(student.id, 'Student');
-                    const isPresent = isAttendancePresent(studentAtt);
-                    
-                    return (
-                      <TableRow key={student.id} className={!isPresent ? 'opacity-50' : ''}>
-                      <TableCell className="font-mono">{student.rollNo}</TableCell>
-                      <TableCell className="font-medium">{student.name}</TableCell>
-                      <TableCell>Grade {student.grade}</TableCell>
-                      <TableCell className="text-right">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.5"
-                          value={assessmentScores[student.id] || 0}
-                          onChange={e =>
-                            setAssessmentScores(prev => ({
-                              ...prev,
-                              [student.id]: Math.min(10, Math.max(0, parseFloat(e.target.value) || 0)),
-                            }))
-                          }
-                          className="w-24 ml-auto"
-                          disabled={!isPresent}
-                        />
-                      </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+          <div className="space-y-4 py-2 sm:py-4">
+            <div className="space-y-3 md:hidden">
+              {paginatedSessionStudents.map(student => {
+                const studentAtt = getAttendanceForPerson(student.id, 'Student');
+                const isPresent = isAttendancePresent(studentAtt);
+
+                return (
+                  <div key={student.id} className={`space-y-3 rounded-lg border p-4 ${!isPresent ? 'opacity-50' : ''}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium break-words">{student.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Roll No: <span className="font-mono">{student.rollNo}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">Grade {student.grade}</p>
+                      </div>
+                      <Badge variant={isPresent ? 'default' : 'outline'}>
+                        {isPresent ? 'Present' : 'Absent'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`score-${student.id}`} className="text-sm">Score (0-10)</Label>
+                      <Input
+                        id={`score-${student.id}`}
+                        type="number"
+                        min="0"
+                        max="10"
+                        step="0.5"
+                        value={assessmentScores[student.id] || 0}
+                        onChange={e =>
+                          setAssessmentScores(prev => ({
+                            ...prev,
+                            [student.id]: Math.min(10, Math.max(0, parseFloat(e.target.value) || 0)),
+                          }))
+                        }
+                        className="w-full"
+                        disabled={!isPresent}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden md:block">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Roll No</TableHead>
+                      <TableHead>Student Name</TableHead>
+                      <TableHead>Grade</TableHead>
+                      <TableHead className="text-right">Score (0-10)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedSessionStudents.map(student => {
+                      const studentAtt = getAttendanceForPerson(student.id, 'Student');
+                      const isPresent = isAttendancePresent(studentAtt);
+
+                      return (
+                        <TableRow key={student.id} className={!isPresent ? 'opacity-50' : ''}>
+                          <TableCell className="font-mono">{student.rollNo}</TableCell>
+                          <TableCell className="font-medium">{student.name}</TableCell>
+                          <TableCell>Grade {student.grade}</TableCell>
+                          <TableCell className="text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.5"
+                              value={assessmentScores[student.id] || 0}
+                              onChange={e =>
+                                setAssessmentScores(prev => ({
+                                  ...prev,
+                                  [student.id]: Math.min(10, Math.max(0, parseFloat(e.target.value) || 0)),
+                                }))
+                              }
+                              className="ml-auto w-24"
+                              disabled={!isPresent}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
             <PaginationControls
               currentPage={studentPage}
@@ -1228,11 +1407,11 @@ const SessionDetail = () => {
               }
             />
             
-            <div className="flex justify-end gap-2 pt-4 sticky bottom-0 bg-background pb-4">
-              <Button variant="outline" onClick={() => setIsAssessmentModalOpen(false)}>
+            <div className="sticky bottom-0 flex flex-col-reverse gap-2 bg-background pb-2 pt-4 sm:flex-row sm:justify-end sm:pb-4">
+              <Button className="w-full sm:w-auto" variant="outline" onClick={() => setIsAssessmentModalOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveAssessments}>
+              <Button className="w-full sm:w-auto" onClick={handleSaveAssessments}>
                 <Save className="h-4 w-4 mr-2" />
                 Save Assessments
               </Button>
@@ -1245,3 +1424,5 @@ const SessionDetail = () => {
 };
 
 export default SessionDetail;
+
+
