@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ChevronRight, Loader2 } from 'lucide-react';
@@ -14,7 +14,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getDrilldownReport, exportDrilldownCSV } from '@/lib/api';
-import { useFilters } from '@/contexts/FilterContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 type DrillLevel = 'province' | 'division' | 'district' | 'tehsil' | 'school';
@@ -41,14 +40,38 @@ interface DrillItem {
   };
 }
 
+interface DrilldownSummary {
+  entityCount: number;
+  schools: number;
+  sessions: number;
+  attendanceRate: number;
+  avgScore: number;
+  speakingAssessments: {
+    studentPhases: number;
+    teacherPhases: number;
+    totalPhases: number;
+  };
+  attendance: {
+    presentCount: number;
+    totalCount: number;
+  };
+}
+
+interface DrilldownResponse {
+  level: 'division' | 'district' | 'tehsil' | 'school';
+  parentId?: string;
+  summary?: DrilldownSummary;
+  items?: DrillItem[];
+}
+
 const DrilldownReport = () => {
-  const { filters } = useFilters();
   const { role } = useAuth();
   const [drillState, setDrillState] = useState<DrillState>({ level: 'province' });
   const [divisions, setDivisions] = useState<DrillItem[]>([]);
   const [districts, setDistricts] = useState<DrillItem[]>([]);
   const [tehsils, setTehsils] = useState<DrillItem[]>([]);
   const [schools, setSchools] = useState<DrillItem[]>([]);
+  const [summary, setSummary] = useState<DrilldownSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -94,19 +117,28 @@ const DrilldownReport = () => {
   const fetchDrilldownData = useCallback(async () => {
     try {
       setIsLoading(true);
+      setSummary(null);
       
       if (drillState.level === 'province') {
         const response = await getDrilldownReport({ level: 'division' });
-        setDivisions(response.data.items || []);
+        const payload = response.data as DrilldownResponse;
+        setSummary(payload.summary || null);
+        setDivisions(payload.items || []);
       } else if (drillState.level === 'division' && drillState.divisionId) {
         const response = await getDrilldownReport({ level: 'district', parentId: drillState.divisionId });
-        setDistricts(response.data.items || []);
+        const payload = response.data as DrilldownResponse;
+        setSummary(payload.summary || null);
+        setDistricts(payload.items || []);
       } else if (drillState.level === 'district' && drillState.districtId) {
         const response = await getDrilldownReport({ level: 'tehsil', parentId: drillState.districtId });
-        setTehsils(response.data.items || []);
+        const payload = response.data as DrilldownResponse;
+        setSummary(payload.summary || null);
+        setTehsils(payload.items || []);
       } else if (drillState.level === 'tehsil' && drillState.tehsilId) {
         const response = await getDrilldownReport({ level: 'school', parentId: drillState.tehsilId });
-        setSchools(response.data.items || []);
+        const payload = response.data as DrilldownResponse;
+        setSummary(payload.summary || null);
+        setSchools(payload.items || []);
       }
     } catch (error) {
       console.error('Failed to fetch drilldown data:', error);
@@ -131,6 +163,11 @@ const DrilldownReport = () => {
   useEffect(() => {
     setSchoolPage(1);
   }, [drillState.tehsilId, setSchoolPage]);
+
+  const toFixedOne = (value: number) => {
+    const safe = Number(value);
+    return Number.isFinite(safe) ? safe.toFixed(1) : '0.0';
+  };
 
   const handleExport = async () => {
     try {
@@ -168,6 +205,15 @@ const DrilldownReport = () => {
   };
 
   const calculateProvinceMetrics = () => {
+    if (summary) {
+      return {
+        schools: summary.schools,
+        sessions: summary.sessions,
+        attendanceRate: toFixedOne(summary.attendanceRate),
+        avgScore: toFixedOne(summary.avgScore),
+      };
+    }
+
     if (divisions.length === 0) return { schools: 0, sessions: 0, attendanceRate: 0, avgScore: 0 };
     
     const totalSessions = divisions.reduce((sum, div) => sum + (div.sessionCount || 0), 0);
@@ -184,6 +230,15 @@ const DrilldownReport = () => {
   };
 
   const calculateDivisionMetrics = () => {
+    if (summary) {
+      return {
+        schools: summary.schools,
+        sessions: summary.sessions,
+        attendanceRate: toFixedOne(summary.attendanceRate),
+        avgScore: toFixedOne(summary.avgScore),
+      };
+    }
+
     if (districts.length === 0) return { schools: 0, sessions: 0, attendanceRate: 0, avgScore: 0 };
     
     const totalSessions = districts.reduce((sum, dist) => sum + (dist.sessionCount || 0), 0);
@@ -200,6 +255,15 @@ const DrilldownReport = () => {
   };
 
   const calculateDistrictMetrics = () => {
+    if (summary) {
+      return {
+        schools: summary.schools,
+        sessions: summary.sessions,
+        attendanceRate: toFixedOne(summary.attendanceRate),
+        avgScore: toFixedOne(summary.avgScore),
+      };
+    }
+
     if (tehsils.length === 0) return { schools: 0, sessions: 0, attendanceRate: 0, avgScore: 0 };
     
     const totalSessions = tehsils.reduce((sum, teh) => sum + (teh.sessionCount || 0), 0);
@@ -216,6 +280,15 @@ const DrilldownReport = () => {
   };
 
   const calculateTehsilMetrics = () => {
+    if (summary) {
+      return {
+        schools: summary.schools,
+        sessions: summary.sessions,
+        attendanceRate: toFixedOne(summary.attendanceRate),
+        avgScore: toFixedOne(summary.avgScore),
+      };
+    }
+
     if (schools.length === 0) return { schools: 0, sessions: 0, attendanceRate: 0, avgScore: 0 };
     
     const totalSessions = schools.reduce((sum, sch) => sum + (sch.sessionCount || 0), 0);
@@ -242,7 +315,7 @@ const DrilldownReport = () => {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
               <div>
-                <div className="text-2xl font-bold">{divisions.length}</div>
+                <div className="text-2xl font-bold">{summary?.entityCount ?? divisions.length}</div>
                 <p className="text-sm text-muted-foreground">Divisions</p>
               </div>
               <div>
@@ -352,7 +425,7 @@ const DrilldownReport = () => {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
               <div>
-                <div className="text-2xl font-bold">{districts.length}</div>
+                <div className="text-2xl font-bold">{summary?.entityCount ?? districts.length}</div>
                 <p className="text-sm text-muted-foreground">Districts</p>
               </div>
               <div>
@@ -472,7 +545,7 @@ const DrilldownReport = () => {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
               <div>
-                <div className="text-2xl font-bold">{tehsils.length}</div>
+                <div className="text-2xl font-bold">{summary?.entityCount ?? tehsils.length}</div>
                 <p className="text-sm text-muted-foreground">Tehsils</p>
               </div>
               <div>
@@ -592,7 +665,7 @@ const DrilldownReport = () => {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
               <div>
-                <div className="text-2xl font-bold">{schools.length}</div>
+                <div className="text-2xl font-bold">{summary?.entityCount ?? schools.length}</div>
                 <p className="text-sm text-muted-foreground">Schools</p>
               </div>
               <div>
