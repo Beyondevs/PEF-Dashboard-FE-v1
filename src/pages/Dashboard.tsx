@@ -134,6 +134,7 @@ const Dashboard = () => {
         if (filters.district) params.districtId = filters.district;
         if (filters.tehsil) params.tehsilId = filters.tehsil;
         if (filters.school) params.schoolId = filters.school;
+        if (filters.grade) params.grade = filters.grade;
         
         // Add date filters - convert to YYYY-MM-DD format if they exist
         const fromDate = toDateOnly(filters.startDate);
@@ -256,6 +257,7 @@ const Dashboard = () => {
     filters.district,
     filters.tehsil,
     filters.school,
+    filters.grade,
     filters.sessionId,
     filters.startDate,
     filters.endDate,

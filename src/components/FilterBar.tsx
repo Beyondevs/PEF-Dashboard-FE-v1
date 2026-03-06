@@ -225,6 +225,7 @@ export const FilterBar = () => {
     filters.district,
     filters.tehsil,
     filters.school,
+    filters.grade,
     filters.sessionId,
     filters.startDate,
     filters.endDate,
@@ -470,6 +471,25 @@ export const FilterBar = () => {
           </SelectContent>
         </Select>
         )}
+
+        <Select
+          value={filters.grade ?? 'all'}
+          onValueChange={(value) => {
+            setFilters((prev) => ({
+              ...prev,
+              grade: value === 'all' ? undefined : (value as '9' | '10'),
+            }));
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-[130px] md:w-[150px] text-xs md:text-sm">
+            <SelectValue placeholder="All Grades" />
+          </SelectTrigger>
+          <SelectContent className="z-50">
+            <SelectItem value="all">All Grades</SelectItem>
+            <SelectItem value="9">9th</SelectItem>
+            <SelectItem value="10">10th</SelectItem>
+          </SelectContent>
+        </Select>
 
         <Select
           value={filters.sessionId ?? ''}

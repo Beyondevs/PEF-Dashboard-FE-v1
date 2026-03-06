@@ -80,6 +80,7 @@ const AttendanceMarkingReport = () => {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      if (filters.grade) params.grade = filters.grade;
 
       // date filters
       if (filters.startDate) params.from = filters.startDate;
@@ -122,6 +123,7 @@ const AttendanceMarkingReport = () => {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      if (filters.grade) params.grade = filters.grade;
       if (filters.startDate) params.from = filters.startDate;
       if (filters.endDate) params.to = filters.endDate;
 

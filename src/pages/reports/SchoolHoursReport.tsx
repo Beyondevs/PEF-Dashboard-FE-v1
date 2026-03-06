@@ -86,6 +86,7 @@ const SchoolHoursReport = () => {
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
     if (filters.school) params.schoolId = filters.school;
+    if (filters.grade) params.grade = filters.grade;
     const from = toDateOnly(filters.startDate);
     const to = toDateOnly(filters.endDate);
     if (from) params.from = from;
@@ -122,7 +123,7 @@ const SchoolHoursReport = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.division, filters.district, filters.tehsil, filters.school, filters.startDate, filters.endDate]);
+  }, [filters.division, filters.district, filters.tehsil, filters.school, filters.grade, filters.startDate, filters.endDate]);
 
   const handleSearch = () => {
     const term = searchQuery.trim();

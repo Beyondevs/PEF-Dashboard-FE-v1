@@ -80,6 +80,7 @@ const MonthlyAttendanceCalendar = () => {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      if (personType === 'student' && filters.grade) params.grade = filters.grade;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
       const response = await getMonthlyAttendanceCalendar(params);
@@ -90,7 +91,7 @@ const MonthlyAttendanceCalendar = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedMonth, selectedYear, personType, filters.division, filters.district, filters.tehsil, filters.school, searchQuery]);
+  }, [selectedMonth, selectedYear, personType, filters.division, filters.district, filters.tehsil, filters.school, filters.grade, searchQuery]);
 
   useEffect(() => {
     fetchData();
@@ -108,6 +109,7 @@ const MonthlyAttendanceCalendar = () => {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      if (personType === 'student' && filters.grade) params.grade = filters.grade;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
       const blob = await exportMonthlyAttendanceCalendar(params);
@@ -618,4 +620,3 @@ const MonthlyAttendanceCalendar = () => {
 };
 
 export default MonthlyAttendanceCalendar;
-

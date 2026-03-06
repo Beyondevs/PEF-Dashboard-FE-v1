@@ -124,6 +124,7 @@ const SchoolSummaryReport = () => {
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
+    if (filters.grade) params.grade = filters.grade;
     if (filters.startDate) params.from = filters.startDate;
     if (filters.endDate) params.to = filters.endDate;
     if (schoolId) params.schoolId = schoolId;
@@ -135,6 +136,7 @@ const SchoolSummaryReport = () => {
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
+    if (filters.grade) params.grade = filters.grade;
     if (filters.startDate) params.from = filters.startDate;
     if (filters.endDate) params.to = filters.endDate;
     return params;

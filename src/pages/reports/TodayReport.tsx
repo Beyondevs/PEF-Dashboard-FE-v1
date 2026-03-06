@@ -84,6 +84,7 @@ const TodayReport = () => {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      if (filters.grade) params.grade = filters.grade;
 
       const blob = await exportTodayActivityCSV(params);
       
@@ -116,6 +117,7 @@ const TodayReport = () => {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      if (filters.grade) params.grade = filters.grade;
 
       const response = await getTodayActivityReport(params);
       setTodayData(response.data);
@@ -125,7 +127,7 @@ const TodayReport = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [today, filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [today, filters.division, filters.district, filters.tehsil, filters.school, filters.grade]);
 
   useEffect(() => {
     fetchTodayActivity();

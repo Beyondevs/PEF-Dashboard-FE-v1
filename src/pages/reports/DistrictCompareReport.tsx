@@ -44,6 +44,7 @@ const DistrictCompareReport = () => {
     try {
       const params: Record<string, string> = {};
       if (filters.division) params.divisionId = filters.division;
+      if (filters.grade) params.grade = filters.grade;
 
       const blob = await exportDistrictComparisonCSV(params);
       const url = window.URL.createObjectURL(blob);
@@ -70,6 +71,9 @@ const DistrictCompareReport = () => {
       if (filters.division) {
         params.divisionId = filters.division;
       }
+      if (filters.grade) {
+        params.grade = filters.grade;
+      }
 
       const response = await getDistrictComparisonReport(params);
       setDistrictData(response.data || []);
@@ -79,7 +83,7 @@ const DistrictCompareReport = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filters.division]);
+  }, [filters.division, filters.grade]);
 
   useEffect(() => {
     fetchDistrictComparison();

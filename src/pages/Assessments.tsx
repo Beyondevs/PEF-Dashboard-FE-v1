@@ -63,6 +63,7 @@ const Assessments = () => {
     district: filters.district,
     tehsil: filters.tehsil,
     school: filters.school,
+    grade: filters.grade,
     startDate: filters.startDate,
     endDate: filters.endDate,
     activeSearchTerm: activeSearchTerm,
@@ -95,6 +96,7 @@ const Assessments = () => {
     if (filters.district) apiFilters.districtId = filters.district;
     if (filters.tehsil) apiFilters.tehsilId = filters.tehsil;
     if (filters.school) apiFilters.schoolId = filters.school;
+    if (subjectType === 'student' && filters.grade) apiFilters.grade = filters.grade;
     if (filters.startDate) apiFilters.from = filters.startDate;
     if (filters.endDate) apiFilters.to = filters.endDate;
     if (activeSearchTerm) apiFilters.search = activeSearchTerm;
@@ -106,6 +108,7 @@ const Assessments = () => {
     const params: Record<string, string> = {};
     if (filters.sessionId) params.sessionId = filters.sessionId;
     params.subjectType = activeTab === 'students' ? 'student' : 'teacher';
+    if (activeTab === 'students' && filters.grade) params.grade = filters.grade;
     if (filters.startDate) params.startDate = filters.startDate;
     if (filters.endDate) params.endDate = filters.endDate;
     if (activeSearchTerm) params.search = activeSearchTerm;
@@ -121,6 +124,7 @@ const Assessments = () => {
       prevFilters.district !== filters.district ||
       prevFilters.tehsil !== filters.tehsil ||
       prevFilters.school !== filters.school ||
+      prevFilters.grade !== filters.grade ||
       prevFilters.startDate !== filters.startDate ||
       prevFilters.endDate !== filters.endDate ||
       prevFilters.activeSearchTerm !== activeSearchTerm;
@@ -136,6 +140,7 @@ const Assessments = () => {
       district: filters.district,
       tehsil: filters.tehsil,
       school: filters.school,
+      grade: filters.grade,
       startDate: filters.startDate,
       endDate: filters.endDate,
       activeSearchTerm: activeSearchTerm,

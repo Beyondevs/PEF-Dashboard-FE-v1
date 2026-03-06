@@ -157,6 +157,7 @@ export interface FilterState {
   district?: string;
   tehsil?: string;
   school?: string;
+  grade?: '9' | '10';
   sessionId?: string;
   startDate?: string;  // ISO date string (YYYY-MM-DD)
   endDate?: string;    // ISO date string (YYYY-MM-DD)

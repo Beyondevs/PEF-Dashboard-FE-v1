@@ -121,11 +121,12 @@ const Leaderboard = () => {
       if (filters.district) filterParams.districtId = filters.district;
       if (filters.tehsil) filterParams.tehsilId = filters.tehsil;
       if (filters.school) filterParams.schoolId = filters.school;
-      const teacherStudentParams = { ...filterParams, topN: 50 };
-      const schoolParams = { ...filterParams, topN: 9999 };
+      const teacherParams = { ...filterParams, topN: 50 };
+      const studentParams = { ...filterParams, topN: 50, ...(filters.grade ? { grade: filters.grade } : {}) };
+      const schoolParams = { ...filterParams, topN: 9999, ...(filters.grade ? { grade: filters.grade } : {}) };
       const [teacherResponse, studentResponse, schoolStarsResponse] = await Promise.all([
-        getTeacherLeaderboard(teacherStudentParams),
-        getStudentLeaderboard(teacherStudentParams),
+        getTeacherLeaderboard(teacherParams),
+        getStudentLeaderboard(studentParams),
         getSchoolStarStats(schoolParams),
       ]);
       setTeacherData(teacherResponse.data?.leaderboard || []);
@@ -159,7 +160,7 @@ const Leaderboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filters.division, filters.district, filters.tehsil, filters.school]);
+  }, [filters.division, filters.district, filters.tehsil, filters.school, filters.grade]);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -869,7 +870,7 @@ const Leaderboard = () => {
       )}
     </>
   );
-  const hasActiveFilters = !!(filters.division || filters.district || filters.school);
+  const hasActiveFilters = !!(filters.division || filters.district || filters.tehsil || filters.school || filters.grade);
 
   return (
     <div className="space-y-8">

@@ -123,6 +123,7 @@ const SchoolHoursSchoolDetail = () => {
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
+    if (filters.grade) params.grade = filters.grade;
     const defaultRange = getDefaultSchoolHoursRange();
     params.from = filters.startDate || defaultRange.from;
     params.to = filters.endDate || defaultRange.to;
@@ -136,6 +137,7 @@ const SchoolHoursSchoolDetail = () => {
     if (filters.division) params.divisionId = filters.division;
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
+    if (filters.grade) params.grade = filters.grade;
     const defaultRange = getDefaultSchoolHoursRange();
     params.from = filters.startDate || defaultRange.from;
     params.to = filters.endDate || defaultRange.to;
@@ -449,4 +451,3 @@ const SchoolHoursSchoolDetail = () => {
 };
 
 export default SchoolHoursSchoolDetail;
-

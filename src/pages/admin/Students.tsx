@@ -62,6 +62,7 @@ export default function Students() {
     district: filters.district,
     tehsil: filters.tehsil,
     school: filters.school,
+    grade: filters.grade,
     activeSearchTerm: activeSearchTerm,
     statusFilter: statusFilter,
   });
@@ -91,6 +92,7 @@ export default function Students() {
         prevFilters.district !== filters.district ||
         prevFilters.tehsil !== filters.tehsil ||
         prevFilters.school !== filters.school ||
+        prevFilters.grade !== filters.grade ||
         prevFilters.activeSearchTerm !== activeSearchTerm ||
         prevFilters.statusFilter !== statusFilter;
 
@@ -104,6 +106,7 @@ export default function Students() {
           district: filters.district,
           tehsil: filters.tehsil,
           school: filters.school,
+          grade: filters.grade,
           activeSearchTerm: activeSearchTerm,
           statusFilter: statusFilter,
         };
@@ -123,6 +126,7 @@ export default function Students() {
       if (filters.district) params.districtId = filters.district;
       if (filters.tehsil) params.tehsilId = filters.tehsil;
       if (filters.school) params.schoolId = filters.school;
+      if (filters.grade) params.grade = filters.grade;
 
       // Add search parameter if provided
       if (activeSearchTerm && activeSearchTerm.trim()) {
@@ -161,7 +165,7 @@ export default function Students() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.pageSize, filters.division, filters.district, filters.tehsil, filters.school, activeSearchTerm, statusFilter, toast]);
+  }, [pagination.page, pagination.pageSize, filters.division, filters.district, filters.tehsil, filters.school, filters.grade, activeSearchTerm, statusFilter, toast]);
 
   // Fetch students when filters, search, status, or page changes
   useEffect(() => {

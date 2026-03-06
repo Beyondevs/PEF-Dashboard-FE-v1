@@ -145,6 +145,7 @@ const SpeakingAssessments = () => {
       if (filters.division) apiFilters.divisionId = filters.division;
       if (filters.district) apiFilters.districtId = filters.district;
       if (filters.school) apiFilters.schoolId = filters.school;
+      if (filters.grade) apiFilters.grade = filters.grade;
       if (activeSearchTerm) apiFilters.search = activeSearchTerm;
 
       const response = await getStudentSpeakingAssessments(apiFilters);
@@ -160,7 +161,7 @@ const SpeakingAssessments = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [studentPage, pageSize, selectedStatus, filters.division, filters.district, filters.school, activeSearchTerm]);
+  }, [studentPage, pageSize, selectedStatus, filters.division, filters.district, filters.school, filters.grade, activeSearchTerm]);
 
   const fetchTeacherAssessments = useCallback(async () => {
     try {
@@ -195,7 +196,7 @@ const SpeakingAssessments = () => {
   useEffect(() => {
     setStudentPage(1);
     setTeacherPage(1);
-  }, [filters.division, filters.district, filters.school, selectedStatus]);
+  }, [filters.division, filters.district, filters.school, filters.grade, selectedStatus]);
 
   useEffect(() => {
     if (activeTab === 'students') {
@@ -505,6 +506,7 @@ const SpeakingAssessments = () => {
                     if (filters.division) params.divisionId = filters.division;
                     if (filters.district) params.districtId = filters.district;
                     if (filters.school) params.schoolId = filters.school;
+                    if (filters.grade) params.grade = filters.grade;
                     if (activeSearchTerm) params.search = activeSearchTerm;
 
                     const blob = await exportSpeakingAssessmentsPdfsZip(params);
@@ -542,6 +544,7 @@ const SpeakingAssessments = () => {
                   if (filters.division) params.divisionId = filters.division;
                   if (filters.district) params.districtId = filters.district;
                   if (filters.school) params.schoolId = filters.school;
+                  if (activeTab === 'students' && filters.grade) params.grade = filters.grade;
                   if (activeSearchTerm) params.search = activeSearchTerm;
 
                   if (activeTab === 'students') {

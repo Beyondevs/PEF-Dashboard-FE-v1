@@ -67,6 +67,7 @@ const Attendance = () => {
     district: filters.district,
     tehsil: filters.tehsil,
     school: filters.school,
+    grade: filters.grade,
     startDate: filters.startDate,
     endDate: filters.endDate,
     activeSearchTerm: activeSearchTerm,
@@ -112,6 +113,7 @@ const Attendance = () => {
         prevFilters.district !== filters.district ||
         prevFilters.tehsil !== filters.tehsil ||
         prevFilters.school !== filters.school ||
+        prevFilters.grade !== filters.grade ||
         prevFilters.startDate !== filters.startDate ||
         prevFilters.endDate !== filters.endDate ||
         prevFilters.activeSearchTerm !== activeSearchTerm;
@@ -128,6 +130,7 @@ const Attendance = () => {
           district: filters.district,
           tehsil: filters.tehsil,
           school: filters.school,
+          grade: filters.grade,
           startDate: filters.startDate,
           endDate: filters.endDate,
           activeSearchTerm: activeSearchTerm,
@@ -169,6 +172,9 @@ const Attendance = () => {
       if (filters.school) {
         teacherFilters.schoolId = filters.school;
         studentFilters.schoolId = filters.school;
+      }
+      if (filters.grade) {
+        studentFilters.grade = filters.grade;
       }
 
       if (filters.startDate) {
@@ -221,6 +227,7 @@ const Attendance = () => {
     if (filters.district) params.districtId = filters.district;
     if (filters.tehsil) params.tehsilId = filters.tehsil;
     if (filters.school) params.schoolId = filters.school;
+    if (activeTab === 'students' && filters.grade) params.grade = filters.grade;
     if (filters.startDate) params.from = filters.startDate;
     if (filters.endDate) params.to = filters.endDate;
     params.personType = activeTab === 'teachers' ? 'teacher' : 'student';

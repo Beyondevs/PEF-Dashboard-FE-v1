@@ -50,11 +50,12 @@ const SpeakingAssessmentReports = () => {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  const buildFilters = () => {
+  const buildFilters = (includeGrade = false) => {
     const apiFilters: Record<string, string | number> = {};
     if (filters.division) apiFilters.divisionId = filters.division;
     if (filters.district) apiFilters.districtId = filters.district;
     if (filters.school) apiFilters.schoolId = filters.school;
+    if (includeGrade && filters.grade) apiFilters.grade = filters.grade;
     if (filters.startDate) apiFilters.from = filters.startDate;
     if (filters.endDate) apiFilters.to = filters.endDate;
     return apiFilters;
@@ -64,10 +65,10 @@ const SpeakingAssessmentReports = () => {
     setIsLoading(true);
     try {
       if (activeTab === 'students') {
-        const response = await getStudentSpeakingAssessmentReport(buildFilters());
+        const response = await getStudentSpeakingAssessmentReport(buildFilters(true));
         setStudentReport(response.data);
       } else {
-        const response = await getTeacherSpeakingAssessmentReport(buildFilters());
+        const response = await getTeacherSpeakingAssessmentReport(buildFilters(false));
         setTeacherReport(response.data);
       }
     } catch (error) {
@@ -155,6 +156,7 @@ const SpeakingAssessmentReports = () => {
                   { metric: 'filter_divisionId', value: filters.division || '' },
                   { metric: 'filter_districtId', value: filters.district || '' },
                   { metric: 'filter_schoolId', value: filters.school || '' },
+                  { metric: 'filter_grade', value: activeTab === 'students' ? (filters.grade || '') : '' },
                   { metric: 'filter_from', value: filters.startDate || '' },
                   { metric: 'filter_to', value: filters.endDate || '' },
                 ];
