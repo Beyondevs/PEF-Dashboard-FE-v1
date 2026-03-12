@@ -90,8 +90,6 @@ interface ReportData {
     generatedAt: string;
     studentMaxScore: number;
     teacherMaxScore: number;
-    studentStarThreshold: number;
-    teacherStarThreshold: number;
   };
 }
 
@@ -385,7 +383,7 @@ const StarPerformersSection = ({ data }: { data: ReportData }) => {
               Star Performers
             </CardTitle>
             <CardDescription>
-              Threshold: average ≥ 3.0 "Good" per skill (60% of max). {tab === 'students' ? 'Max 60pts' : 'Max 70pts'}.
+              Participants marked as star performers (same definition as Leaderboard).
             </CardDescription>
           </div>
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
@@ -593,8 +591,7 @@ const PrePostAssessmentReport = () => {
           {/* Meta footer */}
           <p className="text-xs text-muted-foreground text-right">
             Report generated: {new Date(report.meta.generatedAt).toLocaleString()} ·
-            Star threshold: ≥{report.meta.studentStarThreshold}/{report.meta.studentMaxScore} (students),
-            ≥{report.meta.teacherStarThreshold}/{report.meta.teacherMaxScore} (teachers)
+            Max score: {report.meta.studentMaxScore} (students), {report.meta.teacherMaxScore} (teachers)
           </p>
         </div>
       )}
