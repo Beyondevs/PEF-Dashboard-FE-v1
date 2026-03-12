@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle, Mic, Calendar, Clock } from 'lucide-react';
+import { FileText, BarChart3, TrendingUp, ArrowRight, AlertCircle, Mic, Calendar, Clock, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -69,6 +69,15 @@ const Reports = () => {
       color: 'text-emerald-600',
       path: '/reports/school-hours',
       restrictedRoles: ['teacher', 'student'], // Hide from teacher/student roles
+    },
+    {
+      id: 8,
+      title: 'Pre & Post Assessment Final Report',
+      description: 'Comprehensive overview of student and teacher oral assessments, including division-wise, gender-based, and skill-wise progress.',
+      icon: BarChart2,
+      color: 'text-indigo-600',
+      path: '/reports/pre-post-assessment',
+      restrictedRoles: ['teacher', 'student', 'trainer', 'division_role'],
     },
   ];
 
