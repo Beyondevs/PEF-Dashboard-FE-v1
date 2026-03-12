@@ -265,6 +265,9 @@ export const getAttendanceMarkingStatus = (params: Record<string, string | numbe
 export const getPrePostAssessmentReport = () =>
   apiClient.get<any>('/reports/pre-post-assessment');
 
+export const getPrePostAssessmentPdf = () =>
+  apiClient.getBlob('/reports/pre-post-assessment-pdf');
+
 export const getSchoolHoursReport = (params: Record<string, string | number | boolean> = {}) => {
   const qs = new URLSearchParams(params as any).toString();
   return apiClient.get<any>(`/reports/school-hours${qs ? `?${qs}` : ''}`);

@@ -25,7 +25,9 @@ import MonthlyAttendanceCalendar from "./pages/reports/MonthlyAttendanceCalendar
 import SchoolHoursReport from "./pages/reports/SchoolHoursReport";
 import SchoolHoursSchoolDetail from "./pages/reports/SchoolHoursSchoolDetail";
 import SchoolSummaryReport from "./pages/reports/SchoolSummaryReport";
+import PrePostAssessmentHub from "./pages/reports/PrePostAssessmentHub";
 import PrePostAssessmentReport from "./pages/reports/PrePostAssessmentReport";
+import PrePostAssessmentPdfViewer from "./pages/reports/PrePostAssessmentPdfViewer";
 import Schools from "./pages/Schools";
 import Repository from "./pages/Repository";
 import WeeklySummaries from "./pages/WeeklySummaries";
@@ -88,7 +90,9 @@ const App = () => (
               <Route path="/reports/school-hours" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><SchoolHoursReport /></PrivateRoute></ProtectedLayout>} />
               <Route path="/reports/school-hours/:schoolId" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><SchoolHoursSchoolDetail /></PrivateRoute></ProtectedLayout>} />
               <Route path="/reports/school-summary/:schoolId" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><SchoolSummaryReport /></PrivateRoute></ProtectedLayout>} />
-              <Route path="/reports/pre-post-assessment" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'bnu']}><PrePostAssessmentReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/pre-post-assessment" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'bnu']}><PrePostAssessmentHub /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/pre-post-assessment/dashboard" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'bnu']}><PrePostAssessmentReport /></PrivateRoute></ProtectedLayout>} />
+              <Route path="/reports/pre-post-assessment/official-report" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'bnu']}><PrePostAssessmentPdfViewer /></PrivateRoute></ProtectedLayout>} />
               <Route path="/schools" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Schools /></PrivateRoute></ProtectedLayout>} />
               <Route path="/repository" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><Repository /></PrivateRoute></ProtectedLayout>} />
               <Route path="/hybrid/weekly-summaries" element={<ProtectedLayout><PrivateRoute allowedRoles={['admin', 'client', 'trainer', 'division_role', 'bnu']}><WeeklySummaries /></PrivateRoute></ProtectedLayout>} />

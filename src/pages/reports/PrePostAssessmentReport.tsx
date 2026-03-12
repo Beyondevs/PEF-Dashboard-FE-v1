@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -15,6 +15,17 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { getPrePostAssessmentReport } from '@/lib/api';
+
+// ─── Mobile hook ──────────────────────────────────────────────────────────────
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  const onResize = useCallback(() => setIsMobile(window.innerWidth < 640), []);
+  useEffect(() => {
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [onResize]);
+  return isMobile;
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface KpiGroup {
@@ -165,9 +176,9 @@ const KpiSection = ({ data }: { data: ReportData }) => {
       <CardContent>
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           {cards.map((c) => (
-            <div key={c.label} className={`rounded-lg p-4 ${c.bg}`}>
+            <div key={c.label} className={`rounded-lg p-3 sm:p-4 ${c.bg}`}>
               <c.icon className={`h-5 w-5 mb-2 ${c.color}`} />
-              <p className="text-2xl font-bold text-foreground">{c.value}</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground leading-tight break-words">{c.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{c.label}</p>
             </div>
           ))}
@@ -180,13 +191,17 @@ const KpiSection = ({ data }: { data: ReportData }) => {
 // ─── Widget 2: Division-wise Performance ──────────────────────────────────────
 const DivisionPerformanceSection = ({ data }: { data: ReportData }) => {
   const [tab, setTab] = useState<'students' | 'teachers'>('students');
+  const isMobile = useIsMobile();
   const rows = data.divisionPerformance[tab];
 
   const chartData = rows.map((r) => ({
-    division: r.division,
+    division: isMobile && r.division.length > 8 ? r.division.substring(0, 7) + '…' : r.division,
     'Pre (%)': r.preAvgPercent,
     'Post (%)': r.postAvgPercent,
   }));
+
+  // On mobile: fixed 520px so all 6 divisions always render; desktop: responsive
+  const chartMinWidth = 520;
 
   return (
     <Card>
@@ -204,18 +219,22 @@ const DivisionPerformanceSection = ({ data }: { data: ReportData }) => {
           </Tabs>
         </div>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="division" tick={{ fontSize: 12 }} />
-            <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
-            <Tooltip formatter={(v: number) => `${v}%`} />
-            <Legend />
-            <Bar dataKey="Pre (%)"  fill="hsl(217 91% 35%)" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="Post (%)" fill="hsl(142 76% 36%)" radius={[3, 3, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <CardContent className="px-2 sm:px-6">
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+          <div style={{ minWidth: chartMinWidth }}>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="division" tick={{ fontSize: 11 }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} width={42} />
+                <Tooltip formatter={(v: number) => `${v}%`} />
+                <Legend />
+                <Bar dataKey="Pre (%)"  fill="hsl(217 91% 35%)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Post (%)" fill="hsl(142 76% 36%)" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -251,9 +270,9 @@ const GenderAnalysisSection = ({ data }: { data: ReportData }) => {
             <p className="text-xs font-medium text-muted-foreground mb-2">By Division (Post %)</p>
             <div className="space-y-1">
               {entry.byDivision.map((d) => (
-                <div key={d.divisionId} className="flex justify-between text-xs">
-                  <span className="text-muted-foreground truncate max-w-[120px]">{d.division}</span>
-                  <span className="font-medium">{fmt(d.postAvgPercent)}</span>
+                <div key={d.divisionId} className="flex justify-between text-xs gap-2">
+                  <span className="text-muted-foreground truncate">{d.division}</span>
+                  <span className="font-medium shrink-0">{fmt(d.postAvgPercent)}</span>
                 </div>
               ))}
             </div>
@@ -270,7 +289,7 @@ const GenderAnalysisSection = ({ data }: { data: ReportData }) => {
         <CardDescription>Pre & Post score comparison by gender (students only)</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <GenderCard label="Female" entry={female} accent="border-l-pink-500" />
           <GenderCard label="Male"   entry={male}   accent="border-l-blue-500" />
         </div>
@@ -282,13 +301,23 @@ const GenderAnalysisSection = ({ data }: { data: ReportData }) => {
 // ─── Widget 4: Skill-wise Shift ───────────────────────────────────────────────
 const SkillShiftSection = ({ data }: { data: ReportData }) => {
   const [tab, setTab] = useState<'students' | 'teachers'>('students');
+  const isMobile = useIsMobile();
   const skills = data.skillShift[tab];
 
+  // On mobile: shorten labels to fit; on desktop: full labels
   const chartData = skills.map((s) => ({
-    skill: s.skill,
+    skill: isMobile
+      ? (s.skill.length > 18 ? `${s.skill.substring(0, 16)}…` : s.skill)
+      : s.skill,
     'Pre (%)':  s.prePercent,
     'Post (%)': s.postPercent,
   }));
+
+  const yAxisWidth  = isMobile ? 130 : 210;
+  const labelMaxLen = isMobile ? 18 : 28;
+  const rowHeight   = isMobile ? 30 : 36;
+  // minimum chart width so bars always get enough space on mobile
+  const minChartWidth = isMobile ? 320 : 0;
 
   return (
     <Card>
@@ -306,28 +335,32 @@ const SkillShiftSection = ({ data }: { data: ReportData }) => {
           </Tabs>
         </div>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={skills.length * 36 + 40}>
-          <BarChart
-            layout="vertical"
-            data={chartData}
-            margin={{ top: 5, right: 40, left: 8, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
-            <YAxis
-              type="category"
-              dataKey="skill"
-              width={210}
-              tick={{ fontSize: 11 }}
-              tickFormatter={(v: string) => v.length > 28 ? `${v.substring(0, 26)}…` : v}
-            />
-            <Tooltip formatter={(v: number) => `${v}%`} />
-            <Legend />
-            <Bar dataKey="Pre (%)"  fill="hsl(217 91% 35%)" radius={[0, 3, 3, 0]} />
-            <Bar dataKey="Post (%)" fill="hsl(142 76% 36%)" radius={[0, 3, 3, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <CardContent className="px-2 sm:px-6">
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+          <div style={minChartWidth ? { minWidth: minChartWidth } : undefined}>
+            <ResponsiveContainer width="100%" height={skills.length * rowHeight + 40}>
+              <BarChart
+                layout="vertical"
+                data={chartData}
+                margin={{ top: 5, right: isMobile ? 24 : 40, left: 4, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: isMobile ? 10 : 11 }} tickFormatter={(v) => `${v}%`} />
+                <YAxis
+                  type="category"
+                  dataKey="skill"
+                  width={yAxisWidth}
+                  tick={{ fontSize: isMobile ? 10 : 11 }}
+                  tickFormatter={(v: string) => v.length > labelMaxLen ? `${v.substring(0, labelMaxLen - 1)}…` : v}
+                />
+                <Tooltip formatter={(v: number) => `${v}%`} />
+                <Legend />
+                <Bar dataKey="Pre (%)"  fill="hsl(217 91% 35%)" radius={[0, 3, 3, 0]} />
+                <Bar dataKey="Post (%)" fill="hsl(142 76% 36%)" radius={[0, 3, 3, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -363,39 +396,47 @@ const StarPerformersSection = ({ data }: { data: ReportData }) => {
           </Tabs>
         </div>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Division</TableHead>
-              <TableHead className="text-right">{tab === 'students' ? 'Total Students' : 'Total Teachers'}</TableHead>
-              <TableHead className="text-right">Star Performers</TableHead>
-              <TableHead className="text-right">Star %</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((r) => (
-              <TableRow key={r.divisionId}>
-                <TableCell className="font-medium">{r.division}</TableCell>
-                <TableCell className="text-right">{(r.totalStudents ?? r.totalTeachers ?? 0).toLocaleString()}</TableCell>
-                <TableCell className="text-right">{r.starPerformers.toLocaleString()}</TableCell>
+      <CardContent className="px-2 sm:px-6">
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+          <Table className="min-w-[340px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Division</TableHead>
+                <TableHead className="text-right">
+                  <span className="hidden sm:inline">{tab === 'students' ? 'Total Students' : 'Total Teachers'}</span>
+                  <span className="sm:hidden">Total</span>
+                </TableHead>
+                <TableHead className="text-right">
+                  <span className="hidden sm:inline">Star Performers</span>
+                  <span className="sm:hidden">Stars</span>
+                </TableHead>
+                <TableHead className="text-right">Star %</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.divisionId}>
+                  <TableCell className="font-medium text-xs sm:text-sm">{r.division}</TableCell>
+                  <TableCell className="text-right text-xs sm:text-sm">{(r.totalStudents ?? r.totalTeachers ?? 0).toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-xs sm:text-sm">{r.starPerformers.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">
+                    <ImprovementBadge value={r.starPercent} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableBody>
+              <TableRow className="border-t-2 font-semibold bg-muted/40">
+                <TableCell className="text-xs sm:text-sm">Total</TableCell>
+                <TableCell className="text-right text-xs sm:text-sm">{totalCount.toLocaleString()}</TableCell>
+                <TableCell className="text-right text-xs sm:text-sm">{totalStar.toLocaleString()}</TableCell>
                 <TableCell className="text-right">
-                  <ImprovementBadge value={r.starPercent} />
+                  <ImprovementBadge value={parseFloat(totalPct)} />
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-          <TableBody>
-            <TableRow className="border-t-2 font-semibold bg-muted/40">
-              <TableCell>Total</TableCell>
-              <TableCell className="text-right">{totalCount.toLocaleString()}</TableCell>
-              <TableCell className="text-right">{totalStar.toLocaleString()}</TableCell>
-              <TableCell className="text-right">
-                <ImprovementBadge value={parseFloat(totalPct)} />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
@@ -517,7 +558,7 @@ const PrePostAssessmentReport = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/reports')} className="mt-1 shrink-0">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/reports/pre-post-assessment')} className="mt-1 shrink-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -543,10 +584,8 @@ const PrePostAssessmentReport = () => {
       ) : (
         <div className="space-y-6">
           <KpiSection data={report} />
-          <div className="grid gap-6 lg:grid-cols-2">
-            <DivisionPerformanceSection data={report} />
-            <GenderAnalysisSection data={report} />
-          </div>
+          <DivisionPerformanceSection data={report} />
+          <GenderAnalysisSection data={report} />
           <SkillShiftSection data={report} />
           <StarPerformersSection data={report} />
           <ProgressTablesSection data={report} />
