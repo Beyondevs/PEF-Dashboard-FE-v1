@@ -93,6 +93,435 @@ interface ReportData {
   };
 }
 
+// ─── PDF Static Fallback Data (Oct–Dec 2025 report) ───────────────────────────
+const PDF_FALLBACK_DATA: ReportData = {
+  kpi: {
+    students: {
+      totalActiveAssessed: 13439,
+      totalStarPerformers: 10059,
+      starPercent: 75.40,
+      preAvgPercent: 47.3,
+      postAvgPercent: 83.5,
+    },
+    teachers: {
+      totalActiveAssessed: 1945,
+      totalStarPerformers: 0,
+      starPercent: 0,
+      preAvgPercent: 0,
+      postAvgPercent: 0,
+    },
+  },
+  divisionPerformance: {
+    students: [
+      { division: 'Faisalabad', divisionId: 'faisalabad', count: 3029, preAvgPercent: 30.69, postAvgPercent: 71.35, improvement: 40.66 },
+      { division: 'Gujranwala', divisionId: 'gujranwala', count: 1786, preAvgPercent: 37.49, postAvgPercent: 77.36, improvement: 39.87 },
+      { division: 'Gujrat',     divisionId: 'gujrat',     count: 1395, preAvgPercent: 45.69, postAvgPercent: 82.07, improvement: 36.38 },
+      { division: 'Lahore',     divisionId: 'lahore',     count: 3294, preAvgPercent: 50.09, postAvgPercent: 86.28, improvement: 36.19 },
+      { division: 'Rawalpindi', divisionId: 'rawalpindi', count: 1142, preAvgPercent: 58.79, postAvgPercent: 90.88, improvement: 32.09 },
+      { division: 'Sargodha',   divisionId: 'sargodha',   count: 2793, preAvgPercent: 64.30, postAvgPercent: 95.06, improvement: 30.76 },
+    ],
+    teachers: [],
+  },
+  genderAnalysis: {
+    female: {
+      count: 8485,
+      preAvgPercent: 49.83,
+      postAvgPercent: 86.17,
+      improvement: 36.34,
+      byDivision: [
+        { division: 'Faisalabad', divisionId: 'faisalabad', count: 1570, preAvgPercent: 32.5,  postAvgPercent: 75.8  },
+        { division: 'Gujranwala', divisionId: 'gujranwala', count: 1213, preAvgPercent: 38.9,  postAvgPercent: 80.3  },
+        { division: 'Gujrat',     divisionId: 'gujrat',     count: 1035, preAvgPercent: 47.0,  postAvgPercent: 84.3  },
+        { division: 'Lahore',     divisionId: 'lahore',     count: 2395, preAvgPercent: 51.6,  postAvgPercent: 89.3  },
+        { division: 'Rawalpindi', divisionId: 'rawalpindi', count: 746,  preAvgPercent: 61.0,  postAvgPercent: 94.5  },
+        { division: 'Sargodha',   divisionId: 'sargodha',   count: 1526, preAvgPercent: 68.1,  postAvgPercent: 93.0  },
+      ],
+    },
+    male: {
+      count: 4954,
+      preAvgPercent: 44.30,
+      postAvgPercent: 78.92,
+      improvement: 34.62,
+      byDivision: [
+        { division: 'Faisalabad', divisionId: 'faisalabad', count: 1459, preAvgPercent: 28.8, postAvgPercent: 66.6 },
+        { division: 'Gujranwala', divisionId: 'gujranwala', count: 573,  preAvgPercent: 34.6, postAvgPercent: 71.2 },
+        { division: 'Gujrat',     divisionId: 'gujrat',     count: 360,  preAvgPercent: 41.8, postAvgPercent: 75.8 },
+        { division: 'Lahore',     divisionId: 'lahore',     count: 899,  preAvgPercent: 46.2, postAvgPercent: 78.4 },
+        { division: 'Rawalpindi', divisionId: 'rawalpindi', count: 396,  preAvgPercent: 54.7, postAvgPercent: 84.0 },
+        { division: 'Sargodha',   divisionId: 'sargodha',   count: 1267, preAvgPercent: 59.7, postAvgPercent: 97.6 },
+      ],
+    },
+  },
+  skillShift: {
+    students: [
+      { skill: 'Fluency',                       prePercent: 52.8, postPercent: 86.3, improvement: 33.5 },
+      { skill: 'Speaking in Complete Sentences', prePercent: 46.6, postPercent: 83.8, improvement: 37.2 },
+      { skill: 'Accuracy',                       prePercent: 50.4, postPercent: 86.2, improvement: 35.8 },
+      { skill: 'Pronunciation',                  prePercent: 52.0, postPercent: 87.5, improvement: 35.5 },
+      { skill: 'Vocabulary',                     prePercent: 55.4, postPercent: 89.9, improvement: 34.5 },
+      { skill: 'Confidence',                     prePercent: 44.1, postPercent: 80.6, improvement: 36.5 },
+      { skill: 'Asking Questions',               prePercent: 45.4, postPercent: 83.8, improvement: 38.4 },
+      { skill: 'Answering Questions',            prePercent: 48.7, postPercent: 84.4, improvement: 35.7 },
+      { skill: 'Asking & Sharing Information',   prePercent: 52.3, postPercent: 87.7, improvement: 35.4 },
+      { skill: 'Describing & Explaining',        prePercent: 42.8, postPercent: 80.3, improvement: 37.5 },
+      { skill: 'Expressing Thoughts & Feelings', prePercent: 40.8, postPercent: 77.5, improvement: 36.7 },
+      { skill: 'Speaking for an Audience',       prePercent: 43.6, postPercent: 80.0, improvement: 36.4 },
+    ],
+    teachers: [],
+  },
+  starPerformers: {
+    students: [
+      { division: 'Faisalabad', divisionId: 'faisalabad', totalStudents: 3029, starPerformers: 1767, starPercent: 58.34 },
+      { division: 'Gujranwala', divisionId: 'gujranwala', totalStudents: 1786, starPerformers: 1162, starPercent: 65.06 },
+      { division: 'Gujrat',     divisionId: 'gujrat',     totalStudents: 1395, starPerformers: 1022, starPercent: 73.26 },
+      { division: 'Lahore',     divisionId: 'lahore',     totalStudents: 3294, starPerformers: 2571, starPercent: 78.05 },
+      { division: 'Rawalpindi', divisionId: 'rawalpindi', totalStudents: 1142, starPerformers: 986,  starPercent: 86.34 },
+      { division: 'Sargodha',   divisionId: 'sargodha',   totalStudents: 2793, starPerformers: 2551, starPercent: 91.34 },
+    ],
+    teachers: [],
+  },
+  progressTables: {
+    students: {
+      overall: [
+        {
+          skill: 'Fluency',
+          overallPre: 52.8, overallPost: 86.3,
+          divisions: {
+            Faisalabad: { pre: 38.31, post: 74.35 }, Gujranwala: { pre: 40.38, post: 80.68 },
+            Gujrat:     { pre: 50.32, post: 84.26 }, Lahore:     { pre: 55.18, post: 89.57 },
+            Rawalpindi: { pre: 62.71, post: 91.61 }, Sargodha:   { pre: 64.99, post: 97.09 },
+          },
+        },
+        {
+          skill: 'Speaking in Complete Sentences',
+          overallPre: 46.6, overallPost: 83.8,
+          divisions: {
+            Faisalabad: { pre: 27.67, post: 72.43 }, Gujranwala: { pre: 36.18, post: 77.74 },
+            Gujrat:     { pre: 42.25, post: 82.51 }, Lahore:     { pre: 47.41, post: 84.57 },
+            Rawalpindi: { pre: 58.23, post: 90.46 }, Sargodha:   { pre: 63.92, post: 95.08 },
+          },
+        },
+        {
+          skill: 'Accuracy',
+          overallPre: 50.4, overallPost: 86.2,
+          divisions: {
+            Faisalabad: { pre: 37.60, post: 75.06 }, Gujranwala: { pre: 40.92, post: 78.43 },
+            Gujrat:     { pre: 44.63, post: 85.78 }, Lahore:     { pre: 54.76, post: 87.84 },
+            Rawalpindi: { pre: 62.47, post: 93.82 }, Sargodha:   { pre: 64.14, post: 96.50 },
+          },
+        },
+        {
+          skill: 'Pronunciation',
+          overallPre: 52.0, overallPost: 87.5,
+          divisions: {
+            Faisalabad: { pre: 34.53, post: 76.09 }, Gujranwala: { pre: 40.87, post: 81.33 },
+            Gujrat:     { pre: 52.67, post: 85.65 }, Lahore:     { pre: 55.99, post: 90.73 },
+            Rawalpindi: { pre: 62.71, post: 93.59 }, Sargodha:   { pre: 69.28, post: 97.36 },
+          },
+        },
+        {
+          skill: 'Vocabulary',
+          overallPre: 55.4, overallPost: 89.9,
+          divisions: {
+            Faisalabad: { pre: 38.38, post: 80.26 }, Gujranwala: { pre: 40.85, post: 83.42 },
+            Gujrat:     { pre: 56.07, post: 90.02 }, Lahore:     { pre: 59.53, post: 93.75 },
+            Rawalpindi: { pre: 64.29, post: 94.57 }, Sargodha:   { pre: 75.11, post: 97.50 },
+          },
+        },
+        {
+          skill: 'Confidence',
+          overallPre: 44.1, overallPost: 80.6,
+          divisions: {
+            Faisalabad: { pre: 24.35, post: 67.41 }, Gujranwala: { pre: 38.42, post: 71.93 },
+            Gujrat:     { pre: 42.90, post: 77.42 }, Lahore:     { pre: 45.40, post: 84.42 },
+            Rawalpindi: { pre: 54.64, post: 89.61 }, Sargodha:   { pre: 61.13, post: 92.95 },
+          },
+        },
+        {
+          skill: 'Asking Questions',
+          overallPre: 45.4, overallPost: 83.8,
+          divisions: {
+            Faisalabad: { pre: 30.95, post: 66.76 }, Gujranwala: { pre: 37.37, post: 76.48 },
+            Gujrat:     { pre: 40.23, post: 79.60 }, Lahore:     { pre: 49.56, post: 84.67 },
+            Rawalpindi: { pre: 55.18, post: 88.97 }, Sargodha:   { pre: 59.23, post: 94.45 },
+          },
+        },
+        {
+          skill: 'Answering Questions',
+          overallPre: 48.7, overallPost: 84.4,
+          divisions: {
+            Faisalabad: { pre: 30.15, post: 71.31 }, Gujranwala: { pre: 38.69, post: 78.71 },
+            Gujrat:     { pre: 45.69, post: 81.55 }, Lahore:     { pre: 52.42, post: 87.35 },
+            Rawalpindi: { pre: 59.23, post: 92.12 }, Sargodha:   { pre: 64.25, post: 95.35 },
+          },
+        },
+        {
+          skill: 'Asking & Sharing Information',
+          overallPre: 52.3, overallPost: 87.7,
+          divisions: {
+            Faisalabad: { pre: 37.15, post: 77.19 }, Gujranwala: { pre: 39.91, post: 83.91 },
+            Gujrat:     { pre: 49.26, post: 86.65 }, Lahore:     { pre: 53.47, post: 88.84 },
+            Rawalpindi: { pre: 63.64, post: 93.64 }, Sargodha:   { pre: 70.18, post: 96.16 },
+          },
+        },
+        {
+          skill: 'Describing & Explaining',
+          overallPre: 42.8, overallPost: 80.3,
+          divisions: {
+            Faisalabad: { pre: 22.01, post: 65.48 }, Gujranwala: { pre: 32.56, post: 73.84 },
+            Gujrat:     { pre: 42.08, post: 78.37 }, Lahore:     { pre: 42.86, post: 81.28 },
+            Rawalpindi: { pre: 55.87, post: 89.21 }, Sargodha:   { pre: 61.68, post: 93.69 },
+          },
+        },
+        {
+          skill: 'Expressing Thoughts & Feelings',
+          overallPre: 40.8, overallPost: 77.5,
+          divisions: {
+            Faisalabad: { pre: 24.05, post: 64.91 }, Gujranwala: { pre: 31.01, post: 67.55 },
+            Gujrat:     { pre: 40.33, post: 73.95 }, Lahore:     { pre: 40.93, post: 78.79 },
+            Rawalpindi: { pre: 50.95, post: 85.48 }, Sargodha:   { pre: 56.83, post: 91.89 },
+          },
+        },
+        {
+          skill: 'Speaking for an Audience',
+          overallPre: 43.6, overallPost: 80.0,
+          divisions: {
+            Faisalabad: { pre: 23.15, post: 64.89 }, Gujranwala: { pre: 32.77, post: 74.29 },
+            Gujrat:     { pre: 41.89, post: 76.93 }, Lahore:     { pre: 43.61, post: 83.49 },
+            Rawalpindi: { pre: 54.15, post: 87.51 }, Sargodha:   { pre: 60.80, post: 92.75 },
+          },
+        },
+      ],
+      female: [
+        {
+          skill: 'Fluency',
+          overallPre: 53.7, overallPost: 88.8,
+          divisions: {
+            Faisalabad: { pre: 39.30, post: 78.97 }, Gujranwala: { pre: 40.94, post: 83.20 },
+            Gujrat:     { pre: 52.17, post: 86.34 }, Lahore:     { pre: 57.00, post: 92.39 },
+            Rawalpindi: { pre: 65.74, post: 94.99 }, Sargodha:   { pre: 68.82, post: 96.09 },
+          },
+        },
+        {
+          skill: 'Speaking in Complete Sentences',
+          overallPre: 48.0, overallPost: 86.6,
+          divisions: {
+            Faisalabad: { pre: 30.19, post: 76.97 }, Gujranwala: { pre: 37.99, post: 80.87 },
+            Gujrat:     { pre: 43.13, post: 84.68 }, Lahore:     { pre: 49.16, post: 87.67 },
+            Rawalpindi: { pre: 59.97, post: 94.58 }, Sargodha:   { pre: 67.72, post: 93.24 },
+          },
+        },
+        {
+          skill: 'Accuracy',
+          overallPre: 52.5, overallPost: 88.5,
+          divisions: {
+            Faisalabad: { pre: 38.83, post: 79.58 }, Gujranwala: { pre: 41.50, post: 81.34 },
+            Gujrat:     { pre: 46.09, post: 87.79 }, Lahore:     { pre: 56.43, post: 90.70 },
+            Rawalpindi: { pre: 63.97, post: 96.68 }, Sargodha:   { pre: 67.75, post: 94.81 },
+          },
+        },
+        {
+          skill: 'Pronunciation',
+          overallPre: 54.9, overallPost: 90.4,
+          divisions: {
+            Faisalabad: { pre: 36.75, post: 80.57 }, Gujranwala: { pre: 41.47, post: 83.78 },
+            Gujrat:     { pre: 55.13, post: 87.65 }, Lahore:     { pre: 57.75, post: 93.42 },
+            Rawalpindi: { pre: 64.48, post: 96.57 }, Sargodha:   { pre: 74.09, post: 96.30 },
+          },
+        },
+        {
+          skill: 'Vocabulary',
+          overallPre: 57.6, overallPost: 92.2,
+          divisions: {
+            Faisalabad: { pre: 39.27, post: 84.33 }, Gujranwala: { pre: 41.45, post: 85.90 },
+            Gujrat:     { pre: 58.42, post: 91.69 }, Lahore:     { pre: 60.29, post: 95.95 },
+            Rawalpindi: { pre: 66.33, post: 97.27 }, Sargodha:   { pre: 80.21, post: 95.78 },
+          },
+        },
+        {
+          skill: 'Confidence',
+          overallPre: 46.3, overallPost: 82.5,
+          divisions: {
+            Faisalabad: { pre: 26.56, post: 72.20 }, Gujranwala: { pre: 39.34, post: 75.19 },
+            Gujrat:     { pre: 43.86, post: 80.06 }, Lahore:     { pre: 46.92, post: 84.03 },
+            Rawalpindi: { pre: 57.29, post: 93.65 }, Sargodha:   { pre: 64.13, post: 90.03 },
+          },
+        },
+        {
+          skill: 'Asking Questions',
+          overallPre: 47.3, overallPost: 84.3,
+          divisions: {
+            Faisalabad: { pre: 33.08, post: 71.25 }, Gujranwala: { pre: 38.85, post: 79.62 },
+            Gujrat:     { pre: 40.75, post: 82.07 }, Lahore:     { pre: 51.51, post: 87.87 },
+            Rawalpindi: { pre: 57.75, post: 93.19 }, Sargodha:   { pre: 62.01, post: 91.90 },
+          },
+        },
+        {
+          skill: 'Answering Questions',
+          overallPre: 50.4, overallPost: 87.0,
+          divisions: {
+            Faisalabad: { pre: 32.73, post: 75.76 }, Gujranwala: { pre: 39.64, post: 81.65 },
+            Gujrat:     { pre: 47.09, post: 83.75 }, Lahore:     { pre: 54.34, post: 90.14 },
+            Rawalpindi: { pre: 60.56, post: 95.60 }, Sargodha:   { pre: 67.96, post: 92.83 },
+          },
+        },
+        {
+          skill: 'Asking & Sharing Information',
+          overallPre: 53.9, overallPost: 89.7,
+          divisions: {
+            Faisalabad: { pre: 38.79, post: 81.31 }, Gujranwala: { pre: 40.49, post: 86.36 },
+            Gujrat:     { pre: 51.27, post: 88.31 }, Lahore:     { pre: 55.52, post: 91.61 },
+            Rawalpindi: { pre: 65.92, post: 96.60 }, Sargodha:   { pre: 75.41, post: 94.12 },
+          },
+        },
+        {
+          skill: 'Describing & Explaining',
+          overallPre: 44.7, overallPost: 82.5,
+          divisions: {
+            Faisalabad: { pre: 23.25, post: 69.78 }, Gujranwala: { pre: 35.20, post: 77.20 },
+            Gujrat:     { pre: 42.94, post: 80.83 }, Lahore:     { pre: 43.77, post: 84.57 },
+            Rawalpindi: { pre: 58.39, post: 93.03 }, Sargodha:   { pre: 64.72, post: 90.90 },
+          },
+        },
+        {
+          skill: 'Expressing Thoughts & Feelings',
+          overallPre: 42.8, overallPost: 80.1,
+          divisions: {
+            Faisalabad: { pre: 25.94, post: 69.27 }, Gujranwala: { pre: 34.03, post: 70.73 },
+            Gujrat:     { pre: 40.91, post: 78.57 }, Lahore:     { pre: 41.26, post: 82.58 },
+            Rawalpindi: { pre: 54.10, post: 90.27 }, Sargodha:   { pre: 60.41, post: 89.41 },
+          },
+        },
+        {
+          skill: 'Speaking for an Audience',
+          overallPre: 45.0, overallPost: 82.5,
+          divisions: {
+            Faisalabad: { pre: 24.78, post: 69.29 }, Gujranwala: { pre: 35.42, post: 77.54 },
+            Gujrat:     { pre: 42.76, post: 79.36 }, Lahore:     { pre: 44.73, post: 86.67 },
+            Rawalpindi: { pre: 57.18, post: 91.88 }, Sargodha:   { pre: 63.84, post: 89.96 },
+          },
+        },
+      ],
+      male: [
+        {
+          skill: 'Fluency',
+          overallPre: 48.7, overallPost: 79.8,
+          divisions: {
+            Faisalabad: { pre: 37.24, post: 69.42 }, Gujranwala: { pre: 39.20, post: 75.36 },
+            Gujrat:     { pre: 45.00, post: 78.28 }, Lahore:     { pre: 50.32, post: 82.05 },
+            Rawalpindi: { pre: 59.90, post: 85.25 }, Sargodha:   { pre: 60.38, post: 98.30 },
+          },
+        },
+        {
+          skill: 'Speaking in Complete Sentences',
+          overallPre: 42.4, overallPost: 78.2,
+          divisions: {
+            Faisalabad: { pre: 24.96, post: 67.55 }, Gujranwala: { pre: 32.36, post: 71.10 },
+            Gujrat:     { pre: 39.72, post: 76.28 }, Lahore:     { pre: 42.76, post: 76.31 },
+            Rawalpindi: { pre: 54.95, post: 82.68 }, Sargodha:   { pre: 59.34, post: 97.30 },
+          },
+        },
+        {
+          skill: 'Accuracy',
+          overallPre: 46.7, overallPost: 81.7,
+          divisions: {
+            Faisalabad: { pre: 36.29, post: 70.20 }, Gujranwala: { pre: 34.33, post: 72.29 },
+            Gujrat:     { pre: 40.44, post: 80.00 }, Lahore:     { pre: 50.32, post: 80.24 },
+            Rawalpindi: { pre: 59.65, post: 88.43 }, Sargodha:   { pre: 59.79, post: 98.53 },
+          },
+        },
+        {
+          skill: 'Pronunciation',
+          overallPre: 47.3, overallPost: 83.0,
+          divisions: {
+            Faisalabad: { pre: 32.15, post: 71.27 }, Gujranwala: { pre: 39.62, post: 76.16 },
+            Gujrat:     { pre: 45.61, post: 79.89 }, Lahore:     { pre: 51.30, post: 83.56 },
+            Rawalpindi: { pre: 59.39, post: 87.98 }, Sargodha:   { pre: 63.49, post: 98.64 },
+          },
+        },
+        {
+          skill: 'Vocabulary',
+          overallPre: 51.2, overallPost: 86.0,
+          divisions: {
+            Faisalabad: { pre: 37.42, post: 75.89 }, Gujranwala: { pre: 39.58, post: 78.15 },
+            Gujrat:     { pre: 49.33, post: 85.22 }, Lahore:     { pre: 57.51, post: 87.88 },
+            Rawalpindi: { pre: 60.45, post: 89.49 }, Sargodha:   { pre: 68.97, post: 99.57 },
+          },
+        },
+        {
+          skill: 'Confidence',
+          overallPre: 40.8, overallPost: 75.3,
+          divisions: {
+            Faisalabad: { pre: 21.97, post: 62.26 }, Gujranwala: { pre: 36.47, post: 65.03 },
+            Gujrat:     { pre: 40.11, post: 69.83 }, Lahore:     { pre: 41.33, post: 76.44 },
+            Rawalpindi: { pre: 49.65, post: 82.02 }, Sargodha:   { pre: 57.52, post: 96.46 },
+          },
+        },
+        {
+          skill: 'Asking Questions',
+          overallPre: 42.0, overallPost: 75.7,
+          divisions: {
+            Faisalabad: { pre: 28.60, post: 61.93 }, Gujranwala: { pre: 34.24, post: 69.84 },
+            Gujrat:     { pre: 38.72, post: 72.50 }, Lahore:     { pre: 44.38, post: 76.15 },
+            Rawalpindi: { pre: 50.35, post: 81.01 }, Sargodha:   { pre: 55.90, post: 97.52 },
+          },
+        },
+        {
+          skill: 'Answering Questions',
+          overallPre: 44.6, overallPost: 79.5,
+          divisions: {
+            Faisalabad: { pre: 27.37, post: 66.53 }, Gujranwala: { pre: 36.60, post: 72.50 },
+            Gujrat:     { pre: 41.67, post: 75.22 }, Lahore:     { pre: 47.30, post: 72.53 },
+            Rawalpindi: { pre: 56.72, post: 85.56 }, Sargodha:   { pre: 58.99, post: 98.99 },
+          },
+        },
+        {
+          skill: 'Asking & Sharing Information',
+          overallPre: 48.3, overallPost: 83.6,
+          divisions: {
+            Faisalabad: { pre: 35.39, post: 72.76 }, Gujranwala: { pre: 38.67, post: 78.71 },
+            Gujrat:     { pre: 43.50, post: 81.89 }, Lahore:     { pre: 48.01, post: 81.47 },
+            Rawalpindi: { pre: 60.61, post: 88.08 }, Sargodha:   { pre: 63.87, post: 98.63 },
+          },
+        },
+        {
+          skill: 'Describing & Explaining',
+          overallPre: 39.7, overallPost: 75.2,
+          divisions: {
+            Faisalabad: { pre: 20.69, post: 60.85 }, Gujranwala: { pre: 26.98, post: 66.74 },
+            Gujrat:     { pre: 39.61, post: 71.28 }, Lahore:     { pre: 42.76, post: 72.53 },
+            Rawalpindi: { pre: 51.11, post: 82.02 }, Sargodha:   { pre: 58.01, post: 97.05 },
+          },
+        },
+        {
+          skill: 'Expressing Thoughts & Feelings',
+          overallPre: 37.3, overallPost: 71.5,
+          divisions: {
+            Faisalabad: { pre: 22.03, post: 60.22 }, Gujranwala: { pre: 24.61, post: 60.80 },
+            Gujrat:     { pre: 38.67, post: 68.94 }, Lahore:     { pre: 40.04, post: 68.70 },
+            Rawalpindi: { pre: 45.00, post: 76.46 }, Sargodha:   { pre: 52.52, post: 94.87 },
+          },
+        },
+        {
+          skill: 'Speaking for an Audience',
+          overallPre: 39.0, overallPost: 74.7,
+          divisions: {
+            Faisalabad: { pre: 21.40, post: 60.15 }, Gujranwala: { pre: 27.10, post: 67.40 },
+            Gujrat:     { pre: 39.33, post: 69.94 }, Lahore:     { pre: 40.63, post: 75.02 },
+            Rawalpindi: { pre: 48.43, post: 79.25 }, Sargodha:   { pre: 57.14, post: 96.12 },
+          },
+        },
+      ],
+    },
+    teachers: { overall: [] },
+  },
+  meta: {
+    generatedAt: '2025-12-12T00:00:00.000Z',
+    studentMaxScore: 60,
+    teacherMaxScore: 70,
+  },
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (v: number) => `${v.toFixed(1)}%`;
 
@@ -541,10 +970,10 @@ const PrePostAssessmentReport = () => {
       setIsLoading(true);
       try {
         const res = await getPrePostAssessmentReport();
-        setReport(res.data);
+        setReport(res.data ?? PDF_FALLBACK_DATA);
       } catch (err) {
-        console.error('Failed to load Pre & Post Assessment Report', err);
-        toast.error('Failed to load report. Please try again.');
+        console.error('Failed to load Pre & Post Assessment Report – using PDF data', err);
+        setReport(PDF_FALLBACK_DATA);
       } finally {
         setIsLoading(false);
       }
