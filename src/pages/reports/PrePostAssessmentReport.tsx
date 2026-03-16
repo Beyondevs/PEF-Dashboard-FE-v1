@@ -966,19 +966,9 @@ const PrePostAssessmentReport = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchReport = async () => {
-      setIsLoading(true);
-      try {
-        const res = await getPrePostAssessmentReport();
-        setReport(res.data ?? PDF_FALLBACK_DATA);
-      } catch (err) {
-        console.error('Failed to load Pre & Post Assessment Report – using PDF data', err);
-        setReport(PDF_FALLBACK_DATA);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchReport();
+    // Always use the official PDF report data (Oct–Dec 2025)
+    setReport(PDF_FALLBACK_DATA);
+    setIsLoading(false);
   }, []);
 
   return (
