@@ -50,7 +50,7 @@ const Reports = () => {
       icon: Mic,
       color: 'text-purple-600',
       path: '/speaking-assessments/reports',
-      restrictedRoles: ['teacher', 'student', 'trainer'], // Hide from teachers, students, and trainers
+      restrictedRoles: ['teacher', 'student', 'trainer', 'division_role'], // Hide from teachers, students, trainers, and division_role
     },
     {
       id: 6,
