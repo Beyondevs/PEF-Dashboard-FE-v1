@@ -35,7 +35,7 @@ import {
 
 const Attendance = () => {
   const { filters } = useFilters();
-  const { canMarkAttendance, isAdmin, role } = useAuth();
+  const { canMarkAttendance, isAdmin, role, isViewOnly } = useAuth();
   const isMobile = useIsMobile();
   const [editMode, setEditMode] = useState(false);
   const [attendanceChanges, setAttendanceChanges] = useState<Record<string, boolean>>({});
@@ -56,6 +56,7 @@ const Attendance = () => {
   const [studentTotalItems, setStudentTotalItems] = useState(0);
   const pageSize = 100;
   const hasManagePermissions = canMarkAttendance();
+  const readOnly = isViewOnly();
   const showDataTransferButtons = isAdmin() || role === 'client';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
@@ -497,21 +498,23 @@ return (
   label="Export"
   exportFn={async () => exportAttendance(buildExportParams())}
   filename={activeTab === 'teachers' ? 'attendance-teachers.csv' : 'attendance-students.csv'}
+  disabled={readOnly}
 />
 
-  {/* Edit / Save buttons (remain permission-based) */}
-  {hasManagePermissions && (
+  {/* Edit / Save buttons — visible for trainers but disabled (view-only) */}
+  {(hasManagePermissions || readOnly) && (
     <>
       <Button
         variant={editMode ? 'default' : 'outline'}
         onClick={editMode ? handleCancelEdit : () => setEditMode(true)}
         className="flex-1 sm:flex-initial"
+        disabled={readOnly}
       >
         <span className="hidden sm:inline">{editMode ? 'Cancel Edit' : 'Edit Mode'}</span>
         <span className="sm:hidden">{editMode ? 'Cancel' : 'Edit'}</span>
       </Button>
       {editMode && Object.keys(attendanceChanges).length > 0 && (
-        <Button onClick={handleSaveChanges} className="flex-1 sm:flex-initial">
+        <Button onClick={handleSaveChanges} className="flex-1 sm:flex-initial" disabled={readOnly}>
           <Save className="h-4 w-4 sm:mr-2" />
           <span className="hidden sm:inline">Save Changes ({Object.keys(attendanceChanges).length})</span>
           <span className="sm:hidden">Save ({Object.keys(attendanceChanges).length})</span>

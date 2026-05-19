@@ -56,7 +56,7 @@ import type { Teacher, Student } from '@/types';
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { role, isAdmin, canMarkAttendance } = useAuth();
+  const { isAdmin, canMarkAttendance, isViewOnly } = useAuth();
   
   const [localAttendance, setLocalAttendance] = useState(attendance);
   const [localAssessments, setLocalAssessments] = useState(
@@ -191,31 +191,6 @@ const SessionDetail = () => {
       return '0h';
     }
   }, [session?.startTime, session?.endTime]);
-
-  // Check if session date is today or in the past (for trainer restrictions)
-  // Trainers can mark attendance for past and present dates, but not future dates
-  const isSessionPastOrPresent = useMemo(() => {
-    if (!session?.date) return false;
-    const sessionDate = new Date(session.date);
-    const today = new Date();
-    
-    // Normalize both dates to midnight (start of day) for accurate date-only comparison
-    const sessionDateOnly = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate());
-    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    
-    // Allow past dates (before today) and present date (today), block future dates (after today)
-    return sessionDateOnly.getTime() <= todayDateOnly.getTime();
-  }, [session?.date]);
-
-  // Check if trainer can mark attendance (trainers can mark for past and present dates, not future)
-  const canTrainerMarkAttendance = useMemo(() => {
-    if (role === 'admin') return true;
-    if (role === 'trainer') {
-      // Trainers can mark attendance for past and present dates, but not future dates
-      return isSessionPastOrPresent;
-    }
-    return false;
-  }, [role, isSessionPastOrPresent]);
 
   const sessionTeachers = useMemo<Teacher[]>(() => {
     if (!session) {
@@ -406,6 +381,9 @@ const SessionDetail = () => {
     ? (sessionAssessments.reduce((sum, a) => sum + a.score, 0) / sessionAssessments.length).toFixed(1)
     : 'N/A';
 
+  const showAttendanceActions = session.status !== 'Completed' && (canMarkAttendance() || isViewOnly());
+  const attendanceActionsDisabled = isViewOnly();
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
       Planned: 'outline',
@@ -416,6 +394,7 @@ const SessionDetail = () => {
   };
 
   const toggleAttendance = (personId: string, personType: 'Teacher' | 'Student') => {
+    if (attendanceActionsDisabled) return;
     // Update modal attendance state for immediate UI feedback
     const key = `${personType}-${personId}`;
     setModalAttendance(prev => ({
@@ -451,12 +430,8 @@ const SessionDetail = () => {
 
   // Initialize modal attendance when opening the modal
   const handleOpenAttendanceModal = (type: 'Teacher' | 'Student') => {
-    // Prevent trainers from opening modal for future sessions
-    if (role === 'trainer' && !isSessionPastOrPresent) {
-      toast.error('Trainers can only mark attendance for past and present dates, not future dates');
-      return;
-    }
-    
+    if (attendanceActionsDisabled) return;
+
     setAttendanceType(type);
     const initialAttendance: Record<string, boolean> = {};
     
@@ -493,6 +468,7 @@ const SessionDetail = () => {
       toast.error('Session ID not found');
       return;
     }
+    if (attendanceActionsDisabled) return;
 
     try {
       setIsAttendanceLoading(true);
@@ -793,7 +769,7 @@ const SessionDetail = () => {
                   </div>
                 )}
                 <div className="pt-4 space-y-2">
-                  {canMarkAttendance() && session.status !== 'Completed' && (
+                  {showAttendanceActions && (
                     <TooltipProvider>
                       <>
                         <Tooltip>
@@ -803,16 +779,16 @@ const SessionDetail = () => {
                                 className="w-full"
                                 variant="outline"
                                 onClick={() => handleOpenAttendanceModal('Teacher')}
-                                disabled={role === 'trainer' && !isSessionPastOrPresent}
+                                disabled={attendanceActionsDisabled}
                               >
                                 <Users className="h-4 w-4 mr-2" />
                                 Mark Teacher Attendance
                               </Button>
                             </span>
                           </TooltipTrigger>
-                          {role === 'trainer' && !isSessionPastOrPresent && (
+                          {attendanceActionsDisabled && (
                             <TooltipContent>
-                              <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                              <p>View-only access — you cannot mark attendance</p>
                             </TooltipContent>
                           )}
                         </Tooltip>
@@ -823,16 +799,16 @@ const SessionDetail = () => {
                                 className="w-full"
                                 variant="outline"
                                 onClick={() => handleOpenAttendanceModal('Student')}
-                                disabled={role === 'trainer' && !isSessionPastOrPresent}
+                                disabled={attendanceActionsDisabled}
                               >
                                 <Users className="h-4 w-4 mr-2" />
                                 Mark Student Attendance
                               </Button>
                             </span>
                           </TooltipTrigger>
-                          {role === 'trainer' && !isSessionPastOrPresent && (
+                          {attendanceActionsDisabled && (
                             <TooltipContent>
-                              <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                              <p>View-only access — you cannot mark attendance</p>
                             </TooltipContent>
                           )}
                         </Tooltip>
@@ -860,7 +836,7 @@ const SessionDetail = () => {
             <CardHeader>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Teacher Attendance</CardTitle>
-                {canMarkAttendance() && session.status !== 'Completed' && (
+                {showAttendanceActions && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -868,16 +844,16 @@ const SessionDetail = () => {
                           <Button
                             className="w-full sm:w-auto"
                             onClick={() => handleOpenAttendanceModal('Teacher')}
-                            disabled={role === 'trainer' && !isSessionPastOrPresent}
+                            disabled={attendanceActionsDisabled}
                           >
                             <Users className="h-4 w-4 mr-2" />
                             Mark Attendance
                           </Button>
                         </span>
                       </TooltipTrigger>
-                      {role === 'trainer' && !isSessionPastOrPresent && (
+                      {attendanceActionsDisabled && (
                         <TooltipContent>
-                          <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                          <p>View-only access — you cannot mark attendance</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -919,7 +895,7 @@ const SessionDetail = () => {
                             </Badge>
                           )}
                         </div>
-                        {canMarkAttendance() && session.status !== 'Completed' && (
+                        {showAttendanceActions && (
                           <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
                             <span className="text-sm font-medium">Mark Attendance</span>
                             <TooltipProvider>
@@ -929,13 +905,13 @@ const SessionDetail = () => {
                                     <Switch
                                       checked={isAttendancePresent(att)}
                                       onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
-                                      disabled={role === 'trainer' && !isSessionPastOrPresent}
+                                      disabled={attendanceActionsDisabled}
                                     />
                                   </span>
                                 </TooltipTrigger>
-                                {role === 'trainer' && !isSessionPastOrPresent && (
+                                {attendanceActionsDisabled && (
                                   <TooltipContent>
-                                    <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                                    <p>View-only access — you cannot mark attendance</p>
                                   </TooltipContent>
                                 )}
                               </Tooltip>
@@ -957,7 +933,7 @@ const SessionDetail = () => {
                         <TableHead>Phone</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Status</TableHead>
-                        {canMarkAttendance() && session.status !== 'Completed' && (
+                        {showAttendanceActions && (
                           <TableHead>Action</TableHead>
                         )}
                       </TableRow>
@@ -984,7 +960,7 @@ const SessionDetail = () => {
                                 </Badge>
                               )}
                             </TableCell>
-                            {canMarkAttendance() && session.status !== 'Completed' && (
+                            {showAttendanceActions && (
                               <TableCell>
                                 <TooltipProvider>
                                   <Tooltip>
@@ -993,13 +969,13 @@ const SessionDetail = () => {
                                         <Switch
                                           checked={isAttendancePresent(att)}
                                           onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
-                                          disabled={role === 'trainer' && !isSessionPastOrPresent}
+                                          disabled={attendanceActionsDisabled}
                                         />
                                       </span>
                                     </TooltipTrigger>
-                                    {role === 'trainer' && !isSessionPastOrPresent && (
+                                    {attendanceActionsDisabled && (
                                       <TooltipContent>
-                                        <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                                        <p>View-only access — you cannot mark attendance</p>
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
@@ -1034,7 +1010,7 @@ const SessionDetail = () => {
             <CardHeader>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Student Attendance</CardTitle>
-                {canMarkAttendance() && session.status !== 'Completed' && (
+                {showAttendanceActions && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1042,16 +1018,16 @@ const SessionDetail = () => {
                           <Button
                             className="w-full sm:w-auto"
                             onClick={() => handleOpenAttendanceModal('Student')}
-                            disabled={role === 'trainer' && !isSessionPastOrPresent}
+                            disabled={attendanceActionsDisabled}
                           >
                             <Users className="h-4 w-4 mr-2" />
                             Mark Attendance
                           </Button>
                         </span>
                       </TooltipTrigger>
-                      {role === 'trainer' && !isSessionPastOrPresent && (
+                      {attendanceActionsDisabled && (
                         <TooltipContent>
-                          <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                          <p>View-only access — you cannot mark attendance</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -1095,7 +1071,7 @@ const SessionDetail = () => {
                             </Badge>
                           )}
                         </div>
-                        {canMarkAttendance() && session.status !== 'Completed' && (
+                        {showAttendanceActions && (
                           <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
                             <span className="text-sm font-medium">Mark Attendance</span>
                             <TooltipProvider>
@@ -1105,13 +1081,13 @@ const SessionDetail = () => {
                                     <Switch
                                       checked={isAttendancePresent(att)}
                                       onCheckedChange={() => toggleAttendance(student.id, 'Student')}
-                                      disabled={role === 'trainer' && !isSessionPastOrPresent}
+                                      disabled={attendanceActionsDisabled}
                                     />
                                   </span>
                                 </TooltipTrigger>
-                                {role === 'trainer' && !isSessionPastOrPresent && (
+                                {attendanceActionsDisabled && (
                                   <TooltipContent>
-                                    <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                                    <p>View-only access — you cannot mark attendance</p>
                                   </TooltipContent>
                                 )}
                               </Tooltip>
@@ -1133,7 +1109,7 @@ const SessionDetail = () => {
                         <TableHead>Gender</TableHead>
                         <TableHead>Grade</TableHead>
                         <TableHead>Status</TableHead>
-                        {canMarkAttendance() && session.status !== 'Completed' && (
+                        {showAttendanceActions && (
                           <TableHead>Action</TableHead>
                         )}
                       </TableRow>
@@ -1160,7 +1136,7 @@ const SessionDetail = () => {
                                 </Badge>
                               )}
                             </TableCell>
-                            {canMarkAttendance() && session.status !== 'Completed' && (
+                            {showAttendanceActions && (
                               <TableCell>
                                 <TooltipProvider>
                                   <Tooltip>
@@ -1169,13 +1145,13 @@ const SessionDetail = () => {
                                         <Switch
                                           checked={isAttendancePresent(att)}
                                           onCheckedChange={() => toggleAttendance(student.id, 'Student')}
-                                          disabled={role === 'trainer' && !isSessionPastOrPresent}
+                                          disabled={attendanceActionsDisabled}
                                         />
                                       </span>
                                     </TooltipTrigger>
-                                    {role === 'trainer' && !isSessionPastOrPresent && (
+                                    {attendanceActionsDisabled && (
                                       <TooltipContent>
-                                        <p>Trainers can only mark attendance for past and present dates, not future dates</p>
+                                        <p>View-only access — you cannot mark attendance</p>
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
@@ -1230,6 +1206,7 @@ const SessionDetail = () => {
                             checked={isPresent}
                             onCheckedChange={() => toggleAttendance(teacher.id, 'Teacher')}
                             id={`teacher-${teacher.id}`}
+                            disabled={attendanceActionsDisabled}
                           />
                           <label
                             htmlFor={`teacher-${teacher.id}`}
@@ -1259,6 +1236,7 @@ const SessionDetail = () => {
                             checked={isPresent}
                             onCheckedChange={() => toggleAttendance(student.id, 'Student')}
                             id={`student-${student.id}`}
+                            disabled={attendanceActionsDisabled}
                           />
                           <label
                             htmlFor={`student-${student.id}`}
@@ -1289,7 +1267,7 @@ const SessionDetail = () => {
               >
                 Cancel
               </Button>
-              <Button className="w-full sm:w-auto" onClick={handleSaveAttendance} disabled={isAttendanceLoading}>
+              <Button className="w-full sm:w-auto" onClick={handleSaveAttendance} disabled={isAttendanceLoading || attendanceActionsDisabled}>
                 <Save className="h-4 w-4 mr-2" />
                 {isAttendanceLoading ? 'Saving...' : 'Save Attendance'}
               </Button>

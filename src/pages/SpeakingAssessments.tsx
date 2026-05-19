@@ -74,11 +74,12 @@ import { useNavigate } from 'react-router-dom';
 
 const SpeakingAssessments = () => {
   const { filters } = useFilters();
-  const { role, isAdmin } = useAuth();
+  const { role, isAdmin, isViewOnly } = useAuth();
   const navigate = useNavigate();
   const isAdminUser = isAdmin();
-  const canFillAssessment = isAdminUser || role === 'trainer' || role === 'division_role';
-  const canEditAssessments = isAdminUser || role === 'trainer' || role === 'division_role';
+  const readOnly = isViewOnly();
+  const canFillAssessment = (isAdminUser || role === 'division_role') && !readOnly;
+  const canEditAssessments = (isAdminUser || role === 'division_role') && !readOnly;
   const canExportAssessments = role === 'admin' || role === 'client' || role === 'division_role';
 
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
@@ -480,16 +481,15 @@ const SpeakingAssessments = () => {
 
         {/* Reports Button - Hidden for trainers; also provide client/admin/division_role export option */}
         <div className="flex items-center gap-2">
-          {role !== 'trainer' && (
-            <Button
-              variant="outline"
-              onClick={() => navigate('/speaking-assessments/reports')}
-              className="gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Reports
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            onClick={() => navigate('/speaking-assessments/reports')}
+            className="gap-2"
+            disabled={readOnly}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Reports
+          </Button>
           {/* Client/admin/division_role export of current view data */}
           {/* Simple client-side export of the currently visible assessments. Hidden for BNU by ExportButton itself */}
           {canExportAssessments && (
@@ -670,11 +670,12 @@ const SpeakingAssessments = () => {
                           </TableCell>
                           <TableCell className="text-right whitespace-nowrap">
                             <div className="flex gap-2 justify-end shrink-0">
-                              {canFillAssessment && assessment.nextPhase && (
+                              {assessment.nextPhase && (canFillAssessment || readOnly) && (
                                 <Button
                                   size="sm"
                                   onClick={() => handleStudentFillForm(assessment)}
                                   className="gap-1"
+                                  disabled={readOnly}
                                 >
                                   <ClipboardEdit className="h-3 w-3" />
                                   {getNextPhaseLabel(assessment.nextPhase)}
@@ -823,11 +824,12 @@ const SpeakingAssessments = () => {
                           </TableCell>
                           <TableCell className="text-right whitespace-nowrap">
                             <div className="flex gap-2 justify-end shrink-0">
-                              {canFillAssessment && assessment.nextPhase && (
+                              {assessment.nextPhase && (canFillAssessment || readOnly) && (
                                 <Button
                                   size="sm"
                                   onClick={() => handleTeacherFillForm(assessment)}
                                   className="gap-1"
+                                  disabled={readOnly}
                                 >
                                   <ClipboardEdit className="h-3 w-3" />
                                   {getNextPhaseLabel(assessment.nextPhase)}

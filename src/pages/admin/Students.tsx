@@ -53,7 +53,8 @@ export default function Students() {
     pageSize: 10,
     total: 0,
   });
-  const { canEdit, canDelete, isAdmin, role, canStarStudentOrTeacher } = useAuth();
+  const { canEdit, canDelete, isAdmin, role, canStarStudentOrTeacher, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
   const { toast } = useToast();
 
   // Track previous filter values to detect changes and reset pagination
@@ -289,6 +290,7 @@ export default function Students() {
   };
 
   const handleToggleStar = async (student: any) => {
+    if (readOnly) return;
     try {
       await api.updateStudent(student.id, { starred: !student.starred });
       toast({
@@ -372,7 +374,6 @@ export default function Students() {
 
         <div className="flex flex-wrap gap-2 justify-end">
           {/* Export Button - Always visible */}
-          {role !== 'trainer' && (
           <ExportButton
             label="Export"
             exportFn={async () => {
@@ -387,8 +388,8 @@ export default function Students() {
               return api.exportStudents(params);
             }}
             filename="students.csv"
+            disabled={readOnly}
           />
-          )}
 
           {isAdmin() && (
             <>
@@ -540,15 +541,16 @@ export default function Students() {
                     { label: 'School', value: student.school?.name || 'N/A', icon: <School className="h-3 w-3" /> },
                   ]}
                   actions={
-                    (canEdit() || canDelete() || isAdmin() || canStarStudentOrTeacher()) ? (
+                    (canEdit() || canDelete() || isAdmin() || canStarStudentOrTeacher() || readOnly) ? (
                       <div className="flex gap-2 flex-wrap">
-                        {canStarStudentOrTeacher() && (
+                        {(canStarStudentOrTeacher() || readOnly) && (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handleToggleStar(student)}
                             title={student.starred ? 'Remove star' : 'Mark as outstanding'}
                             className="p-2"
+                            disabled={readOnly}
                           >
                             <Star className={`h-4 w-4 ${student.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground'}`} />
                           </Button>
@@ -617,13 +619,14 @@ export default function Students() {
                     className={isDisabled ? 'opacity-60' : ''}
                   >
                     <TableCell className="w-10">
-                      {canStarStudentOrTeacher() ? (
+                      {(canStarStudentOrTeacher() || readOnly) ? (
                         <Button
                           variant="ghost"
                           size="sm"
                           className="p-1 h-8 w-8"
                           onClick={() => handleToggleStar(student)}
                           title={student.starred ? 'Remove star' : 'Mark as outstanding'}
+                          disabled={readOnly}
                         >
                           <Star
                             className={`h-5 w-5 ${student.starred ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground'}`}

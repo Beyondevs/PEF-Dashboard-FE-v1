@@ -10,6 +10,7 @@ interface ExportButtonProps {
   filename: string;
   variant?: 'default' | 'outline' | 'secondary' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
+  disabled?: boolean;
 }
 
 export function ExportButton({
@@ -18,6 +19,7 @@ export function ExportButton({
   filename,
   variant = 'outline',
   size = 'default',
+  disabled: disabledProp = false,
 }: ExportButtonProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -29,6 +31,7 @@ export function ExportButton({
   }
 
   const handleExport = async () => {
+    if (disabledProp) return;
     try {
       setLoading(true);
       const blob = await exportFn();
@@ -64,7 +67,7 @@ export function ExportButton({
       variant={variant}
       size={size}
       onClick={handleExport}
-      disabled={loading}
+      disabled={loading || disabledProp}
     >
       <Download className="h-4 w-4 mr-2" />
       {loading ? 'Exporting...' : label}

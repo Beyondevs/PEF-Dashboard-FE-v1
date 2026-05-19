@@ -60,7 +60,8 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Sessions = () => {
-  const { role, isAdmin, canEdit } = useAuth();
+  const { role, isAdmin, canEdit, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
   const canManageSessions = () => role === 'admin';
   const canViewDataTransfer = () => role === 'admin' || role === 'division_role' || role === 'client';
   const { filters } = useFilters();
@@ -410,9 +411,10 @@ const Sessions = () => {
             </>
           )}
 
-          {(canViewDataTransfer() || role === 'trainer') && (
+          {(canViewDataTransfer() || readOnly) && (
             <ExportButton
               label="Export"
+              disabled={readOnly}
               exportFn={async () => {
                 const params: Record<string, string | number | boolean> = {};
                 if (filters.division) params.divisionId = filters.division;

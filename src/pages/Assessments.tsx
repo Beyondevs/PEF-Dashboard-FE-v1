@@ -30,9 +30,11 @@ import { SearchTag } from '@/components/SearchTag';
 
 const Assessments = () => {
   const { filters } = useFilters();
-  const { role, isAdmin } = useAuth();
+  const { role, isAdmin, isViewOnly } = useAuth();
   const isAdminUser = isAdmin();
-  const canManageAssessments = isAdminUser || role === 'trainer';
+  const readOnly = isViewOnly();
+  const canManageAssessments = isAdminUser && !readOnly;
+  const showAssessmentEditControls = isAdminUser || readOnly;
   const showDataTransferButtons = isAdminUser || role === 'client';
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const [editMode, setEditMode] = useState(false);
@@ -385,7 +387,7 @@ const Assessments = () => {
               />
             </div>
           )}
-          {(showDataTransferButtons || canManageAssessments) && (
+          {(showDataTransferButtons || showAssessmentEditControls) && (
             <>
               {showDataTransferButtons && (
                 <>
@@ -435,13 +437,14 @@ const Assessments = () => {
                   />
                 </>
               )}
-              {canManageAssessments && (
+              {showAssessmentEditControls && (
                 <>
                   {editMode ? (
                     <>
                       <Button
                         onClick={activeTab === 'students' ? handleSaveStudentChanges : handleSaveTeacherChanges}
                         className="flex-1 sm:flex-initial"
+                        disabled={readOnly}
                       >
                         <Save className="h-4 w-4 mr-2" />
                         Save Changes (
@@ -450,13 +453,13 @@ const Assessments = () => {
                           : Object.keys(teacherChanges).length}
                         )
                       </Button>
-                      <Button variant="outline" onClick={handleCancelEdit} className="flex-1 sm:flex-initial">
+                      <Button variant="outline" onClick={handleCancelEdit} className="flex-1 sm:flex-initial" disabled={readOnly}>
                         <X className="h-4 w-4 mr-2" />
                         Cancel
                       </Button>
                     </>
                   ) : (
-                    <Button onClick={() => setEditMode(true)} className="flex-1 sm:flex-initial">
+                    <Button onClick={() => setEditMode(true)} className="flex-1 sm:flex-initial" disabled={readOnly}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </Button>

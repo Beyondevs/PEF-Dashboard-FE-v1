@@ -23,8 +23,10 @@ interface AuthContextType {
   canEdit: () => boolean;
   canDelete: () => boolean;
   canMarkAttendance: () => boolean;
-  /** Trainer can only toggle star on students/teachers; admin can edit and star */
+  /** Admin/division_role can toggle star on students/teachers */
   canStarStudentOrTeacher: () => boolean;
+  /** Trainer role: view data only; action controls stay visible but disabled */
+  isViewOnly: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -312,8 +314,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isDivisionRole = () => role === 'division_role';
   const canEdit = () => role === 'admin';
   const canDelete = () => role === 'admin';
-  const canMarkAttendance = () => role === 'admin' || role === 'trainer' || role === 'division_role';
-  const canStarStudentOrTeacher = () => role === 'admin' || role === 'trainer' || role === 'division_role';
+  const isViewOnly = () => role === 'trainer';
+  const canMarkAttendance = () => role === 'admin' || role === 'division_role';
+  const canStarStudentOrTeacher = () => role === 'admin' || role === 'division_role';
 
   return (
     <AuthContext.Provider value={{ 
@@ -334,7 +337,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       canEdit,
       canDelete,
       canMarkAttendance,
-      canStarStudentOrTeacher
+      canStarStudentOrTeacher,
+      isViewOnly,
     }}>
       {children}
     </AuthContext.Provider>

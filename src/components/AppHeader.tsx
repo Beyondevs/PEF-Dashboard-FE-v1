@@ -21,7 +21,8 @@ import { getSignature, uploadSignature } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 export const AppHeader = () => {
-  const { userName, role, logout, hasSignature, checkAuth } = useAuth();
+  const { userName, role, logout, hasSignature, checkAuth, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [viewSignatureOpen, setViewSignatureOpen] = useState(false);
@@ -55,6 +56,7 @@ export const AppHeader = () => {
   };
 
   const handleErrorIconClick = () => {
+    if (readOnly) return;
     setAddSignatureOpen(true);
   };
 
@@ -138,7 +140,8 @@ export const AppHeader = () => {
                   <button
                     type="button"
                     onClick={handleErrorIconClick}
-                    className="flex items-center gap-1.5 sm:gap-2 min-h-9 min-w-9 sm:min-w-0 px-2 sm:px-3 py-2 rounded-md text-destructive hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring touch-manipulation"
+                    disabled={readOnly}
+                    className="flex items-center gap-1.5 sm:gap-2 min-h-9 min-w-9 sm:min-w-0 px-2 sm:px-3 py-2 rounded-md text-destructive hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring touch-manipulation disabled:opacity-50 disabled:pointer-events-none"
                     aria-label="Add your signature"
                   >
                     <AlertCircle className="h-5 w-5 shrink-0" />
@@ -207,7 +210,7 @@ export const AppHeader = () => {
               type="button"
               variant="outline"
               className="w-full min-h-11 sm:min-h-10 touch-manipulation"
-              disabled={uploading}
+              disabled={uploading || readOnly}
               onClick={() => fileInputRef.current?.click()}
             >
               {uploading ? (
