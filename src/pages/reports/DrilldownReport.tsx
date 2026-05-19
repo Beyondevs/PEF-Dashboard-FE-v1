@@ -65,7 +65,8 @@ interface DrilldownResponse {
 }
 
 const DrilldownReport = () => {
-  const { role } = useAuth();
+  const { role, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
   const [drillState, setDrillState] = useState<DrillState>({ level: 'province' });
   const [divisions, setDivisions] = useState<DrillItem[]>([]);
   const [districts, setDistricts] = useState<DrillItem[]>([]);
@@ -170,6 +171,7 @@ const DrilldownReport = () => {
   };
 
   const handleExport = async () => {
+    if (readOnly) return;
     try {
       // Map 'province' level to 'division' since backend doesn't support 'province'
       const exportLevel = drillState.level === 'province' ? 'division' : drillState.level;
@@ -754,7 +756,7 @@ const DrilldownReport = () => {
           <p className="text-muted-foreground">Province → Division → District → Tehsil → School performance metrics</p>
         </div>
         {role !== 'bnu' && (
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} disabled={readOnly}>
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>

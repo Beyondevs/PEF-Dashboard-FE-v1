@@ -47,7 +47,8 @@ interface MonthlyAttendanceData {
 
 const MonthlyAttendanceCalendar = () => {
   const { filters } = useFilters();
-  const { role } = useAuth();
+  const { role, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
   const [data, setData] = useState<MonthlyAttendanceData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,6 +99,7 @@ const MonthlyAttendanceCalendar = () => {
   }, [fetchData]);
 
   const handleExport = async () => {
+    if (readOnly) return;
     try {
       const params: Record<string, string> = {
         month: String(selectedMonth),
@@ -244,7 +246,7 @@ const MonthlyAttendanceCalendar = () => {
           <p className="text-muted-foreground">View student and teacher attendance in calendar format</p>
         </div>
         {role !== 'bnu' && (
-          <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+          <Button variant="outline" onClick={handleExport} disabled={readOnly || isLoading}>
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>

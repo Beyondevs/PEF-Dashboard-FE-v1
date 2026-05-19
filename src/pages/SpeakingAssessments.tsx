@@ -78,9 +78,10 @@ const SpeakingAssessments = () => {
   const navigate = useNavigate();
   const isAdminUser = isAdmin();
   const readOnly = isViewOnly();
-  const canFillAssessment = (isAdminUser || role === 'division_role') && !readOnly;
-  const canEditAssessments = (isAdminUser || role === 'division_role') && !readOnly;
+  const canFillAssessment = isAdminUser && !readOnly;
+  const canEditAssessments = isAdminUser && !readOnly;
   const canExportAssessments = role === 'admin' || role === 'client' || role === 'division_role';
+  const showExportActions = canExportAssessments || readOnly;
 
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   const [selectedStatus, setSelectedStatus] = useState<SpeakingAssessmentStatus | 'all'>('all');
@@ -492,12 +493,12 @@ const SpeakingAssessments = () => {
           </Button>
           {/* Client/admin/division_role export of current view data */}
           {/* Simple client-side export of the currently visible assessments. Hidden for BNU by ExportButton itself */}
-          {canExportAssessments && (
+          {showExportActions && (
             <>
               <Button
                 variant="outline"
                 size="default"
-                disabled={isDownloadingPdfs}
+                disabled={isDownloadingPdfs || readOnly}
                 onClick={async () => {
                   setIsDownloadingPdfs(true);
                   try {
@@ -537,6 +538,7 @@ const SpeakingAssessments = () => {
               </Button>
               <ExportButton
                 label="Export CSV"
+                disabled={readOnly}
                 filename={`speaking_assessments_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`}
                 exportFn={async () => {
                   const params: Record<string, string | number | boolean> = {};

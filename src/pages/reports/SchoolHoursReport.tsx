@@ -14,6 +14,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { SearchTag } from '@/components/SearchTag';
 import PaginationControls from '@/components/PaginationControls';
+import { useAuth } from '@/contexts/AuthContext';
 
 type SchoolListRow = {
   schoolId: string;
@@ -58,6 +59,8 @@ function safeFilenamePart(input: string): string {
 const SchoolHoursReport = () => {
   const { filters } = useFilters();
   const navigate = useNavigate();
+  const { isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
 
   const [reportData, setReportData] = useState<SchoolListData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -145,6 +148,7 @@ const SchoolHoursReport = () => {
   const endIdx = totalFiltered === 0 ? 0 : Math.min(startIdx + 10, totalFiltered);
 
   const handleExport = useCallback(async () => {
+    if (readOnly) return;
     try {
       setIsExporting(true);
       const params = buildParams();
@@ -170,9 +174,10 @@ const SchoolHoursReport = () => {
     } finally {
       setIsExporting(false);
     }
-  }, [buildParams]);
+  }, [buildParams, readOnly]);
 
   const handleDownloadSchoolPdf = useCallback(async (school: SchoolListRow) => {
+    if (readOnly) return;
     try {
       setDownloadingSchoolId(school.schoolId);
       const blob = await downloadSchoolSpeakingAssessmentsPdf(school.schoolId);
@@ -231,7 +236,7 @@ const SchoolHoursReport = () => {
         </div>
 
         <div className="flex gap-2 print:hidden">
-          <Button onClick={handleExport} variant="outline" disabled={isExporting || totalFiltered === 0}>
+          <Button onClick={handleExport} variant="outline" disabled={readOnly || isExporting || totalFiltered === 0}>
             <Download className="h-4 w-4 mr-2" />
             {isExporting ? 'Exporting...' : 'Export CSV'}
           </Button>
@@ -375,7 +380,7 @@ const SchoolHoursReport = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDownloadSchoolPdf(s)}
-                            disabled={downloadingSchoolId === s.schoolId}
+                            disabled={readOnly || downloadingSchoolId === s.schoolId}
                           >
                             {downloadingSchoolId === s.schoolId ? (
                               <span className="flex items-center gap-2">

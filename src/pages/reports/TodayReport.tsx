@@ -68,12 +68,14 @@ interface TodayActivityData {
 
 const TodayReport = () => {
   const { filters } = useFilters();
-  const { role } = useAuth();
+  const { role, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
   const [todayData, setTodayData] = useState<TodayActivityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const today = new Date().toISOString().split('T')[0];
 
   const handleExport = async () => {
+    if (readOnly) return;
     try {
       const params: Record<string, string> = {
         date: today,
@@ -178,7 +180,7 @@ const TodayReport = () => {
           <p className="text-muted-foreground">Real-time snapshot of ongoing sessions and attendance - {new Date().toLocaleDateString()}</p>
         </div>
         {role !== 'bnu' && (
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} disabled={readOnly}>
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>

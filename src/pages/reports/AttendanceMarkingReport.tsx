@@ -63,7 +63,8 @@ interface AttendanceMarkingData {
 
 const AttendanceMarkingReport = () => {
   const { filters } = useFilters();
-  const { role } = useAuth();
+  const { role, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
   const navigate = useNavigate();
   const [reportData, setReportData] = useState<AttendanceMarkingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +72,7 @@ const AttendanceMarkingReport = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'marked' | 'unmarked'>('unmarked');
 
   const handleExport = async () => {
+    if (readOnly) return;
     setIsExporting(true);
     try {
       const params: Record<string, string> = {};
@@ -199,7 +201,7 @@ const AttendanceMarkingReport = () => {
         </div>
       </div>
       {role !== 'bnu' && (
-        <Button onClick={handleExport} variant="outline" disabled={isExporting}>
+        <Button onClick={handleExport} variant="outline" disabled={readOnly || isExporting}>
           {isExporting ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (

@@ -36,11 +36,13 @@ interface DistrictData {
 
 const DistrictCompareReport = () => {
   const { filters } = useFilters();
-  const { role } = useAuth();
+  const { role, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
   const [districtData, setDistrictData] = useState<DistrictData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleExport = async () => {
+    if (readOnly) return;
     try {
       const params: Record<string, string> = {};
       if (filters.division) params.divisionId = filters.division;
@@ -128,7 +130,7 @@ const DistrictCompareReport = () => {
           <p className="text-muted-foreground">Compare performance metrics across all districts in Punjab</p>
         </div>
         {role !== 'bnu' && (
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} disabled={readOnly}>
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>

@@ -393,7 +393,7 @@ const Sessions = () => {
                   New Session
                 </Button>
               )}
-              <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1 sm:flex-initial">
+              <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1 sm:flex-initial" disabled={readOnly}>
                 <FileText className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Template</span>
                 <span className="sm:hidden">Template</span>

@@ -108,7 +108,8 @@ const SchoolHoursSchoolDetail = () => {
   const { schoolId } = useParams<{ schoolId: string }>();
   const navigate = useNavigate();
   const { filters } = useFilters();
-  const { role } = useAuth();
+  const { role, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
 
   const [reportData, setReportData] = useState<ConsolidatedReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -188,7 +189,7 @@ const SchoolHoursSchoolDetail = () => {
   }, [isExportAllDialogOpen, buildListParams]);
 
   const handleExport = async () => {
-    if (!schoolId) return;
+    if (!schoolId || readOnly) return;
     setIsExporting(true);
     try {
       const params = buildParams();
@@ -215,7 +216,7 @@ const SchoolHoursSchoolDetail = () => {
   };
 
   const handleExportAllSchoolsZip = async () => {
-    if (role === 'bnu') return;
+    if (role === 'bnu' || readOnly) return;
     if (isExportingAll) return;
 
     setIsExportingAll(true);
@@ -299,7 +300,7 @@ const SchoolHoursSchoolDetail = () => {
           </Button>
           {role !== 'bnu' && (
             <>
-              <Button variant="outline" onClick={handleExport} disabled={isExporting || isExportingAll}>
+              <Button variant="outline" onClick={handleExport} disabled={readOnly || isExporting || isExportingAll}>
                 {isExporting ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -310,7 +311,7 @@ const SchoolHoursSchoolDetail = () => {
               <Button
                 variant="outline"
                 onClick={() => setIsExportAllDialogOpen(true)}
-                disabled={isExporting || isExportingAll}
+                disabled={readOnly || isExporting || isExportingAll}
               >
                 {isExportingAll ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

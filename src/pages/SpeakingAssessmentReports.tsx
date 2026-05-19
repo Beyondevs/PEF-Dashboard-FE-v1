@@ -41,7 +41,8 @@ function toCsvBlob(rows: Record<string, any>[], columns: string[]): Blob {
 const SpeakingAssessmentReports = () => {
   const { filters } = useFilters();
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, isViewOnly } = useAuth();
+  const readOnly = isViewOnly();
 
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
   
@@ -86,6 +87,7 @@ const SpeakingAssessmentReports = () => {
   const currentReport = activeTab === 'students' ? studentReport : teacherReport;
   const maxScore = activeTab === 'students' ? 60 : 70;
   const canExport = role === 'admin' || role === 'client' || role === 'division_role';
+  const showExport = canExport || readOnly;
 
   const getProgressPercentage = (score: number) => {
     return ((score / maxScore) * 100);
@@ -142,10 +144,11 @@ const SpeakingAssessmentReports = () => {
           </div>
         </div>
 
-        {canExport && (
+        {showExport && (
           <div className="flex items-center justify-end">
             <ExportButton
               label="Export CSV"
+              disabled={readOnly}
               filename={`speaking_assessment_report_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`}
               exportFn={async () => {
                 const report = currentReport;
