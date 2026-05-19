@@ -25,6 +25,7 @@ import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { useFilters } from '@/contexts/FilterContext';
 import { SearchTag } from '@/components/SearchTag';
+import PaginationSummary from '@/components/PaginationSummary';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function Schools() {
@@ -630,10 +631,10 @@ export default function Schools() {
       {/* Pagination */}
       {pagination.total > 0 && (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mt-4">
-          <div className="text-sm text-muted-foreground order-2 sm:order-1 text-center sm:text-left">
+          <PaginationSummary className="text-sm text-muted-foreground order-2 sm:order-1 text-center sm:text-left">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} schools
             {activeSearchTerm && ' (filtered)'}
-          </div>
+          </PaginationSummary>
           <div className="flex items-center justify-center gap-2 order-1 sm:order-2">
             <Button
               variant="outline"

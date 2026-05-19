@@ -18,12 +18,14 @@ import { useFilters } from '@/contexts/FilterContext';
 import { getSchools } from '@/lib/api';
 import PaginationControls from '@/components/PaginationControls';
 import { SearchTag } from '@/components/SearchTag';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ITEMS_PER_PAGE = 10;
 
 const Schools = () => {
   const isMobile = useIsMobile();
   const { filters } = useFilters();
+  const { showPaginationSummary } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -126,12 +128,14 @@ const Schools = () => {
               </div>
             )}
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <School className="h-4 w-4" />
-              <span>
-                {isLoading ? 'Loading...' : `Showing ${schools.length} of ${totalItems} schools`}
-              </span>
-            </div>
+            {showPaginationSummary() && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <School className="h-4 w-4" />
+                <span>
+                  {isLoading ? 'Loading...' : `Showing ${schools.length} of ${totalItems} schools`}
+                </span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Pagination,
   PaginationContent,
@@ -51,6 +52,9 @@ export const PaginationControls = ({
   className,
   pageInfo,
 }: PaginationControlsProps) => {
+  const { showPaginationSummary } = useAuth();
+  const displayPageInfo = pageInfo && showPaginationSummary();
+
   if (totalPages <= 1) {
     return null;
   }
@@ -58,8 +62,14 @@ export const PaginationControls = ({
   const pageItems = buildPageItems(currentPage, totalPages);
 
   return (
-    <div className={cn('flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between', className)}>
-      {pageInfo && <span className="text-sm text-muted-foreground">{pageInfo}</span>}
+    <div
+      className={cn(
+        'flex flex-col gap-3 sm:flex-row sm:items-center',
+        displayPageInfo ? 'sm:justify-between' : 'sm:justify-end',
+        className,
+      )}
+    >
+      {displayPageInfo && <span className="text-sm text-muted-foreground">{pageInfo}</span>}
       <Pagination>
         <PaginationContent>
           <PaginationItem>

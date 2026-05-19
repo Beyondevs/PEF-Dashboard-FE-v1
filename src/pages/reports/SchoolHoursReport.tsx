@@ -59,7 +59,7 @@ function safeFilenamePart(input: string): string {
 const SchoolHoursReport = () => {
   const { filters } = useFilters();
   const navigate = useNavigate();
-  const { isViewOnly } = useAuth();
+  const { isViewOnly, showPaginationSummary } = useAuth();
   const readOnly = isViewOnly();
 
   const [reportData, setReportData] = useState<SchoolListData | null>(null);
@@ -304,12 +304,14 @@ const SchoolHoursReport = () => {
               </div>
             ) : null}
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <School className="h-4 w-4" />
-              <span>
-                Showing {totalFiltered === 0 ? 0 : `${startIdx + 1}-${endIdx}`} of {totalFiltered} schools
-              </span>
-            </div>
+            {showPaginationSummary() && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <School className="h-4 w-4" />
+                <span>
+                  Showing {totalFiltered === 0 ? 0 : `${startIdx + 1}-${endIdx}`} of {totalFiltered} schools
+                </span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

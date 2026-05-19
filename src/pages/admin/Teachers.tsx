@@ -29,6 +29,7 @@ import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { SearchTag } from '@/components/SearchTag';
+import PaginationSummary from '@/components/PaginationSummary';
 
 export default function Teachers() {
   const isMobile = useIsMobile();
@@ -621,10 +622,10 @@ export default function Teachers() {
       {/* Pagination */}
       {pagination.total > 0 && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4">
-          <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+          <PaginationSummary className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total}
             {activeSearchTerm && ` (filtered)`}
-          </div>
+          </PaginationSummary>
           <div className="flex items-center justify-center flex-wrap gap-2">
             <Button
               variant="outline"

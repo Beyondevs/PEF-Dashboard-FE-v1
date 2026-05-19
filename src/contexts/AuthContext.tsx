@@ -27,6 +27,8 @@ interface AuthContextType {
   canStarStudentOrTeacher: () => boolean;
   /** Trainer and division_role: view data only; action controls stay visible but disabled */
   isViewOnly: () => boolean;
+  /** Client role: hide "Showing X–Y of Z" pagination summaries on tables */
+  showPaginationSummary: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -315,6 +317,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const canEdit = () => role === 'admin';
   const canDelete = () => role === 'admin';
   const isViewOnly = () => role === 'trainer' || role === 'division_role';
+  const showPaginationSummary = () => role !== 'client';
   const canMarkAttendance = () => role === 'admin';
   const canStarStudentOrTeacher = () => role === 'admin';
 
@@ -339,6 +342,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       canMarkAttendance,
       canStarStudentOrTeacher,
       isViewOnly,
+      showPaginationSummary,
     }}>
       {children}
     </AuthContext.Provider>

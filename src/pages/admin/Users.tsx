@@ -14,6 +14,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/lib/api';
 import PaginationControls from '@/components/PaginationControls';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 10;
 const ROLE_LABELS: Record<string, string> = {
@@ -44,6 +45,7 @@ export default function Users() {
     total: 0,
   });
   const { toast } = useToast();
+  const { showPaginationSummary } = useAuth();
 
   const fetchUsers = useCallback(
     async (page = 1) => {
@@ -117,7 +119,9 @@ export default function Users() {
             <Search className="h-4 w-4" />
           </Button>
         </div>
-        <span className="text-sm text-muted-foreground">{pageInfo}</span>
+        {showPaginationSummary() && (
+          <span className="text-sm text-muted-foreground">{pageInfo}</span>
+        )}
       </div>
 
       <div className="border rounded-lg">

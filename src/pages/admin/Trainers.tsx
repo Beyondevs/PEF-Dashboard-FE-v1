@@ -28,6 +28,7 @@ import * as api from '@/lib/api';
 import { ExportButton } from '@/components/data-transfer/ExportButton';
 import { ImportButton } from '@/components/data-transfer/ImportButton';
 import { SearchTag } from '@/components/SearchTag';
+import PaginationSummary from '@/components/PaginationSummary';
 
 export default function Trainers() {
   const [trainers, setTrainers] = useState([]);
@@ -610,10 +611,10 @@ export default function Trainers() {
       {/* Pagination */}
       {pagination.total > 0 && (
         <div className="flex items-center justify-between flex-wrap mt-4">
-          <div className="text-sm text-muted-foreground mb-4">
+          <PaginationSummary className="text-sm text-muted-foreground mb-4">
             Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} trainers
             {searchTerm && ` (filtered)`}
-          </div>
+          </PaginationSummary>
           <div className="flex items-center flex-wrap gap-2">
             <Button
               variant="outline"
